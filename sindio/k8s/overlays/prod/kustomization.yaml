@@ -1,0 +1,97 @@
+# ============================================================
+# Sindio — Kustomize overlay: prod
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sindio
+
+bases:
+  - ../..
+
+patches:
+  # Inject ECR production tags
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                image: ${ECR_REPO}/sindio-api:${BUILD_TAG}
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-simulator
+      spec:
+        template:
+          spec:
+            containers:
+              - name: simulator
+                image: ${ECR_REPO}/sindio-simulator:${BUILD_TAG}
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-rag
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rag
+                image: ${ECR_REPO}/sindio-rag:${BUILD_TAG}
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-frontend
+      spec:
+        template:
+          spec:
+            containers:
+              - name: frontend
+                image: ${ECR_REPO}/sindio-frontend:${BUILD_TAG}
+
+  # Production security hardening
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 65534
+                  readOnlyRootFilesystem: true
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-simulator
+      spec:
+        template:
+          spec:
+            containers:
+              - name: simulator
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 1000
+                  readOnlyRootFilesystem: true
+
+  # Remove LocalStack from production
+  - patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sindio-config
+      data:
+        LOG_LEVEL: "warn"
+        AWS_ENDPOINT_URL: ""

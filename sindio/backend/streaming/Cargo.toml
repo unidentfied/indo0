@@ -1,0 +1,65 @@
+[package]
+name = "sindio-streaming"
+version = "0.2.0"
+edition = "2021"
+description = "Sindio real-time mobility consumer — H3 aggregation + TimescaleDB sink"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+tokio-util = "0.7"
+
+# Kafka
+rdkafka = { version = "0.35", features = ["cmake-build", "ssl", "gssapi"] }
+
+# H3 geospatial binning
+h3o = "0.3"
+
+# Database
+sqlx = { version = "0.7", features = [
+    "runtime-tokio",
+    "tls-rustls",
+    "postgres",
+    "chrono",
+    "uuid",
+    "json",
+] }
+
+# Serde
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4"] }
+
+# Config
+dotenvy = "0.15"
+clap = { version = "4", features = ["derive", "env"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Metrics
+metrics = "0.22"
+metrics-exporter-prometheus = { version = "0.13", default-features = false, features = ["http-listener"] }
+
+# HTTP server (Axum)
+axum = "0.7"
+tower-http = { version = "0.5", features = ["cors"] }
+
+# Utility
+futures = "0.3"
+rand = "0.8"
+thiserror = "1"
+lazy_static = "1.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[[bin]]
+name = "sindio-streaming"
+path = "src/main.rs"
+
+[[bin]]
+name = "mobility-consumer"
+path = "src/mobility/main.rs"

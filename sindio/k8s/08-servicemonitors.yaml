@@ -1,0 +1,81 @@
+# ============================================================
+# Sindio — Prometheus ServiceMonitors
+# ============================================================
+# Requires prometheus-operator installed:
+#   helm install prometheus prometheus-community/kube-prometheus-stack
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-api
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: api-gateway
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: sindio-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-simulator
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: simulator
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: sindio-simulator
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-rag
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: rag
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: sindio-rag
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-frontend
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: frontend
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: sindio-frontend
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s

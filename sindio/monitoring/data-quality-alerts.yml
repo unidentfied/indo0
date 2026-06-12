@@ -1,0 +1,75 @@
+groups:
+  - name: sindio-data-quality
+    interval: 30s
+    rules:
+      # ── Alert: mock fallback ratio exceeds 10% for more than 1 hour ──
+      - alert: SindioMockFallbackHigh
+        expr: data_quality_mock_fallback_ratio > 0.10
+        for: 1h
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "Mock fallback rate above 10% for {{ $labels.infrastructure_type }}"
+          description: >
+            Infrastructure type "{{ $labels.infrastructure_type }}" has been serving
+            {{ $value | humanizePercentage }} of requests from mock/fallback data
+            for more than 1 hour. Real data sources may be unreachable.
+            Check PostGIS, Kafka, Qdrant, and TimescaleDB connectivity.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+          runbook: "https://wiki.sindio.urban/runbooks/data-quality"
+
+      # ── Alert: mock fallback ratio exceeds 25% for more than 15 minutes ──
+      - alert: SindioMockFallbackCritical
+        expr: data_quality_mock_fallback_ratio > 0.25
+        for: 15m
+        labels:
+          severity: critical
+          team: sindio
+        annotations:
+          summary: "Mock fallback rate above 25% for {{ $labels.infrastructure_type }}"
+          description: >
+            Infrastructure type "{{ $labels.infrastructure_type }}" has been serving
+            {{ $value | humanizePercentage }} of requests from mock/fallback data
+            for more than 15 minutes. Data quality is severely degraded.
+            Immediate investigation required.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+          runbook: "https://wiki.sindio.urban/runbooks/data-quality"
+
+      # ── Alert: model confidence drops below 0.70 ──
+      - alert: SindioModelConfidenceLow
+        expr: data_quality_model_confidence < 0.70
+        for: 30m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "Model confidence below 70% for {{ $labels.infrastructure_type }}"
+          description: >
+            Model confidence for "{{ $labels.infrastructure_type }}" has dropped to
+            {{ $value | humanizePercentage }} for more than 30 minutes.
+            Model may need retraining or input data quality has degraded.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+
+      # ── Alert: no real data fetches in the last 2 hours ──
+      - alert: SindioNoRealDataFetches
+        expr: increase(data_quality_real_fetch_total[2h]) == 0
+        for: 0m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "No real data fetches for {{ $labels.infrastructure_type }} in 2 hours"
+          description: >
+            Infrastructure type "{{ $labels.infrastructure_type }}" has not successfully
+            fetched any real data in the last 2 hours. All data may be from fallback sources.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+
+      # ── Recording rule: 1-hour average mock ratio for trending ──
+      - record: data_quality_mock_fallback_ratio:avg1h
+        expr: avg_over_time(data_quality_mock_fallback_ratio[1h])
+
+      # ── Recording rule: real data ratio by service ──
+      - record: data_quality_real_data_ratio:by_service
+        expr: |
+          avg by (infrastructure_type, job) (data_quality_real_data_ratio)

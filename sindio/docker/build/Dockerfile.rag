@@ -1,0 +1,37 @@
+# ============================================================
+# Sindio RAG + Agent — hybrid search + agentic workflow
+# ============================================================
+FROM python:3.11-slim AS base
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev gcc curl \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM base AS builder
+
+WORKDIR /app
+COPY backend/core/pyproject.toml ./
+RUN if [ -f backend/core/poetry.lock ]; then cp backend/core/poetry.lock ./; fi
+
+RUN pip install --no-cache-dir poetry \
+    && (poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi) \
+    || pip install --no-cache-dir \
+         fastapi uvicorn[standard] pydantic httpx numpy pandas \
+         torch transformers sentence-transformers \
+         psycopg2-binary sqlalchemy redis celery[redis] \
+         elasticsearch faiss-cpu langgraph langchain-core openai \
+         qdrant-client
+
+FROM base AS runtime
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+WORKDIR /app
+COPY backend/core/app/ ./app/
+
+EXPOSE 8081
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8081/health || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]

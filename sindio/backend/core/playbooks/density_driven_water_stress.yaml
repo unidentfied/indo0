@@ -1,0 +1,28 @@
+# Playbook: density_driven_water_stress
+# Matches water infrastructure alerts classified as density_driven
+# with severity >= 0.7.
+# ------------------------------------------------------------------
+name: density_driven_water_stress
+version: "1.0"
+triggers:
+  - infrastructure_type: water
+  - classification: density_driven
+  - severity_range: [0.7, 1.0]
+
+steps:
+  - action: retrieve_population_trend
+    params: { radius_m: 500, years: 5 }
+  - action: calculate_demand_vs_capacity
+    params: {}
+  - action: generate_upgrade_options
+    options: ["upsize_pipe", "add_parallel_line", "pressure_reduction"]
+  - action: cost_estimate
+    source: "nairobi_water_rates_2025"
+  - action: format_recommendation
+
+output_template: |
+  Density-driven stress detected on {asset_id} ({ward} ward).
+  Population within {radius_m}m grew {growth}% over {years} years,
+  increasing demand to {demand} L/s against capacity of {capacity} L/s
+  (utilization: {utilization_pct}%).
+  Recommended: {top_option} with estimated cost {cost} KES. Timeline: {timeline}.

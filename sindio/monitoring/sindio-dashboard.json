@@ -1,0 +1,530 @@
+{
+  "dashboard": {
+    "uid": "sindio-nairobi-urban-stress",
+    "title": "Sindio — Nairobi Urban Planning Monitor",
+    "description": "Real-time infrastructure stress, RAG retrieval, alert rates, and model health for Nairobi County.",
+    "tags": ["sindio", "nairobi", "urban-planning", "infrastructure", "rag"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "editable": true,
+    "graphTooltip": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Alert Rate by Infrastructure Type (last 24h)",
+        "type": "barchart",
+        "gridPos": { "h": 10, "w": 12, "x": 0, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "palette-classic" },
+            "unit": "short"
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "power" },     "properties": [{ "id": "color", "value": { "fixedColor": "#F2CC0C", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "water" },     "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "road" },      "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "waste" },     "properties": [{ "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }] }
+          ]
+        },
+        "options": {
+          "orientation": "horizontal",
+          "xField": "infra_type",
+          "colorByField": "infra_type",
+          "showValue": "auto",
+          "groupWidth": 0.7,
+          "barRadius": 3,
+          "legend": { "displayMode": "list", "placement": "bottom", "calcs": ["sum"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (infrastructure_type) (rate(alerts_generated_total{level!=\"advisory\"}[24h]))",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "format": "table",
+            "instant": true
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "95th Percentile Stress by Ward (Nairobi)",
+        "type": "geomap",
+        "gridPos": { "h": 10, "w": 12, "x": 12, "y": 0 },
+        "options": {
+          "basemap": {
+            "type": "carto",
+            "config": { "style": "dark-matter" }
+          },
+          "controls": {
+            "showZoom": true,
+            "showAttribution": true,
+            "mouseWheelZoom": true
+          },
+          "view": {
+            "lat": -1.2833,
+            "lon": 36.8219,
+            "zoom": 12
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "histogram_quantile(0.95, sum by (ward, le) (rate(stress_value_bucket[5m])))",
+            "legendFormat": "{{ward}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "format": "table",
+            "instant": true
+          },
+          {
+            "refId": "B",
+            "expr": "label_replace(ward_centroid_lat, \"ward\", \"$1\", \"ward\", \"(.*)\")",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "format": "table",
+            "instant": true,
+            "hide": false
+          },
+          {
+            "refId": "C",
+            "expr": "label_replace(ward_centroid_lng, \"ward\", \"$1\", \"ward\", \"(.*)\")",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "format": "table",
+            "instant": true,
+            "hide": false
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "RAG Retrieval Latency",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "palette-classic" },
+            "unit": "s",
+            "custom": { "lineInterpolation": "smooth", "fillOpacity": 15, "spanNulls": true }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "p99" }, "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "color", "value": { "fixedColor": "#F2CC0C", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "p50" }, "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }] }
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "last"] }
+        },
+        "targets": [
+          {
+            "refId": "p50",
+            "expr": "histogram_quantile(0.50, sum(rate(rag_retrieval_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "p95",
+            "expr": "histogram_quantile(0.95, sum(rate(rag_retrieval_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "p99",
+            "expr": "histogram_quantile(0.99, sum(rate(rag_retrieval_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Temporal Spacing Compliance Rate",
+        "type": "stat",
+        "gridPos": { "h": 8, "w": 4, "x": 8, "y": 10 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "unit": "percentunit",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.85 },
+                { "color": "#73BF69", "value": 0.95 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background",
+          "textMode": "value_and_name",
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum(temporal_spacing_met_total) / sum(temporal_spacing_expected_total)",
+            "legendFormat": "Compliance",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Temporal Spacing Compliance by Type",
+        "type": "bargauge",
+        "gridPos": { "h": 8, "w": 6, "x": 12, "y": 10 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0.7,
+            "max": 1.0,
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.85 },
+                { "color": "#73BF69", "value": 0.95 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true,
+          "minVizHeight": 10,
+          "maxVizHeight": 300
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (update_type) (temporal_spacing_met_total) / sum by (update_type) (temporal_spacing_expected_total)",
+            "legendFormat": "{{update_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "instant": true
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Model Drift — Stress Distribution Shift (PSI)",
+        "type": "timeseries",
+        "gridPos": { "h": 9, "w": 12, "x": 0, "y": 18 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": { "drawStyle": "bars", "fillOpacity": 60, "lineWidth": 1, "spanNulls": true },
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#73BF69", "value": null },
+                { "color": "#F2CC0C", "value": 0.05 },
+                { "color": "#E02F44", "value": 0.10 }
+              ]
+            }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "PSI (power)" }, "properties": [{ "id": "color", "value": { "fixedColor": "#F2CC0C", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "PSI (water)" }, "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "PSI (road)" }, "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "Drift Threshold" }, "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }, { "id": "custom.lineStyle", "value": { "fill": "dash" } }] }
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+        },
+        "targets": [
+          {
+            "refId": "power_psi",
+            "expr": "model_stress_psi{infrastructure_type=\"power\"}",
+            "legendFormat": "PSI (power)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "water_psi",
+            "expr": "model_stress_psi{infrastructure_type=\"water\"}",
+            "legendFormat": "PSI (water)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "road_psi",
+            "expr": "model_stress_psi{infrastructure_type=\"road\"}",
+            "legendFormat": "PSI (road)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "threshold",
+            "expr": "vector(0.10)",
+            "legendFormat": "Drift Threshold",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Stress Output Distribution — Current vs Baseline (24h)",
+        "type": "barchart",
+        "gridPos": { "h": 9, "w": 12, "x": 12, "y": 18 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "Current" }, "properties": [{ "id": "color", "value": { "fixedColor": "#5794F2", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "Baseline" }, "properties": [{ "id": "color", "value": { "fixedColor": "#A0A0A0", "mode": "fixed" } }] }
+          ]
+        },
+        "options": {
+          "orientation": "vertical",
+          "xField": "bucket",
+          "stacking": "none",
+          "groupWidth": 0.7,
+          "barRadius": 2,
+          "showValue": "never",
+          "legend": { "displayMode": "list", "placement": "bottom" }
+        },
+        "targets": [
+          {
+            "refId": "current",
+            "expr": "sum by (le) (rate(stress_value_bucket[24h]))",
+            "legendFormat": "Current",
+            "format": "table",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "instant": true
+          },
+          {
+            "refId": "baseline",
+            "expr": "sum by (le) (rate(stress_value_bucket{source=\"baseline\"}[30d]))",
+            "legendFormat": "Baseline",
+            "format": "table",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "instant": true
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Top 10 Assets Approaching Capacity Breach (Nairobi)",
+        "type": "table",
+        "gridPos": { "h": 10, "w": 12, "x": 0, "y": 27 },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Current Stress %" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "gauge", "mode": "gradient" } },
+                { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                  { "color": "#73BF69", "value": null },
+                  { "color": "#F2CC0C", "value": 70 },
+                  { "color": "#E02F44", "value": 85 }
+                ] } }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Capacity Headroom %" },
+              "properties": [
+                { "id": "custom.cellOptions", "value": { "type": "color-background" } },
+                { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                  { "color": "#E02F44", "value": null },
+                  { "color": "#F2CC0C", "value": 15 },
+                  { "color": "#73BF69", "value": 30 }
+                ] } }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showTypeIcons": false,
+          "sortBy": [{ "displayName": "Current Stress %", "desc": true }]
+        },
+        "targets": [
+          {
+            "refId": "top10",
+            "expr": "topk(10, stress_value{source=\"model_fresh\"})",
+            "legendFormat": "{{node_name}} ({{ward}})",
+            "format": "table",
+            "instant": true,
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "capacity",
+            "expr": "capacity_total{node_name=~\"$node_name\"}",
+            "format": "table",
+            "instant": true,
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ],
+        "transformations": [
+          { "id": "merge", "options": {} },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true },
+              "renameByName": {
+                "node_name": "Asset Name",
+                "ward": "Ward",
+                "infrastructure_type": "Type",
+                "Value #A": "Current Stress %",
+                "Value #B": "Capacity Headroom %"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "API Request Rate (v1 Gateway)",
+        "type": "timeseries",
+        "gridPos": { "h": 7, "w": 8, "x": 12, "y": 27 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "spanNulls": true }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (path) (rate(request_duration_seconds_count[5m]))",
+            "legendFormat": "{{path}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Qdrant Index Size & RAG Chunk Count",
+        "type": "timeseries",
+        "gridPos": { "h": 7, "w": 8, "x": 0, "y": 28 },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 },
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+        },
+        "targets": [
+          {
+            "refId": "vectors",
+            "expr": "qdrant_points_count{collection=\"nairobi_planning_docs\"}",
+            "legendFormat": "Vector count",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "chunks",
+            "expr": "pg_document_chunks_total",
+            "legendFormat": "PG chunk count",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "size",
+            "expr": "qdrant_collection_size_bytes{collection=\"nairobi_planning_docs\"} / 1024 / 1024",
+            "legendFormat": "Index size (MiB)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Celery Worker Queue Depth & Task Rate",
+        "type": "timeseries",
+        "gridPos": { "h": 7, "w": 8, "x": 8, "y": 28 },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 },
+            "color": { "mode": "palette-classic" }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "Queue Depth" }, "properties": [{ "id": "custom.axisPlacement", "value": "left" }] },
+            { "matcher": { "id": "byName", "options": "Task Rate" }, "properties": [{ "id": "custom.axisPlacement", "value": "right" }] }
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "mean"] }
+        },
+        "targets": [
+          {
+            "refId": "queue",
+            "expr": "celery_queue_depth{queue=\"celery\"}",
+            "legendFormat": "Queue Depth",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "rate",
+            "expr": "rate(celery_tasks_total[5m])",
+            "legendFormat": "Task Rate",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "DS_PROMETHEUS",
+          "type": "datasource",
+          "query": "prometheus",
+          "label": "Prometheus",
+          "hide": 0,
+          "current": { "selected": true, "text": "Prometheus", "value": "Prometheus" }
+        },
+        {
+          "name": "infrastructure_type",
+          "type": "query",
+          "query": "label_values(alerts_generated_total, infrastructure_type)",
+          "label": "Infrastructure Type",
+          "multi": true,
+          "includeAll": true,
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+        },
+        {
+          "name": "ward",
+          "type": "query",
+          "query": "label_values(stress_value, ward)",
+          "label": "Nairobi Ward",
+          "multi": true,
+          "includeAll": true,
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "kube_deployment_status_replicas_available{namespace=\"sindio\"} < 1",
+          "iconColor": "#E02F44",
+          "titleFormat": "Degraded: {{deployment}}"
+        }
+      ]
+    }
+  }
+}

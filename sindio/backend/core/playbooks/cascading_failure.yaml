@@ -1,0 +1,30 @@
+# Playbook: cascading_failure
+# Matches alerts where a power outage cascades to water pumps
+# going offline, requiring backup generator deployment.
+# ------------------------------------------------------------------
+name: cascading_failure
+version: "1.0"
+triggers:
+  - classification: recurring
+  - severity_range: [0.8, 1.0]
+  - infrastructure_type: power
+
+steps:
+  - action: detect_cascade_chain
+    params: { lookback_minutes: 30 }
+  - action: identify_critical_assets
+    params: { asset_types: ["water_pump", "traffic_signal", "hospital_feeder"] }
+  - action: estimate_downtime_impact
+    params: {}
+  - action: generate_backup_options
+    options: ["deploy_mobile_generator", "reroute_from_adjacent_feeder", "manual_override_pump"]
+  - action: cost_estimate
+    source: "kenya_power_emergency_rates_2025"
+  - action: format_recommendation
+
+output_template: |
+  Cascading failure detected: {trigger_asset} outage → {cascade_chain}.
+  Affected critical assets: {affected_count} ({affected_asset_list}).
+  Estimated downtime without intervention: {downtime_hours}h affecting {population_affected} people.
+  Recommended: {top_option}. Deployment ETA: {deployment_eta} min.
+  Backup logistics: {logistics_summary}. Estimated cost: {cost} KES.

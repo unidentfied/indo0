@@ -1,0 +1,27 @@
+# Playbook: recurring_seasonal_stress
+# Matches recurring infrastructure alerts where seasonal patterns
+# (dry season) cause temporary capacity strain.
+# Recommendation focus: demand management, not capital upgrade.
+# ------------------------------------------------------------------
+name: recurring_seasonal_stress
+version: "1.0"
+triggers:
+  - classification: recurring
+  - severity_range: [0.4, 0.9]
+
+steps:
+  - action: verify_seasonal_pattern
+    params: { lookback_months: 36 }
+  - action: check_meter_accuracy
+    params: {}
+  - action: demand_management_options
+    params: {}
+  - action: format_recommendation
+
+output_template: |
+  Seasonal stress pattern confirmed on {asset_id} ({ward} ward).
+  Historical analysis shows recurring {infrastructure_type} strain during
+  {peak_months}, aligning with {demand_pattern}.
+  Meter accuracy: {meter_status}. Baseline demand: {baseline_demand} L/s.
+  Recommendation: {top_option}. No capital upgrade needed — manage demand
+  via {demand_management_action}. Estimated savings: {cost_avoided} KES vs upgrade.

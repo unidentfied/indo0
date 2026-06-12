@@ -1,0 +1,21 @@
+# ============================================================
+# Sindio — Kustomize base
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sindio
+
+resources:
+  - 00-namespace.yaml
+  - 01-configmap.yaml
+  - 02-secrets.yaml
+  - 03-pvc.yaml
+  - 04-deployments.yaml
+  - 05-services.yaml
+  - 06-hpa.yaml
+  - 07-istio-virtualservice.yaml
+  - 08-servicemonitors.yaml
+
+commonLabels:
+  app.kubernetes.io/managed-by: kustomize

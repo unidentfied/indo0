@@ -1,0 +1,26 @@
+# ============================================================
+# Sindio API (Go) — multi-stage → scratch
+# ============================================================
+FROM golang:1.21-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates
+
+WORKDIR /build
+COPY backend/api/go.mod backend/api/go.sum ./
+RUN go mod download
+
+COPY backend/api/ ./
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -trimpath \
+    -o /sindio-api ./cmd/api/
+
+FROM scratch
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /sindio-api /sindio-api
+
+EXPOSE 8080
+USER 65534:65534
+HEALTHCHECK --interval=15s --timeout=5s --retries=3 \
+    CMD ["/sindio-api", "-healthcheck"] || true
+
+ENTRYPOINT ["/sindio-api"]

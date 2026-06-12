@@ -1,0 +1,1636 @@
+{
+  "generated_at": "2026-06-11T20:50:42.610305+00:00",
+  "total_sources": 36,
+  "new_sources": 36,
+  "filtered_out_count": 1,
+  "mock_coverage": 0.93,
+  "mock_endpoint_count": 14,
+  "mock_infra_types_covered": [
+    "airports",
+    "any",
+    "electricity",
+    "lrt",
+    "power",
+    "roads",
+    "sgr",
+    "sidewalks",
+    "solid_waste",
+    "traffic",
+    "transit",
+    "utilities",
+    "water"
+  ],
+  "sources": [
+    {
+      "source_name": "A History of SCADA in the Water Sector",
+      "url": "https://htt.io/learning-center/a-history-of-scada-in-the-water-sector",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700846+00:00"
+    },
+    {
+      "source_name": "API",
+      "url": "https://www.scadacore.com/live/features/api/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627289+00:00"
+    },
+    {
+      "source_name": "Developing Geo",
+      "url": "https://erepository.uonbi.ac.ke/server/api/core/bitstreams/5c74ef64-57e5-4a40-bdc6-621e093de177/content",
+      "data_type": "API documentation",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164119+00:00"
+    },
+    {
+      "source_name": "Getting started with USGS Water Data OGC APIs",
+      "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+      "data_type": "API documentation",
+      "access_notes": "Auth: API key | Rate limits: rate limits. | Found 11 API endpoint(s) | Data types: meter, sensor, water quality",
+      "scrape_details": {
+        "endpoints": [
+          "/docs/",
+          "/docs/nims/",
+          "/docs/ogcapi/",
+          "/docs/ogcapi/complex-queries/",
+          "/docs/ogcapi/efficiency/",
+          "/docs/ogcapi/gis/",
+          "/docs/ogcapi/keys/",
+          "/docs/ogcapi/metrics/",
+          "/docs/ogcapi/migration/",
+          "/docs/ogcapi/versioning/",
+          "/docs/stac/"
+        ],
+        "auth_methods": [
+          "API key"
+        ],
+        "rate_limits": [
+          "rate limits."
+        ],
+        "data_types": [
+          "meter",
+          "sensor",
+          "water quality"
+        ],
+        "status_code": 200,
+        "content_type": "text/html",
+        "title": "Water Data APIs"
+      },
+      "discovered_at": "2026-06-11T20:50:01.626743+00:00"
+    },
+    {
+      "source_name": "How to get SCADA data from Water systems without ...",
+      "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Data types: infrastructure, maintenance, scada, sensor, treatment, water quality",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "infrastructure",
+          "maintenance",
+          "scada",
+          "sensor",
+          "treatment",
+          "water quality"
+        ],
+        "status_code": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "title": "How to get SCADA data from Water systems without burdening operations - FacilityConnex"
+      },
+      "discovered_at": "2026-06-11T20:50:17.848555+00:00"
+    },
+    {
+      "source_name": "Improved Water & Wastewater Systems Monitoring and ...",
+      "url": "https://alliancewater.com/how-does-scada-help-water-and-wastewater-management/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700667+00:00"
+    },
+    {
+      "source_name": "Kenya",
+      "url": "https://data.humdata.org/dataset/kenya-general-data-on-water-utilities",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700785+00:00"
+    },
+    {
+      "source_name": "Kenya Water Resources Authority (WRA)",
+      "url": "https://www.un-spider.org/kenya-water-resources-authority-wra",
+      "data_type": "unknown",
+      "access_notes": "No details found",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [],
+        "status_code": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "title": "Kenya Water Resources Authority (WRA) | UN-SPIDER Knowledge Portal"
+      },
+      "discovered_at": "2026-06-11T20:50:37.199949+00:00"
+    },
+    {
+      "source_name": "Kenya Water Resources Profile Overview",
+      "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+      "data_type": "Water quality",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200329+00:00"
+    },
+    {
+      "source_name": "NAIROBI CITY WATER & SEWERAGE COMPANY LTD",
+      "url": "https://tendersoko.com/company/nairobi-city-water-sewerage-company-ltd-17",
+      "data_type": "API documentation",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164636+00:00"
+    },
+    {
+      "source_name": "NAIROBI CITY WATER AND SEWERAGE COMPANY",
+      "url": "https://www.scribd.com/document/1030772609/NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164903+00:00"
+    },
+    {
+      "source_name": "NCWSC Strategic Plan 2019/20",
+      "url": "https://www.nairobiwater.co.ke/wp-content/uploads/2023/04/Strategic-Plan.pdf",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627513+00:00"
+    },
+    {
+      "source_name": "Nairobi City Water & Sewerage",
+      "url": "https://www.zoominfo.com/c/nairobi-city-water--sewerage-co-ltd/191202131",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164460+00:00"
+    },
+    {
+      "source_name": "Nairobi City Water and Sewerage Company (NCWSC )",
+      "url": "http://sti-portal.fao.org/organizations/nairobi-city-water-and-sewerage-company-ncwsc",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164824+00:00"
+    },
+    {
+      "source_name": "Nairobi City Water and Sewerage Company Ltd ...",
+      "url": "https://www.instagram.com/nairobiwater_/",
+      "data_type": "unknown",
+      "access_notes": "No details found",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [],
+        "status_code": 200,
+        "content_type": "text/html; charset=\"utf-8\"",
+        "title": "Nairobi City Water & Sewerage Company Ltd (@nairobiwater_) \u2022 Instagram photos and videos"
+      },
+      "discovered_at": "2026-06-11T20:50:10.384667+00:00"
+    },
+    {
+      "source_name": "Nairobi City Water and Sewerage Company: Home",
+      "url": "https://nairobiwater.co.ke/",
+      "data_type": "Billing / consumption",
+      "access_notes": "Data types: reservoir, treatment",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "reservoir",
+          "treatment"
+        ],
+        "status_code": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "title": "Home - Nairobi City Water and Sewerage Company"
+      },
+      "discovered_at": "2026-06-11T20:50:08.634033+00:00"
+    },
+    {
+      "source_name": "Nairobi Water Company",
+      "url": "https://www.facebook.com/nairobiwater254/posts/notice-nairobi-city-water-and-sewerage-company-ltd-has-introduced-additional-ser/8802342473172560/",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164360+00:00"
+    },
+    {
+      "source_name": "Nairobi, Kenya Water Polygons",
+      "url": "https://datacatalog.worldbank.org/infrastructure-data/search/dataset/0040278/nairobi-kenya-water-polygons",
+      "data_type": "API documentation",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627732+00:00"
+    },
+    {
+      "source_name": "Pan African University, Institute for Water and Energy Sciences",
+      "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+      "data_type": "Water quality",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200389+00:00"
+    },
+    {
+      "source_name": "SCADA API \u2014 Typhoon API 2026.2 documentation",
+      "url": "https://www.typhoon-hil.com/documentation/typhoon-hil-api-documentation/scada_api.html",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Data types: meter, scada",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "meter",
+          "scada"
+        ],
+        "status_code": 200,
+        "content_type": "text/html",
+        "title": "SCADA API \u2014 Typhoon API 2026.2 documentation"
+      },
+      "discovered_at": "2026-06-11T20:49:59.241206+00:00"
+    },
+    {
+      "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+      "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Data types: asset, consumption, distribution, flow rate, infrastructure, maintenance, meter, pressure, pump, scada",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "asset",
+          "consumption",
+          "distribution",
+          "flow rate",
+          "infrastructure",
+          "maintenance",
+          "meter",
+          "pressure",
+          "pump",
+          "scada"
+        ],
+        "status_code": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "title": "SCADA Automation and the Future of Integrated Water Systems - STV"
+      },
+      "discovered_at": "2026-06-11T20:50:20.589192+00:00"
+    },
+    {
+      "source_name": "SCADA Implementation in Water Treatment: A 7",
+      "url": "https://www.pteinc.com/scada-implementation-in-water-treatment-guide/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627652+00:00"
+    },
+    {
+      "source_name": "SCADA for Water Treatment Solutions",
+      "url": "https://www.pcvue.com/our-offers/by-market/solution-for-water/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627383+00:00"
+    },
+    {
+      "source_name": "Specification for a SCADA",
+      "url": "https://www.water.c2.dc.siemens.com/system/files/c2cms_asset/04._functional_specification_scada_wincc_v7.2_in_the_water_industry.pdf",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:01.627593+00:00"
+    },
+    {
+      "source_name": "THE",
+      "url": "https://nairobiassembly.go.ke/ncca/wp-content/uploads/paperlaid/2022/THE-REPORT-OF-THE-AUDITOR-GENERAL-ON-NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY-FRO-THE-YEAR-ENDING-30TH-JUNE-2021.pdf",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164735+00:00"
+    },
+    {
+      "source_name": "Turning every drop into data. We are proud to announce a ...",
+      "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+      "data_type": "unknown",
+      "access_notes": "Data types: infrastructure, leak, scada, valve",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "infrastructure",
+          "leak",
+          "scada",
+          "valve"
+        ],
+        "status_code": 200,
+        "content_type": "text/html; charset=\"utf-8\"",
+        "title": "\ud83d\udca7 Turning every drop into data.\nWe are proud to announce a new partnership with DropByDrop Water Systems to deliver smart, data-driven water management across Kenya.\n\nWith nearly 47% of Kenya\u2019s water supply going unaccounted for, we\u2019re tackling the challenge of non-revenue water head-on using advanced IoT, real-time monitoring, remote valve control, and leak detection.\n\nThis partnership brings together:\n\u2705 Liquid\u2019s powerful IoT and SCADA infrastructure\n\u2705 DropByDrop\u2019s smart, multilingual water platform\n\u2705 A shared mission to drive sustainability, resilience, and impact\n\nTogether, we're building a smarter, more sustainable water future where every drop counts: https://liquid.tech/about-us/news/smart-water-management-across-kenya/ \n\n#SmartWater #IoT #Kenya #Sustainability #WaterSecurity | Liquid Intelligent Technologies"
+      },
+      "discovered_at": "2026-06-11T20:50:24.700477+00:00"
+    },
+    {
+      "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+      "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+      "data_type": "Water quality",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200356+00:00"
+    },
+    {
+      "source_name": "WRA Customer Portal",
+      "url": "https://play.google.com/store/apps/details?id=com.spa.majiapp.wra&hl=en_US",
+      "data_type": "Billing / consumption",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200260+00:00"
+    },
+    {
+      "source_name": "Water Resources Authority",
+      "url": "https://www.facebook.com/p/Water-Resources-Authority-100069277656824/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "No details found",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [],
+        "status_code": 200,
+        "content_type": "text/html; charset=\"utf-8\"",
+        "title": "Water Resources Authority"
+      },
+      "discovered_at": "2026-06-11T20:50:34.504951+00:00"
+    },
+    {
+      "source_name": "Water Resources Authority",
+      "url": "https://www.zoominfo.com/c/water-resources-authority/452790115",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200305+00:00"
+    },
+    {
+      "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+      "url": "https://wra.go.ke/",
+      "data_type": "unknown",
+      "access_notes": "Data types: billing, infrastructure, meter",
+      "scrape_details": {
+        "endpoints": [],
+        "auth_methods": [],
+        "rate_limits": [],
+        "data_types": [
+          "billing",
+          "infrastructure",
+          "meter"
+        ],
+        "status_code": 200,
+        "content_type": "text/html; charset=utf-8",
+        "title": "Water Resources Authority \u2013 Securing water resources, safeguarding our future"
+      },
+      "discovered_at": "2026-06-11T20:50:31.946589+00:00"
+    },
+    {
+      "source_name": "Water Resources Users Associations in the Mara Basin ...",
+      "url": "https://www.frontiersin.org/journals/environmental-science/articles/10.3389/fenvs.2018.00138/full",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:37.200425+00:00"
+    },
+    {
+      "source_name": "What Is SCADA and SCADA System?",
+      "url": "https://www.fortinet.com/resources/cyberglossary/scada-and-scada-systems",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700712+00:00"
+    },
+    {
+      "source_name": "Why SCADA modernization is a priority for water utilities",
+      "url": "https://insights.aecom.com/insights/article/why-scada-modernization-is-a-priority-for-water-utilities",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700740+00:00"
+    },
+    {
+      "source_name": "extending your SCADA",
+      "url": "https://www.data-command.com/case-studies/extend-your-scada-to-the-internet-to-receive-important-data-247/",
+      "data_type": "SCADA / telemetry",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:24.700821+00:00"
+    },
+    {
+      "source_name": "precursors to revenue collection efficiency in the water and ...",
+      "url": "https://www.researchgate.net/publication/345415846_PRECURSORS_TO_REVENUE_COLLECTION_EFFICIENCY_IN_THE_WATER_AND_SANITATION_SECTOR_A_CASE_OF_NAIROBI_CITY_WATER_SEWERAGE_COMPANY_K_LIMITED",
+      "data_type": "unknown",
+      "access_notes": "Page not scraped (fetch failed or SerpAPI only)",
+      "scrape_details": null,
+      "discovered_at": "2026-06-11T20:50:12.164554+00:00"
+    }
+  ],
+  "mock_to_real_mapping": [
+    {
+      "mock_endpoint": "GET /api/dashboard/metrics",
+      "mock_description": "Random mock metrics (grid stability, current load, avg transit, water pressure)",
+      "mock_data_type": "infrastructure metrics",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "transit"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+          "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Turning every drop into data. We are proud to announce a ...",
+          "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+          "url": "https://wra.go.ke/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 8
+    },
+    {
+      "mock_endpoint": "GET /api/dashboard/alerts",
+      "mock_description": "5 hardcoded static alerts with fixed timestamps",
+      "mock_data_type": "alerts",
+      "mock_infra_types": [
+        "electricity",
+        "utilities",
+        "traffic",
+        "water",
+        "roads"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "GET /api/infrastructure/{system}",
+      "mock_description": "Hardcoded status dicts (grid_stability, current_load, active_nodes, capacity_percent)",
+      "mock_data_type": "infrastructure status",
+      "mock_infra_types": [
+        "water",
+        "power",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+          "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Turning every drop into data. We are proud to announce a ...",
+          "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+          "url": "https://wra.go.ke/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 8
+    },
+    {
+      "mock_endpoint": "POST /api/simulations/run",
+      "mock_description": "Fixed 5-point time-series impact data, random ID",
+      "mock_data_type": "simulation results",
+      "mock_infra_types": [
+        "power",
+        "water"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "GET /api/simulations/status",
+      "mock_description": "Hardcoded status (active=True, progress=0.68)",
+      "mock_data_type": "simulation status",
+      "mock_infra_types": [],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "SCADA API \u2014 Typhoon API 2026.2 documentation",
+          "url": "https://www.typhoon-hil.com/documentation/typhoon-hil-api-documentation/scada_api.html",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "API",
+          "url": "https://www.scadacore.com/live/features/api/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA for Water Treatment Solutions",
+          "url": "https://www.pcvue.com/our-offers/by-market/solution-for-water/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NCWSC Strategic Plan 2019/20",
+          "url": "https://www.nairobiwater.co.ke/wp-content/uploads/2023/04/Strategic-Plan.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Specification for a SCADA",
+          "url": "https://www.water.c2.dc.siemens.com/system/files/c2cms_asset/04._functional_specification_scada_wincc_v7.2_in_the_water_industry.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Implementation in Water Treatment: A 7",
+          "url": "https://www.pteinc.com/scada-implementation-in-water-treatment-guide/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi, Kenya Water Polygons",
+          "url": "https://datacatalog.worldbank.org/infrastructure-data/search/dataset/0040278/nairobi-kenya-water-polygons",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company: Home",
+          "url": "https://nairobiwater.co.ke/",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company Ltd ...",
+          "url": "https://www.instagram.com/nairobiwater_/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Developing Geo",
+          "url": "https://erepository.uonbi.ac.ke/server/api/core/bitstreams/5c74ef64-57e5-4a40-bdc6-621e093de177/content",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi Water Company",
+          "url": "https://www.facebook.com/nairobiwater254/posts/notice-nairobi-city-water-and-sewerage-company-ltd-has-introduced-additional-ser/8802342473172560/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water & Sewerage",
+          "url": "https://www.zoominfo.com/c/nairobi-city-water--sewerage-co-ltd/191202131",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "precursors to revenue collection efficiency in the water and ...",
+          "url": "https://www.researchgate.net/publication/345415846_PRECURSORS_TO_REVENUE_COLLECTION_EFFICIENCY_IN_THE_WATER_AND_SANITATION_SECTOR_A_CASE_OF_NAIROBI_CITY_WATER_SEWERAGE_COMPANY_K_LIMITED",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER & SEWERAGE COMPANY LTD",
+          "url": "https://tendersoko.com/company/nairobi-city-water-sewerage-company-ltd-17",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "THE",
+          "url": "https://nairobiassembly.go.ke/ncca/wp-content/uploads/paperlaid/2022/THE-REPORT-OF-THE-AUDITOR-GENERAL-ON-NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY-FRO-THE-YEAR-ENDING-30TH-JUNE-2021.pdf",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company (NCWSC )",
+          "url": "http://sti-portal.fao.org/organizations/nairobi-city-water-and-sewerage-company-ncwsc",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER AND SEWERAGE COMPANY",
+          "url": "https://www.scribd.com/document/1030772609/NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+          "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Turning every drop into data. We are proud to announce a ...",
+          "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Improved Water & Wastewater Systems Monitoring and ...",
+          "url": "https://alliancewater.com/how-does-scada-help-water-and-wastewater-management/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "What Is SCADA and SCADA System?",
+          "url": "https://www.fortinet.com/resources/cyberglossary/scada-and-scada-systems",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Why SCADA modernization is a priority for water utilities",
+          "url": "https://insights.aecom.com/insights/article/why-scada-modernization-is-a-priority-for-water-utilities",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya",
+          "url": "https://data.humdata.org/dataset/kenya-general-data-on-water-utilities",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "extending your SCADA",
+          "url": "https://www.data-command.com/case-studies/extend-your-scada-to-the-internet-to-receive-important-data-247/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "A History of SCADA in the Water Sector",
+          "url": "https://htt.io/learning-center/a-history-of-scada-in-the-water-sector",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+          "url": "https://wra.go.ke/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.facebook.com/p/Water-Resources-Authority-100069277656824/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Authority (WRA)",
+          "url": "https://www.un-spider.org/kenya-water-resources-authority-wra",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WRA Customer Portal",
+          "url": "https://play.google.com/store/apps/details?id=com.spa.majiapp.wra&hl=en_US",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.zoominfo.com/c/water-resources-authority/452790115",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Users Associations in the Mara Basin ...",
+          "url": "https://www.frontiersin.org/journals/environmental-science/articles/10.3389/fenvs.2018.00138/full",
+          "data_type": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 36
+    },
+    {
+      "mock_endpoint": "GET /api/predictive-params",
+      "mock_description": "Fixed params (thermal_stress=42, population_density=peak)",
+      "mock_data_type": "predictive parameters",
+      "mock_infra_types": [],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "SCADA API \u2014 Typhoon API 2026.2 documentation",
+          "url": "https://www.typhoon-hil.com/documentation/typhoon-hil-api-documentation/scada_api.html",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "API",
+          "url": "https://www.scadacore.com/live/features/api/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA for Water Treatment Solutions",
+          "url": "https://www.pcvue.com/our-offers/by-market/solution-for-water/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NCWSC Strategic Plan 2019/20",
+          "url": "https://www.nairobiwater.co.ke/wp-content/uploads/2023/04/Strategic-Plan.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Specification for a SCADA",
+          "url": "https://www.water.c2.dc.siemens.com/system/files/c2cms_asset/04._functional_specification_scada_wincc_v7.2_in_the_water_industry.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Implementation in Water Treatment: A 7",
+          "url": "https://www.pteinc.com/scada-implementation-in-water-treatment-guide/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi, Kenya Water Polygons",
+          "url": "https://datacatalog.worldbank.org/infrastructure-data/search/dataset/0040278/nairobi-kenya-water-polygons",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company: Home",
+          "url": "https://nairobiwater.co.ke/",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company Ltd ...",
+          "url": "https://www.instagram.com/nairobiwater_/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Developing Geo",
+          "url": "https://erepository.uonbi.ac.ke/server/api/core/bitstreams/5c74ef64-57e5-4a40-bdc6-621e093de177/content",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi Water Company",
+          "url": "https://www.facebook.com/nairobiwater254/posts/notice-nairobi-city-water-and-sewerage-company-ltd-has-introduced-additional-ser/8802342473172560/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water & Sewerage",
+          "url": "https://www.zoominfo.com/c/nairobi-city-water--sewerage-co-ltd/191202131",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "precursors to revenue collection efficiency in the water and ...",
+          "url": "https://www.researchgate.net/publication/345415846_PRECURSORS_TO_REVENUE_COLLECTION_EFFICIENCY_IN_THE_WATER_AND_SANITATION_SECTOR_A_CASE_OF_NAIROBI_CITY_WATER_SEWERAGE_COMPANY_K_LIMITED",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER & SEWERAGE COMPANY LTD",
+          "url": "https://tendersoko.com/company/nairobi-city-water-sewerage-company-ltd-17",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "THE",
+          "url": "https://nairobiassembly.go.ke/ncca/wp-content/uploads/paperlaid/2022/THE-REPORT-OF-THE-AUDITOR-GENERAL-ON-NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY-FRO-THE-YEAR-ENDING-30TH-JUNE-2021.pdf",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company (NCWSC )",
+          "url": "http://sti-portal.fao.org/organizations/nairobi-city-water-and-sewerage-company-ncwsc",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER AND SEWERAGE COMPANY",
+          "url": "https://www.scribd.com/document/1030772609/NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+          "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Turning every drop into data. We are proud to announce a ...",
+          "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Improved Water & Wastewater Systems Monitoring and ...",
+          "url": "https://alliancewater.com/how-does-scada-help-water-and-wastewater-management/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "What Is SCADA and SCADA System?",
+          "url": "https://www.fortinet.com/resources/cyberglossary/scada-and-scada-systems",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Why SCADA modernization is a priority for water utilities",
+          "url": "https://insights.aecom.com/insights/article/why-scada-modernization-is-a-priority-for-water-utilities",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya",
+          "url": "https://data.humdata.org/dataset/kenya-general-data-on-water-utilities",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "extending your SCADA",
+          "url": "https://www.data-command.com/case-studies/extend-your-scada-to-the-internet-to-receive-important-data-247/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "A History of SCADA in the Water Sector",
+          "url": "https://htt.io/learning-center/a-history-of-scada-in-the-water-sector",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+          "url": "https://wra.go.ke/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.facebook.com/p/Water-Resources-Authority-100069277656824/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Authority (WRA)",
+          "url": "https://www.un-spider.org/kenya-water-resources-authority-wra",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WRA Customer Portal",
+          "url": "https://play.google.com/store/apps/details?id=com.spa.majiapp.wra&hl=en_US",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.zoominfo.com/c/water-resources-authority/452790115",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Users Associations in the Mara Basin ...",
+          "url": "https://www.frontiersin.org/journals/environmental-science/articles/10.3389/fenvs.2018.00138/full",
+          "data_type": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 36
+    },
+    {
+      "mock_endpoint": "GET /api/simulate/status/{task_id}",
+      "mock_description": "Mock task state machine (PENDING/STARTED/SUCCESS/FAILURE)",
+      "mock_data_type": "task state",
+      "mock_infra_types": [],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "SCADA API \u2014 Typhoon API 2026.2 documentation",
+          "url": "https://www.typhoon-hil.com/documentation/typhoon-hil-api-documentation/scada_api.html",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "API",
+          "url": "https://www.scadacore.com/live/features/api/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA for Water Treatment Solutions",
+          "url": "https://www.pcvue.com/our-offers/by-market/solution-for-water/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NCWSC Strategic Plan 2019/20",
+          "url": "https://www.nairobiwater.co.ke/wp-content/uploads/2023/04/Strategic-Plan.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Specification for a SCADA",
+          "url": "https://www.water.c2.dc.siemens.com/system/files/c2cms_asset/04._functional_specification_scada_wincc_v7.2_in_the_water_industry.pdf",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Implementation in Water Treatment: A 7",
+          "url": "https://www.pteinc.com/scada-implementation-in-water-treatment-guide/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi, Kenya Water Polygons",
+          "url": "https://datacatalog.worldbank.org/infrastructure-data/search/dataset/0040278/nairobi-kenya-water-polygons",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company: Home",
+          "url": "https://nairobiwater.co.ke/",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company Ltd ...",
+          "url": "https://www.instagram.com/nairobiwater_/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Developing Geo",
+          "url": "https://erepository.uonbi.ac.ke/server/api/core/bitstreams/5c74ef64-57e5-4a40-bdc6-621e093de177/content",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi Water Company",
+          "url": "https://www.facebook.com/nairobiwater254/posts/notice-nairobi-city-water-and-sewerage-company-ltd-has-introduced-additional-ser/8802342473172560/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water & Sewerage",
+          "url": "https://www.zoominfo.com/c/nairobi-city-water--sewerage-co-ltd/191202131",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "precursors to revenue collection efficiency in the water and ...",
+          "url": "https://www.researchgate.net/publication/345415846_PRECURSORS_TO_REVENUE_COLLECTION_EFFICIENCY_IN_THE_WATER_AND_SANITATION_SECTOR_A_CASE_OF_NAIROBI_CITY_WATER_SEWERAGE_COMPANY_K_LIMITED",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER & SEWERAGE COMPANY LTD",
+          "url": "https://tendersoko.com/company/nairobi-city-water-sewerage-company-ltd-17",
+          "data_type": "API documentation",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "THE",
+          "url": "https://nairobiassembly.go.ke/ncca/wp-content/uploads/paperlaid/2022/THE-REPORT-OF-THE-AUDITOR-GENERAL-ON-NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY-FRO-THE-YEAR-ENDING-30TH-JUNE-2021.pdf",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Nairobi City Water and Sewerage Company (NCWSC )",
+          "url": "http://sti-portal.fao.org/organizations/nairobi-city-water-and-sewerage-company-ncwsc",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "NAIROBI CITY WATER AND SEWERAGE COMPANY",
+          "url": "https://www.scribd.com/document/1030772609/NAIROBI-CITY-WATER-AND-SEWERAGE-COMPANY",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "SCADA Automation and the Future of Integrated Water Systems",
+          "url": "https://stvinc.com/insight/scada-automation-future-integrated-water-systems/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Turning every drop into data. We are proud to announce a ...",
+          "url": "https://www.facebook.com/LiquidInTech/videos/-turning-every-drop-into-datawe-are-proud-to-announce-a-new-partnership-with-dro/2126847867809010/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Improved Water & Wastewater Systems Monitoring and ...",
+          "url": "https://alliancewater.com/how-does-scada-help-water-and-wastewater-management/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "What Is SCADA and SCADA System?",
+          "url": "https://www.fortinet.com/resources/cyberglossary/scada-and-scada-systems",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Why SCADA modernization is a priority for water utilities",
+          "url": "https://insights.aecom.com/insights/article/why-scada-modernization-is-a-priority-for-water-utilities",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya",
+          "url": "https://data.humdata.org/dataset/kenya-general-data-on-water-utilities",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "extending your SCADA",
+          "url": "https://www.data-command.com/case-studies/extend-your-scada-to-the-internet-to-receive-important-data-247/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "A History of SCADA in the Water Sector",
+          "url": "https://htt.io/learning-center/a-history-of-scada-in-the-water-sector",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority \u2013 Securing water resources ...",
+          "url": "https://wra.go.ke/",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.facebook.com/p/Water-Resources-Authority-100069277656824/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Authority (WRA)",
+          "url": "https://www.un-spider.org/kenya-water-resources-authority-wra",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WRA Customer Portal",
+          "url": "https://play.google.com/store/apps/details?id=com.spa.majiapp.wra&hl=en_US",
+          "data_type": "Billing / consumption",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Authority",
+          "url": "https://www.zoominfo.com/c/water-resources-authority/452790115",
+          "data_type": "unknown",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Water Resources Users Associations in the Mara Basin ...",
+          "url": "https://www.frontiersin.org/journals/environmental-science/articles/10.3389/fenvs.2018.00138/full",
+          "data_type": "unknown",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 36
+    },
+    {
+      "mock_endpoint": "GET /api/v1/alerts",
+      "mock_description": "12 generated mock alerts with synthetic GeoJSON",
+      "mock_data_type": "alerts v1",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "GET /api/v1/next_updates",
+      "mock_description": "Fixed intervals (60s\u2013600s) per infra type",
+      "mock_data_type": "update schedule",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "GET /api/v1/spatial/stress-heatmap",
+      "mock_description": "Random GeoJSON grid with seeded stress values",
+      "mock_data_type": "spatial heatmap",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "GET /api/v1/spatial/nearest-asset",
+      "mock_description": "5 random mock assets near given coordinates",
+      "mock_data_type": "spatial nearest",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "POST /api/v1/spatial/alerts-in-polygon",
+      "mock_description": "20 generated mock alerts filtered by polygon bbox",
+      "mock_data_type": "spatial alerts",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste",
+        "sidewalks",
+        "lrt",
+        "sgr",
+        "airports"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    },
+    {
+      "mock_endpoint": "POST /api/v1/scenario/generate",
+      "mock_description": "Fixed RAG-style response with 3 hardcoded similar scenarios",
+      "mock_data_type": "scenario generation",
+      "mock_infra_types": [
+        "power",
+        "water",
+        "roads",
+        "solid_waste"
+      ],
+      "real_candidates": [
+        {
+          "source_name": "Getting started with USGS Water Data OGC APIs",
+          "url": "https://api.waterdata.usgs.gov/docs/ogcapi/",
+          "data_type": "API documentation",
+          "confidence": 0.4
+        },
+        {
+          "source_name": "How to get SCADA data from Water systems without ...",
+          "url": "https://facilityconnex.com/blog/get-scada-water-data-without-burdening-operations/",
+          "data_type": "SCADA / telemetry",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Kenya Water Resources Profile Overview",
+          "url": "https://winrock.org/resources/kenya-water-resources-profile-overview/",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "WATER RESOURCES AUTHORITY STRATEGIC PLAN 2018",
+          "url": "https://faolex.fao.org/docs/pdf/ken207659.pdf",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        },
+        {
+          "source_name": "Pan African University, Institute for Water and Energy Sciences",
+          "url": "https://dataportal.pauwes.dz/geonetwork/geonetwork/search?orgName=Water%20Resources%20Authority%20Kenya",
+          "data_type": "Water quality",
+          "confidence": 0.0
+        }
+      ],
+      "candidate_count": 5
+    }
+  ],
+  "unmapped_mock_endpoints": [
+    {
+      "endpoint": "POST /api/simulate/run",
+      "description": "Redis-backed mock task queue, returns task_id",
+      "data_type": "async simulation"
+    }
+  ],
+  "filtered_out": [
+    {
+      "url": "https://www.reddit.com/r/SCADA/comments/pr3ukh/api_integration/",
+      "title": "API Integration : r/SCADA",
+      "reason": "blocked domain: reddit.com"
+    }
+  ]
+}

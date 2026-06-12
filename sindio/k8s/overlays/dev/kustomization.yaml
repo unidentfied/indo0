@@ -1,0 +1,137 @@
+# ============================================================
+# Sindio — Kustomize overlay: dev
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sindio
+
+bases:
+  - ../..
+
+patches:
+  # Reduce replica counts for dev
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-api
+      spec:
+        replicas: 1
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-simulator
+      spec:
+        replicas: 1
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-rag
+      spec:
+        replicas: 1
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-frontend
+      spec:
+        replicas: 1
+
+  # Use dev image tags
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                image: ghcr.io/sindio/sindio-api:dev
+                resources:
+                  requests:
+                    cpu: "100m"
+                    memory: "128Mi"
+                  limits:
+                    cpu: "500m"
+                    memory: "512Mi"
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-simulator
+      spec:
+        template:
+          spec:
+            containers:
+              - name: simulator
+                image: ghcr.io/sindio/sindio-simulator:dev
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "512Mi"
+                  limits:
+                    cpu: "1000m"
+                    memory: "2Gi"
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-rag
+      spec:
+        template:
+          spec:
+            containers:
+              - name: rag
+                image: ghcr.io/sindio/sindio-rag:dev
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "512Mi"
+                  limits:
+                    cpu: "1000m"
+                    memory: "2Gi"
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: sindio-frontend
+      spec:
+        template:
+          spec:
+            containers:
+              - name: frontend
+                image: ghcr.io/sindio/sindio-frontend:dev
+
+  # Disable canary in dev
+  - patch: |
+      apiVersion: networking.istio.io/v1beta1
+      kind: VirtualService
+      metadata:
+        name: sindio
+      spec:
+        http:
+          - match:
+              - uri:
+                  prefix: /api/
+            route:
+              - destination:
+                  host: sindio-api.sindio.svc.cluster.local
+                  subset: stable
+                  port:
+                    number: 8080
+                weight: 100
+
+  # Dev-only: enable AWS_ENDPOINT_URL for LocalStack
+  - patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sindio-config
+      data:
+        AWS_ENDPOINT_URL: "http://localstack:4566"
+        LOG_LEVEL: "debug"

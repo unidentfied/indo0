@@ -1,0 +1,27 @@
+venv/
+Anaconda3-2025.12-2-MacOSX-arm64.sh
+.DS_Store
+__pycache__/
+*.pyc
+
+# Large data files
+*.shp
+*.dbf
+*.shx
+*.tif
+*.pbf
+*.parquet
+
+# Trained models
+*.pt
+*.pth
+*.safetensors
+
+# Terraform cruft
+**/.terraform/providers/
+
+# Built binaries
+sindio/backend/api/api
+
+# Image/asset directories
+imagg/

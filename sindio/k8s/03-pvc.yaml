@@ -1,0 +1,94 @@
+# ============================================================
+# Sindio — PersistentVolumeClaims
+# ============================================================
+#
+# Assumes a default StorageClass (or replace with your provisioner).
+# For production, consider using dedicated StorageClasses with
+# SSDs for PostgreSQL and Qdrant.
+# ============================================================
+
+---
+# --- PostgreSQL (100 Gi, SSD preferred) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sindio-postgres-data
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  # storageClassName: premium-rwo  # Uncomment for cloud SSD
+---
+# --- Qdrant vector store (200 Gi) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sindio-qdrant-data
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: qdrant
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  # storageClassName: premium-rwo
+---
+# --- MinIO satellite imagery + GIS rasters (500 Gi) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sindio-minio-data
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: minio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+  # storageClassName: standard-rwo
+---
+# --- Redis (20 Gi, for Celery broker durability via AOF) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sindio-redis-data
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  # storageClassName: standard-rwo
+---
+# --- Model storage (50 Gi, shared across RAG / worker pods) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sindio-models
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: models
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  # storageClassName: premium-rwx  # RWX required for shared model access

@@ -1,0 +1,120 @@
+# ============================================================
+# Sindio — Istio VirtualService (canary deployments)
+# ============================================================
+# Requires Istio 1.20+ installed in the cluster.
+#
+# Canary workflow:
+#   1. Deploy new version with label `version: canary` (replicas=0 initially)
+#   2. Scale canary replicas to get 10 % traffic
+#   3. Monitor error rate / latency → promote or rollback
+#
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: sindio
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  hosts:
+    - "sindio.urban"
+    - "sindio-api.sindio.svc.cluster.local"
+  gateways:
+    - sindio-gateway
+  http:
+    # ── Frontend (static) ──────────────────────────────────────
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: sindio-frontend.sindio.svc.cluster.local
+            port:
+              number: 80
+    # ── API (with canary) ─────────────────────────────────────
+    - match:
+        - uri:
+            prefix: /api/
+      route:
+        - destination:
+            host: sindio-api.sindio.svc.cluster.local
+            subset: stable
+            port:
+              number: 8080
+          weight: 90
+        - destination:
+            host: sindio-api.sindio.svc.cluster.local
+            subset: canary
+            port:
+              number: 8080
+          weight: 10
+      retries:
+        attempts: 2
+        perTryTimeout: 5s
+        retryOn: connect-failure,refused-stream,unavailable
+    # ── Simulator (internal only) ─────────────────────────────
+    - match:
+        - uri:
+            prefix: /api/v1/simulate/
+      route:
+        - destination:
+            host: sindio-simulator.sindio.svc.cluster.local
+            port:
+              number: 8081
+    # ── RAG / agentic workflow ────────────────────────────────
+    - match:
+        - uri:
+            prefix: /api/v1/agent/
+      route:
+        - destination:
+            host: sindio-rag.sindio.svc.cluster.local
+            port:
+              number: 8081
+---
+# ── DestinationRule (stable + canary subsets) ──────────────
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: sindio-api
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  host: sindio-api.sindio.svc.cluster.local
+  subsets:
+    - name: stable
+      labels:
+        version: stable
+    - name: canary
+      labels:
+        version: canary
+  trafficPolicy:
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 1024
+        maxRequestsPerConnection: 2
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+---
+# ── Gateway ─────────────────────────────────────────────────
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: sindio-gateway
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "sindio.urban"
+        - "sindio-api.sindio.svc.cluster.local"

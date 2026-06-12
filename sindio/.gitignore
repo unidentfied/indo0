@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Node / TypeScript
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Go
+backend/api/bin/
+backend/api/vendor/
+
+# Rust
+backend/streaming/target/
+
+# Models (checkpoints are large)
+models/trained/*.pth
+models/trained/*.safetensors
+models/trained/*.bin
+models/embeddings/*.npy
+models/embeddings/*.pkl
+
+# Data (raw GIS data)
+data/raw/*.shp
+data/raw/*.geojson
+data/raw/*.tif
+data/processed/*.parquet
+data/vector_store/**
+
+# Environment
+.env
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+docker/volumes/
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db

@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --sindio-dark: #f8fafc;
+    --sindio-panel: #ffffff;
+    --sindio-border: #e2e8f0;
+    --sindio-accent: #2563eb;
+    --sindio-accent-hover: #1d4ed8;
+    --sindio-critical: #dc2626;
+    --sindio-warning: #d97706;
+    --sindio-advisory: #2563eb;
+    --sindio-text: #0f172a;
+    --sindio-muted: #64748b;
+  }
+  .dark {
+    --sindio-dark: #020617;
+    --sindio-panel: #0f172a;
+    --sindio-border: #1e293b;
+    --sindio-accent: #3b82f6;
+    --sindio-accent-hover: #2563eb;
+    --sindio-critical: #ef4444;
+    --sindio-warning: #f59e0b;
+    --sindio-advisory: #3b82f6;
+    --sindio-text: #f1f5f9;
+    --sindio-muted: #94a3b8;
+  }
+  html, body, #root {
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-sindio-panel border border-sindio-border rounded-xl shadow-panel;
+  }
+  .dark .panel {
+    @apply shadow-none;
+  }
+  .btn-primary {
+    @apply bg-sindio-accent hover:bg-sindio-accent-hover text-white px-5 py-2.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2;
+  }
+  .btn-secondary {
+    @apply border border-sindio-border hover:border-sindio-muted text-sindio-text bg-sindio-panel px-5 py-2.5 rounded-lg font-medium transition-colors inline-flex items-center gap-2 hover:shadow-panel;
+  }
+  .dark .btn-secondary {
+    @apply hover:shadow-none;
+  }
+  .card {
+    @apply bg-sindio-panel border border-sindio-border rounded-xl shadow-card p-4;
+  }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--sindio-dark); }
+::-webkit-scrollbar-thumb { background: var(--sindio-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--sindio-muted); }

@@ -1,0 +1,181 @@
+# ============================================================
+# Sindio — Services (all services)
+# ============================================================
+
+---
+# ── sindio-api (internal only — Istio handles ingress) ──────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-api
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: api-gateway
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+# ── sindio-simulator (internal) ──────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-simulator
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: simulator
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-simulator
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8081
+      targetPort: 8081
+---
+# ── sindio-rag (internal) ────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-rag
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: rag
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-rag
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8081
+      targetPort: 8081
+---
+# ── sindio-frontend (ClusterIP — Istio ingress front) ────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-frontend
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+---
+# ── sindio-postgres (ClusterIP — RDS-proxied in prod) ───────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-postgres
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: postgres
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-postgres
+  ports:
+    - name: postgres
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
+---
+# ── sindio-redis (ElastiCache-proxied in prod) ───────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-redis
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: redis
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-redis
+  ports:
+    - name: redis
+      protocol: TCP
+      port: 6379
+      targetPort: 6379
+---
+# ── sindio-qdrant (ClusterIP — internal only) ────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-qdrant
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: qdrant
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-qdrant
+  ports:
+    - name: http
+      protocol: TCP
+      port: 6333
+      targetPort: 6333
+    - name: grpc
+      protocol: TCP
+      port: 6334
+      targetPort: 6334
+---
+# ── sindio-minio (ClusterIP — internal S3) ───────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-minio
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: minio
+spec:
+  type: ClusterIP
+  selector:
+    app: sindio-minio
+  ports:
+    - name: api
+      protocol: TCP
+      port: 9000
+      targetPort: 9000
+    - name: console
+      protocol: TCP
+      port: 9001
+      targetPort: 9001
+---
+# ── sindio-opensearch (internal — OpenSearch Service-proxied) ─
+apiVersion: v1
+kind: Service
+metadata:
+  name: sindio-opensearch
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: search
+spec:
+  type: ExternalName
+  externalName: opensearch.external.svc.cluster.local
+  ports:
+    - name: http
+      protocol: TCP
+      port: 9200

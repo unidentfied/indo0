@@ -1,0 +1,526 @@
+{
+  "dashboard": {
+    "uid": "sindio-data-quality",
+    "title": "Sindio — Data Quality Monitor",
+    "description": "Single pane of glass for data quality: real data ratio, mock fallback rate, and model confidence per infrastructure type. Alerts when mock usage exceeds 10% for > 1 hour.",
+    "tags": ["sindio", "data-quality", "operational-readiness"],
+    "timezone": "browser",
+    "schemaVersion": 39,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "editable": true,
+    "graphTooltip": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Overall Data Health",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "unit": "percentunit",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.70 },
+                { "color": "#73BF69", "value": 0.90 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background",
+          "textMode": "value_and_name",
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "avg(data_quality_real_data_ratio)",
+            "legendFormat": "Avg Real Data Ratio",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Mock Fallback Rate (Current)",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "unit": "percentunit",
+            "decimals": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#73BF69", "value": null },
+                { "color": "#F2CC0C", "value": 0.10 },
+                { "color": "#E02F44", "value": 0.25 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background",
+          "textMode": "value_and_name",
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "avg(data_quality_mock_fallback_ratio)",
+            "legendFormat": "Avg Mock Ratio",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Model Confidence (Avg)",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "unit": "percentunit",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.70 },
+                { "color": "#73BF69", "value": 0.85 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "graphMode": "area",
+          "colorMode": "background",
+          "textMode": "value_and_name",
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "avg(data_quality_model_confidence)",
+            "legendFormat": "Avg Confidence",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Operational Status",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.5 },
+                { "color": "#73BF69", "value": 0.9 }
+              ]
+            },
+            "mappings": [
+              { "options": { "0": { "color": "#E02F44", "index": 0, "text": "ALL MOCK" } }, "type": "value" },
+              { "options": { "1": { "color": "#73BF69", "index": 1, "text": "FULLY OPERATIONAL" } }, "type": "value" }
+            ]
+          },
+          "overrides": []
+        },
+        "options": {
+          "graphMode": "none",
+          "colorMode": "background",
+          "textMode": "value_and_name",
+          "reduceOptions": { "values": false, "calcs": ["lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "count(data_quality_real_data_ratio > 0.9) / count(data_quality_real_data_ratio)",
+            "legendFormat": "Readiness",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Real Data Ratio by Infrastructure Type",
+        "type": "bargauge",
+        "gridPos": { "h": 10, "w": 12, "x": 0, "y": 6 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1.0,
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.70 },
+                { "color": "#73BF69", "value": 0.90 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true,
+          "minVizHeight": 10,
+          "maxVizHeight": 300
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_real_data_ratio",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "instant": true
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Mock Fallback Rate by Infrastructure Type",
+        "type": "bargauge",
+        "gridPos": { "h": 10, "w": 12, "x": 12, "y": 6 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1.0,
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#73BF69", "value": null },
+                { "color": "#F2CC0C", "value": 0.10 },
+                { "color": "#E02F44", "value": 0.25 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true,
+          "minVizHeight": 10,
+          "maxVizHeight": 300
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_mock_fallback_ratio",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+            "instant": true
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Real Data Ratio Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 10, "w": 12, "x": 0, "y": 16 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1.0,
+            "custom": { "lineInterpolation": "smooth", "fillOpacity": 15, "spanNulls": true },
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.70 },
+                { "color": "#73BF69", "value": 0.90 }
+              ]
+            }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "10% Mock Threshold" }, "properties": [
+              { "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash" } },
+              { "id": "custom.lineWidth", "value": 1 }
+            ]}
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "min", "lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_real_data_ratio",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "threshold",
+            "expr": "vector(0.90)",
+            "legendFormat": "90% Real Target",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Mock Fallback Rate Over Time",
+        "type": "timeseries",
+        "gridPos": { "h": 10, "w": 12, "x": 12, "y": 16 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1.0,
+            "custom": { "lineInterpolation": "smooth", "fillOpacity": 15, "spanNulls": true },
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#73BF69", "value": null },
+                { "color": "#F2CC0C", "value": 0.10 },
+                { "color": "#E02F44", "value": 0.25 }
+              ]
+            }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "10% Alert Threshold" }, "properties": [
+              { "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "fill": "dash" } },
+              { "id": "custom.lineWidth", "value": 1 }
+            ]}
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_mock_fallback_ratio",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "threshold",
+            "expr": "vector(0.10)",
+            "legendFormat": "10% Alert Threshold",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Model Confidence by Infrastructure Type",
+        "type": "timeseries",
+        "gridPos": { "h": 9, "w": 12, "x": 0, "y": 26 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1.0,
+            "custom": { "lineInterpolation": "smooth", "fillOpacity": 10, "spanNulls": true },
+            "color": { "mode": "palette-classic" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "#E02F44", "value": null },
+                { "color": "#F2CC0C", "value": 0.70 },
+                { "color": "#73BF69", "value": 0.85 }
+              ]
+            }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "min", "lastNotNull"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_model_confidence",
+            "legendFormat": "{{infrastructure_type}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Fallback Events (cumulative by source)",
+        "type": "timeseries",
+        "gridPos": { "h": 9, "w": 12, "x": 12, "y": 26 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "spanNulls": true },
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["lastNotNull", "max"] }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "sum by (infrastructure_type, source) (rate(data_quality_fallback_total[5m]))",
+            "legendFormat": "{{infrastructure_type}} / {{source}}",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Real Data Fetches vs Fallbacks (rate)",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "spanNulls": true },
+            "color": { "mode": "palette-classic" }
+          },
+          "overrides": [
+            { "matcher": { "id": "byRegexp", "options": ".*real.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }] },
+            { "matcher": { "id": "byRegexp", "options": ".*fallback.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "#E02F44", "mode": "fixed" } }] }
+          ]
+        },
+        "options": {
+          "tooltip": { "mode": "multi", "sort": "desc" },
+          "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }
+        },
+        "targets": [
+          {
+            "refId": "real",
+            "expr": "sum by (infrastructure_type) (rate(data_quality_real_fetch_total[5m]))",
+            "legendFormat": "{{infrastructure_type}} (real)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          },
+          {
+            "refId": "fallback",
+            "expr": "sum by (infrastructure_type) (rate(data_quality_fallback_total[5m]))",
+            "legendFormat": "{{infrastructure_type}} (fallback)",
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Infrastructure Types Above 10% Mock Threshold",
+        "type": "table",
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+        "fieldConfig": {
+          "defaults": {
+            "custom": { "align": "auto", "cellOptions": { "type": "auto" } },
+            "color": { "mode": "thresholds" }
+          },
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Mock Ratio" },
+              "properties": [
+                { "id": "unit", "value": "percentunit" },
+                { "id": "decimals", "value": 2 },
+                { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                  { "color": "#73BF69", "value": null },
+                  { "color": "#F2CC0C", "value": 0.10 },
+                  { "color": "#E02F44", "value": 0.25 }
+                ] } },
+                { "id": "custom.cellOptions", "value": { "type": "color-background" } }
+              ]
+            },
+            {
+              "matcher": { "id": "byName", "options": "Duration Above Threshold" },
+              "properties": [
+                { "id": "unit", "value": "dtdurations" },
+                { "id": "thresholds", "value": { "mode": "absolute", "steps": [
+                  { "color": "#73BF69", "value": null },
+                  { "color": "#E02F44", "value": 3600 }
+                ] } }
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showTypeIcons": false,
+          "sortBy": [{ "displayName": "Mock Ratio", "desc": true }]
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "expr": "data_quality_mock_fallback_ratio > 0.10",
+            "legendFormat": "{{infrastructure_type}}",
+            "format": "table",
+            "instant": true,
+            "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": { "Time": true, "__name__": true, "instance": true, "job": true },
+              "renameByName": {
+                "infrastructure_type": "Infrastructure Type",
+                "Value": "Mock Ratio"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "DS_PROMETHEUS",
+          "type": "datasource",
+          "query": "prometheus",
+          "label": "Prometheus",
+          "hide": 0,
+          "current": { "selected": true, "text": "Prometheus", "value": "Prometheus" }
+        },
+        {
+          "name": "infrastructure_type",
+          "type": "query",
+          "query": "label_values(data_quality_real_data_ratio, infrastructure_type)",
+          "label": "Infrastructure Type",
+          "multi": true,
+          "includeAll": true,
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "current": { "selected": true, "text": ["All"], "value": ["$__all"] }
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Mock Threshold Breach",
+          "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+          "expr": "data_quality_mock_fallback_ratio > 0.10",
+          "iconColor": "#E02F44",
+          "titleFormat": "Mock > 10%: {{infrastructure_type}}"
+        }
+      ]
+    }
+  }
+}

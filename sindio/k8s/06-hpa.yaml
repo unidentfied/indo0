@@ -1,0 +1,179 @@
+# ============================================================
+# Sindio — Horizontal Pod Autoscalers
+# ============================================================
+
+---
+# ── sindio-api HPA: scale 3–10 replicas at 70% CPU ─────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sindio-api
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: api-gateway
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sindio-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+---
+# ── sindio-simulator KEDA ScaledObject: queue-length driven ──
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: sindio-simulator
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: simulator
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sindio-simulator
+  pollingInterval: 15
+  cooldownPeriod: 180
+  minReplicaCount: 2
+  maxReplicaCount: 20
+  triggers:
+    - type: redis
+      metadata:
+        address: "sindio-redis.sindio.svc.cluster.local:6379"
+        listName: "celery"
+        listLength: "10"             # scale when > 10 tasks per pod
+        activationListLength: "5"
+        enableTLS: "false"
+      authenticationRef:
+        name: sindio-worker-redis-auth
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 120
+        scaleUp:
+          stabilizationWindowSeconds: 30
+          policies:
+            - type: Pods
+              value: 4
+              periodSeconds: 30
+---
+# ── sindio-rag HPA: CPU + memory ─────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sindio-rag
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: rag
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sindio-rag
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+---
+# ── sindio-frontend HPA: scale 2–8 at 60% CPU ───────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sindio-frontend
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: frontend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sindio-frontend
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+---
+# ── KEDA TriggerAuthentication for Redis ────────────────────
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: sindio-worker-redis-auth
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: sindio-secrets
+      key: REDIS_PASSWORD

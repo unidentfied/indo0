@@ -1,0 +1,28 @@
+# Playbook: encroachment_driven_sidewalk
+# Matches sidewalk infrastructure alerts driven by encroachment
+# (vendor stalls, informal structures on pedestrian paths).
+# ------------------------------------------------------------------
+name: encroachment_driven_sidewalk
+version: "1.0"
+triggers:
+  - infrastructure_type: sidewalks
+  - classification: density_driven
+  - severity_range: [0.5, 1.0]
+
+steps:
+  - action: map_encroachment_zones
+    params: { radius_m: 200 }
+  - action: estimate_pedestrian_volume
+    params: {}
+  - action: generate_mitigation_options
+    options: ["vendor_relocation", "street_widening", "designated_market_zone"]
+  - action: cost_estimate
+    source: "nairobi_public_works_rates_2025"
+  - action: format_recommendation
+
+output_template: |
+  Encroachment-driven sidewalk blockage on {asset_id} ({ward} ward).
+  {blocked_pct}% of sidewalk width blocked across {affected_zone_count} zones,
+  affecting {pedestrian_volume}/hour peak pedestrian flow.
+  Recommended: {top_option} at estimated cost {cost} KES. Timeline: {timeline}.
+  Vendor count: {vendor_count}. Relocation site: {relocation_site}.

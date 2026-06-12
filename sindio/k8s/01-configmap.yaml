@@ -1,0 +1,95 @@
+# ============================================================
+# Sindio — ConfigMap (non-secret environment variables)
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sindio-config
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+data:
+  # --- Database ---
+  DB_HOST: "sindio-postgres.sindio.svc.cluster.local"
+  DB_PORT: "5432"
+  DB_NAME: "sindio"
+  DB_USER: "sindio_user"
+  DB_POOL_MIN: "2"
+  DB_POOL_MAX: "10"
+  DATABASE_URL: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+
+  # --- Redis ---
+  REDIS_HOST: "sindio-redis.sindio.svc.cluster.local"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  CELERY_BROKER_URL: "redis://$(REDIS_HOST):$(REDIS_PORT)/0"
+  CELERY_RESULT_BACKEND: "redis://$(REDIS_HOST):$(REDIS_PORT)/1"
+
+  # --- Qdrant (Vector Store) ---
+  QDRANT_HOST: "http://sindio-qdrant.sindio.svc.cluster.local"
+  QDRANT_PORT: "6333"
+  QDRANT_COLLECTION: "sindio_embeddings"
+  QDRANT_COLLECTION_CACHE: "sindio_inference_cache"
+  QDRANT_COLLECTION_DOCS: "nairobi_planning_docs"
+
+  # --- MinIO ---
+  MINIO_HOST: "sindio-minio.sindio.svc.cluster.local"
+  MINIO_PORT: "9000"
+  MINIO_CONSOLE_PORT: "9001"
+  MINIO_IMAGERY_BUCKET: "sindio-satellite-imagery"
+  MINIO_GIS_BUCKET: "sindio-gis-rasters"
+
+  # --- Service endpoints ---
+  API_PORT: "8080"
+  CORE_PORT: "8081"
+  STREAMING_PORT: "8082"
+  FRONTEND_PORT: "3000"
+
+  # --- CORS ---
+  CORS_ORIGINS: "http://localhost:3000,https://sindio.urban"
+
+  # --- Model paths ---
+  MODEL_PATH: "/app/models/trained"
+  EMBEDDINGS_PATH: "/app/models/embeddings"
+  VECTOR_STORE_PATH: "/app/data/vector_store"
+  DOCUMENTS_DIR: "/app/data/documents"
+
+  # --- Auth settings ---
+  JWT_ALGORITHM: "HS256"
+  JWT_EXPIRY_HOURS: "24"
+
+  # --- Azure AD ---
+  AZURE_AD_TENANT_ID: ""
+
+  # --- Logging ---
+  LOG_LEVEL: "info"
+  RUST_LOG: "sindio_streaming=info,tower_http=debug"
+
+  # --- Celery worker ---
+  CELERY_CONCURRENCY: "4"
+  CELERY_TASK_ACKS_LATE: "true"
+  CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
+
+  # --- Elasticsearch / OpenSearch ---
+  ELASTICSEARCH_HOST: "http://sindio-opensearch.sindio.svc.cluster.local:9200"
+  ELASTICSEARCH_INDEX_ALERTS: "sindio_alerts"
+  ES_CLIENT_TYPE: "elasticsearch"
+  OPENSEARCH_ENDPOINT: "vpc-sindio-opensearch-xxxxxxxxx.us-east-1.es.amazonaws.com"
+
+  # --- RAG / Ingestion ---
+  RAG_INGESTION_POLL_INTERVAL: "30"
+  RAG_CHUNK_TOKENS: "500"
+  RAG_CHUNK_OVERLAP: "50"
+  RAG_EMBEDDING_MODEL: "BAAI/bge-large-en-v1.5"
+  RAG_RERANK_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+
+  # --- Simulation ---
+  SIMULATION_MAX_CONCURRENT: "10"
+  SIMULATION_TIMEOUT_SECONDS: "300"
+
+  # --- LocalStack (dev only) ---
+  AWS_ENDPOINT_URL: ""
+  AWS_DEFAULT_REGION: "us-east-1"
+  LOCALSTACK_SQS_MOBILITY_QUEUE: "sindio-mobility-stream"
+  LOCALSTACK_SQS_TELEMETRY_QUEUE: "sindio-utility-telemetry"
+  LOCALSTACK_SNS_ALERTS_TOPIC: "sindio-system-alerts"

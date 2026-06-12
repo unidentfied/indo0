@@ -1,0 +1,27 @@
+# Playbook: density_driven_power
+# Matches power infrastructure alerts with density_driven classification.
+# ------------------------------------------------------------------
+name: density_driven_power
+version: "1.0"
+triggers:
+  - infrastructure_type: power
+  - classification: density_driven
+  - severity_range: [0.6, 1.0]
+
+steps:
+  - action: calculate_load_growth
+    params: { radius_m: 500, years: 5 }
+  - action: check_substation_capacity
+    params: {}
+  - action: generate_upgrade_options
+    options: ["substation_upgrade", "add_transformer_bank", "load_shedding_schedule", "embedded_generation"]
+  - action: cost_estimate
+    source: "kenya_power_rates_2025"
+  - action: format_recommendation
+
+output_template: |
+  Density-driven power stress on {asset_id} ({ward} ward).
+  Load grew {growth}% over {years} years, demand now at {demand} kVA
+  against substation capacity of {capacity} kVA (utilization: {utilization_pct}%).
+  Recommended: {top_option} with estimated cost {cost} KES. Timeline: {timeline}.
+  Note: {redundancy_note}

@@ -1,0 +1,10 @@
+# ============================================================
+# Sindio — K8s Namespace
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/part-of: nairobi-urban-planning
