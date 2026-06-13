@@ -20,7 +20,7 @@ func InitPool(ctx context.Context) (*pgxpool.Pool, error) {
 	port := envOrDefault("DB_PORT", "5432")
 	name := envOrDefault("DB_NAME", "sindio")
 	user := envOrDefault("DB_USER", "sindio_user")
-	pass := envOrDefault("DB_PASSWORD", "sindio_pass")
+	pass := envOrDefault("DB_PASSWORD", "")
 	poolMin := envOrDefault("DB_POOL_MIN", "2")
 	poolMax := envOrDefault("DB_POOL_MAX", "10")
 

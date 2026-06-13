@@ -11,6 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard
+from app.auth import auth_router, require_auth, optional_auth
 from app.services.data_quality_metrics import registry as dq_registry
 from app.services.model_registry import ModelRegistry
 
@@ -88,9 +89,11 @@ async def request_id_middleware(request: Request, call_next):
 model_registry = ModelRegistry()
 
 app.include_router(health.router, prefix="/health")
+app.include_router(auth_router, prefix="/auth")
 app.include_router(simulations.router, prefix="/api/simulations")
 app.include_router(infrastructure.router, prefix="/api/infrastructure")
 app.include_router(dashboard.router, prefix="/api")
+app.include_router(alerts.router, prefix="/api")
 app.include_router(schedule.router)
 app.include_router(monitor.router)
 

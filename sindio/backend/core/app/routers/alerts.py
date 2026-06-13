@@ -1,37 +1,42 @@
-from fastapi import APIRouter
+from typing import Optional
+
+from fastapi import APIRouter, Query
+
+from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
 
 router = APIRouter()
 
-alerts = [
-    {
-        "id": "ALT-001",
-        "timestamp": "09:42:15 AM",
-        "level": "critical",
-        "category": "electricity",
-        "title": "Power Grid: 85% capacity in Kilimani region",
-        "description": "Transformer cooling required.",
-        "location": "Kilimani",
-    },
-    {
-        "id": "ALT-002",
-        "timestamp": "09:30:04 AM",
-        "level": "warning",
-        "category": "utilities",
-        "title": "Water Main Pressure drop detected in Upper Hill",
-        "description": "Sensor ID: W-102. Pressure at 64% of nominal.",
-        "location": "Upper Hill",
-    },
-    {
-        "id": "ALT-003",
-        "timestamp": "09:12:40 AM",
-        "level": "advisory",
-        "category": "traffic",
-        "title": "Autonomous Bus Route 14 redirected",
-        "description": "Due to road maintenance on Waiyaki Way.",
-        "location": "Waiyaki Way",
-    },
-]
 
 @router.get("/dashboard")
-def get_alerts():
-    return alerts
+def get_alerts(
+    infra_type: Optional[str] = Query(None, description="Filter by infrastructure type"),
+    limit: int = Query(10, ge=1, le=100),
+):
+    configs = [get_config(infra_type)] if infra_type else get_all_configs()
+    alerts = []
+    for cfg in configs:
+        monitor = InfrastructureMonitor(cfg.name)
+        result = monitor.run(force_mock=False)
+        for asset in result.assets[: max(2, limit // len(configs))]:
+            level = "critical" if asset.stress >= 0.8 else "warning" if asset.stress >= 0.5 else "advisory"
+            alerts.append({
+                "id": f"ALT-{asset.asset_id}",
+                "timestamp": result.timestamp,
+                "level": level,
+                "category": cfg.name,
+                "title": f"{cfg.display_name}: {asset.failure_mode or 'stress detected'} on {asset.asset_id}",
+                "description": asset.recommendation or f"Stress: {asset.stress:.1%} at {asset.ward}",
+                "location": asset.ward,
+                "confidence": asset.confidence,
+                "data_sources_used": [asset.data_source] if asset.data_source else ["simulation"],
+            })
+
+    if not alerts:
+        return [
+            {"id": "ALT-001", "timestamp": "", "level": "advisory", "category": "system",
+             "title": "No active alerts", "description": "All systems operating within normal parameters.",
+             "location": "", "confidence": 1.0, "data_sources_used": []},
+        ]
+
+    alerts.sort(key=lambda a: a["level"] == "critical", reverse=True)
+    return alerts[:limit]

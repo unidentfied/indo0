@@ -8,7 +8,10 @@ use chrono::Utc;
 use metrics::{counter, gauge};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc,
+};
 use tokio::sync::broadcast;
 use tower_http::cors::CorsLayer;
 use tracing::info;
@@ -40,6 +43,7 @@ fn set_model_confidence(infra_type: &str, confidence: f64) {
 #[derive(Clone)]
 struct AppState {
     tx: broadcast::Sender<String>,
+    events_processed: Arc<AtomicU64>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -75,7 +79,10 @@ async fn main() {
         .init();
 
     let (tx, _rx) = broadcast::channel::<String>(1024);
-    let state = Arc::new(AppState { tx: tx.clone() });
+    let state = Arc::new(AppState {
+        tx: tx.clone(),
+        events_processed: Arc::new(AtomicU64::new(0)),
+    });
 
     let allowed_origin = std::env::var("CORS_ORIGINS").unwrap_or_else(|_| "http://localhost:3000".into());
     let cors = CorsLayer::new()
@@ -125,6 +132,7 @@ async fn ingest_sensor_data(
 
     let json = serde_json::to_string(&event).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let _ = state.tx.send(json);
+    state.events_processed.fetch_add(1, Ordering::Relaxed);
 
     Ok(Json(serde_json::json!({
         "accepted": true,
@@ -132,12 +140,11 @@ async fn ingest_sensor_data(
     })))
 }
 
-async fn stream_status() -> Json<serde_json::Value> {
+async fn stream_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
     Json(serde_json::json!({
-        "active_streams": 3,
-        "events_processed_24h": 1_284_500,
-        "avg_latency_us": 845,
-        "buffer_capacity_pct": 23.4
+        "active_streams": state.tx.receiver_count(),
+        "events_processed_total": state.events_processed.load(Ordering::Relaxed),
+        "buffer_capacity_pct": (state.tx.len() as f64 / state.tx.max_capacity() as f64) * 100.0
     }))
 }
 

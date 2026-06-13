@@ -78,9 +78,11 @@ async def health_ready():
             port=os.getenv("DB_PORT", "5432"),
             dbname=os.getenv("DB_NAME", "sindio"),
             user=os.getenv("DB_USER", "sindio_user"),
-            password=os.getenv("DB_PASSWORD", "sindio_pass"),
+            password=os.getenv("DB_PASSWORD", ""),
             connect_timeout=3,
         )
+        if not os.getenv("DB_PASSWORD"):
+            raise RuntimeError("DB_PASSWORD environment variable is required")
         conn.close()
         deps["postgres"] = "ok"
     except Exception:

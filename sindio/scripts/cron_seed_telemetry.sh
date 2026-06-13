@@ -21,7 +21,10 @@ import psycopg2, random, os, datetime
 def env(k, d):
     return os.environ.get(k, d)
 
-DB = f"host={env('DB_HOST','localhost')} port={env('DB_PORT','5432')} dbname={env('DB_NAME','sindio')} user={env('DB_USER','sindio_user')} password={env('DB_PASSWORD','sindio_pass')}"
+DB_PASS = env('DB_PASSWORD', '')
+if not DB_PASS:
+    raise RuntimeError("DB_PASSWORD environment variable is required for telemetry seeding")
+DB = f"host={env('DB_HOST','localhost')} port={env('DB_PORT','5432')} dbname={env('DB_NAME','sindio')} user={env('DB_USER','sindio_user')} password={DB_PASS}"
 now = datetime.datetime.now(datetime.timezone.utc)
 
 try:

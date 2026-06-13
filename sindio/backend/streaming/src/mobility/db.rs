@@ -8,10 +8,14 @@ const BATCH_SIZE: usize = 512;
 const DB_URL_ENV: &str = "DATABASE_URL";
 
 pub async fn connect() -> Result<PgPool, sqlx::Error> {
-    let url =
-        std::env::var(DB_URL_ENV).unwrap_or_else(|_| {
-            "postgresql://sindio_user:sindio_pass@localhost:5432/sindio".into()
-        });
+    let url = std::env::var(DB_URL_ENV).unwrap_or_else(|_| {
+        let host = std::env::var("DB_HOST").unwrap_or_else(|_| "localhost".into());
+        let port = std::env::var("DB_PORT").unwrap_or_else(|_| "5432".into());
+        let user = std::env::var("DB_USER").unwrap_or_else(|_| "sindio_user".into());
+        let pass = std::env::var("DB_PASSWORD").unwrap_or_else(|_| "".into());
+        let db = std::env::var("DB_NAME").unwrap_or_else(|_| "sindio".into());
+        format!("postgresql://{}:{}@{}:{}/{}", user, pass, host, port, db)
+    });
 
     info!("Connecting to TimescaleDB at {}", mask_password(&url));
 

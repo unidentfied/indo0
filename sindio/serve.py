@@ -5,7 +5,8 @@ import os
 import sys
 
 DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
-PORT = 3000
+PORT = int(os.getenv('SERVE_PORT', '3000'))
+BACKEND_PORT = int(os.getenv('BACKEND_PORT', '8080'))
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -14,8 +15,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/api/') or self.path.startswith('/health') or self.path.startswith('/metrics'):
             try:
-                conn = http.client.HTTPConnection('localhost', 3000)
-                conn.request('GET', self.path, headers={'Host': 'localhost:3000'})
+                conn = http.client.HTTPConnection('localhost', BACKEND_PORT)
+                conn.request('GET', self.path, headers={'Host': f'localhost:{BACKEND_PORT}'})
                 resp = conn.getresponse()
                 self.send_response(resp.status)
                 for h in resp.getheaders():
@@ -37,8 +38,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             content_length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(content_length) if content_length else None
             try:
-                conn = http.client.HTTPConnection('localhost', 3000)
-                headers = {'Host': 'localhost:3000', 'Content-Type': 'application/json'}
+                conn = http.client.HTTPConnection('localhost', BACKEND_PORT)
+                headers = {'Host': f'localhost:{BACKEND_PORT}', 'Content-Type': 'application/json'}
                 conn.request('POST', self.path, body=body, headers=headers)
                 resp = conn.getresponse()
                 self.send_response(resp.status)

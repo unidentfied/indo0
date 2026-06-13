@@ -1,5 +1,9 @@
 FROM postgis/postgis:16-3.4
 
+ARG POSTGRES_USER=sindio_user
+ARG POSTGRES_PASSWORD
+ARG POSTGRES_DB=sindio
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gnupg \
@@ -16,13 +20,11 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN echo "shared_preload_libraries = 'timescaledb'" >> /usr/share/postgresql/postgresql.conf.sample
-
-# Ensure TimescaleDB extension is created on first init
 RUN echo "CREATE EXTENSION IF NOT EXISTS timescaledb;" >> /docker-entrypoint-initdb.d/001_init.sql
 
-ENV POSTGRES_USER=sindio_user
-ENV POSTGRES_PASSWORD=sindio_pass
-ENV POSTGRES_DB=sindio
+ENV POSTGRES_USER=${POSTGRES_USER}
+ENV POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+ENV POSTGRES_DB=${POSTGRES_DB}
 
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \
     CMD pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1
