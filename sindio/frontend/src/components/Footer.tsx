@@ -1,19 +1,20 @@
 import { Link } from 'react-router-dom'
-import { Map, Shield, FileText, Cookie, Scale, Heart, HelpCircle, Mail, Newspaper, Briefcase, Info } from 'lucide-react'
+import { Map, Plus, Minus } from 'lucide-react'
+import { useState } from 'react'
 
 const resources = [
-  { icon: Shield, label: 'Privacy Policy', href: '/privacy' },
-  { icon: Cookie, label: 'Cookie Policy', href: '/cookies' },
-  { icon: Scale, label: 'Terms & Conditions', href: '/terms' },
-  { icon: Heart, label: 'Service Status', href: '/status' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Cookie Policy', href: '/cookies' },
+  { label: 'Terms & Conditions', href: '/terms' },
+  { label: 'Service Status', href: '/status' },
 ]
 
 const company = [
-  { icon: Briefcase, label: 'Careers', href: '/careers' },
-  { icon: HelpCircle, label: 'FAQ', href: '/faq' },
-  { icon: Mail, label: 'Contact Us', href: '/contact' },
-  { icon: Newspaper, label: 'Press', href: '/press' },
-  { icon: Info, label: 'About', href: '/about' },
+  { label: 'Careers', href: '/careers' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Contact Us', href: '/contact' },
+  { label: 'Press', href: '/press' },
+  { label: 'About', href: '/about' },
 ]
 
 const faqItems = [
@@ -23,23 +24,25 @@ const faqItems = [
   },
   {
     q: 'How does stress classification work?',
-    a: 'Sindio employs long-window classification combining STL seasonal decomposition and rolling Spearman rank correlation across up to 18 months of TimescaleDB hypertable data. Assets are classified as recurring-only, density-driven, mixed, or unstable — enabling targeted intervention strategies per classification.',
+    a: 'Sindio employs long-window classification combining STL seasonal decomposition and rolling Spearman rank correlation across up to 18 months of TimescaleDB hypertable data. Assets are classified as recurring-only, density-driven, mixed, or unstable — enabling targeted intervention strategies.',
   },
   {
     q: 'What happens when a data source becomes unavailable?',
-    a: 'Every component includes graceful degradation. If PostGIS, Kafka, or an external API is unreachable, the system falls back to configurable synthetic data while tracking the mock-data ratio via Prometheus metrics. An alert triggers when mock data exceeds 10% for more than one hour.',
+    a: 'Every component includes graceful degradation. If PostGIS, Kafka, or an external API is unreachable, the system falls back to configurable synthetic data while tracking the mock-data ratio via Prometheus metrics. An alert triggers when fallback exceeds 10% for more than one hour.',
   },
   {
     q: 'Is Sindio suitable for cities other than Nairobi?',
-    a: 'The unified registry and parameterized infrastructure monitor are designed for any dense urban environment. The current deployment is calibrated for Nairobi with local GIS boundaries, WorldPop raster data, and region-specific planning documents — but the core engine is location-agnostic.',
+    a: 'The unified registry and parameterized infrastructure monitor are designed for any dense urban environment. The current deployment is calibrated for Nairobi with local GIS boundaries, WorldPop raster data, and region-specific planning documents — the core engine is location-agnostic.',
   },
   {
     q: 'What physics engines are integrated?',
-    a: 'Power grid simulations use pandapower for load-flow analysis. Water networks use EPANET hydraulic models. Road networks use a modified cell-transmission model (CTM). Infrastructure types without dedicated engines (solid waste, sidewalks, LRT, SGR, airports) use configurable heuristic stress calculation.',
+    a: 'Power grid simulations use pandapower. Water networks use EPANET hydraulic models. Road networks use a modified cell-transmission model. Infrastructure types without dedicated physics engines use configurable heuristic stress calculations.',
   },
 ]
 
 export default function Footer() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
   return (
     <footer className="border-t border-sindio-border bg-sindio-panel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -58,8 +61,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {resources.map(r => (
                 <li key={r.label}>
-                  <Link to={r.href} className="flex items-center gap-2 text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
-                    <r.icon className="w-3.5 h-3.5" />
+                  <Link to={r.href} className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
                     {r.label}
                   </Link>
                 </li>
@@ -71,8 +73,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {company.map(c => (
                 <li key={c.label}>
-                  <Link to={c.href} className="flex items-center gap-2 text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
-                    <c.icon className="w-3.5 h-3.5" />
+                  <Link to={c.href} className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
                     {c.label}
                   </Link>
                 </li>
@@ -82,12 +83,6 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-5">Platform</h4>
             <ul className="space-y-3">
-              <li><Link to="/dashboard" className="flex items-center gap-2 text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
-                <FileText className="w-3.5 h-3.5" />Simulation Dashboard
-              </Link></li>
-              <li><Link to="/dashboard?system=alerts" className="flex items-center gap-2 text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
-                <FileText className="w-3.5 h-3.5" />Alert Feed
-              </Link></li>
               <li><Link to="/dashboard?system=power" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Power Grid</Link></li>
               <li><Link to="/dashboard?system=water" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Water Systems</Link></li>
               <li><Link to="/dashboard?system=roads" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Road Network</Link></li>
@@ -96,24 +91,57 @@ export default function Footer() {
               <li><Link to="/dashboard?system=lrt" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">LRT</Link></li>
               <li><Link to="/dashboard?system=sgr" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">SGR</Link></li>
               <li><Link to="/dashboard?system=airports" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Airports</Link></li>
+              <li className="pt-3 mt-3 border-t border-sindio-border/50">
+                <Link to="/dashboard" className="text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">Simulation Dashboard</Link>
+              </li>
+              <li>
+                <Link to="/dashboard?system=alerts" className="text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">Alert Feed</Link>
+              </li>
             </ul>
           </div>
         </div>
 
-        {/* FAQ Section */}
-        <div className="mt-14 pt-10 border-t border-sindio-border">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-5">Frequently Asked Questions</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* FAQ — Accordion */}
+        <div className="mt-16 pt-10 border-t border-sindio-border">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-8">
+            Frequently Asked Questions
+          </h4>
+          <div className="max-w-3xl">
             {faqItems.map((item, i) => (
-              <div key={i} className="text-sm">
-                <h5 className="font-medium text-white mb-2">{item.q}</h5>
-                <p className="text-sindio-muted leading-relaxed">{item.a}</p>
+              <div
+                key={i}
+                className="border-b border-sindio-border/50 last:border-b-0"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between py-4 text-left group"
+                >
+                  <span className="text-sm font-medium text-white group-hover:text-sindio-accent transition-colors pr-4">
+                    {item.q}
+                  </span>
+                  <span className="flex-shrink-0 text-sindio-muted group-hover:text-sindio-accent transition-colors">
+                    {openFaq === i ? (
+                      <Minus className="w-4 h-4" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                  </span>
+                </button>
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    openFaq === i ? 'max-h-96 pb-4' : 'max-h-0'
+                  }`}
+                >
+                  <p className="text-sm text-sindio-muted leading-relaxed">
+                    {item.a}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="mt-14 pt-8 border-t border-sindio-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sindio-muted">
+        <div className="mt-16 pt-8 border-t border-sindio-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sindio-muted">
           <p>&copy; {new Date().getFullYear()} Sindio Urban Systems. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <span>v0.1.0-alpha</span>
