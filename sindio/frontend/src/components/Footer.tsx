@@ -83,14 +83,7 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-5">Platform</h4>
             <ul className="space-y-3">
-              <li><Link to="/dashboard?system=power" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Power Grid</Link></li>
-              <li><Link to="/dashboard?system=water" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Water Systems</Link></li>
-              <li><Link to="/dashboard?system=roads" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Road Network</Link></li>
-              <li><Link to="/dashboard?system=solid_waste" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Solid Waste</Link></li>
-              <li><Link to="/dashboard?system=sidewalks" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Sidewalks</Link></li>
-              <li><Link to="/dashboard?system=lrt" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">LRT</Link></li>
-              <li><Link to="/dashboard?system=sgr" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">SGR</Link></li>
-              <li><Link to="/dashboard?system=airports" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Airports</Link></li>
+              <li><Link to="/dashboard" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Infrastructure Types</Link></li>
               <li><Link to="/dashboard" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Simulation Dashboard</Link></li>
               <li><Link to="/dashboard?system=alerts" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Alert Feed</Link></li>
             </ul>
