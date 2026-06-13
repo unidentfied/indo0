@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import logging
+import structlog
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -10,7 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2Pas
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-logger = logging.getLogger("sindio.auth")
+logger = structlog.get_logger("sindio.auth")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")

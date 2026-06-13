@@ -22,7 +22,6 @@ lazy_static::lazy_static! {
         PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
 }
 
-// Data quality metrics helpers
 fn record_real_fetch(infra_type: &str, source: &str) {
     counter!("data_quality_real_fetch_total", "infrastructure_type" => infra_type, "source" => source).increment(1);
 }
@@ -150,4 +149,193 @@ async fn stream_status(State(state): State<Arc<AppState>>) -> Json<serde_json::V
 
 async fn metrics_endpoint() -> String {
     METRICS_HANDLE.render()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
+    use tower::ServiceExt;
+
+    fn test_state() -> Arc<AppState> {
+        let (tx, _rx) = broadcast::channel::<String>(1024);
+        Arc::new(AppState {
+            tx,
+            events_processed: Arc::new(AtomicU64::new(0)),
+        })
+    }
+
+    fn test_app(state: Arc<AppState>) -> Router {
+        Router::new()
+            .route("/health", get(health_check))
+            .route("/streams/status", get(stream_status))
+            .route("/metrics", get(metrics_endpoint))
+            .with_state(state)
+    }
+
+    #[tokio::test]
+    async fn health_check_returns_ok() {
+        let state = test_state();
+        let app = test_app(state);
+
+        let response = app
+            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["status"], "ok");
+        assert_eq!(json["service"], "sindio-streaming-rust");
+    }
+
+    #[tokio::test]
+    async fn stream_status_returns_metrics() {
+        let state = test_state();
+        let app = test_app(state);
+
+        let response = app
+            .oneshot(Request::builder().uri("/streams/status").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(json["active_streams"].is_number());
+        assert!(json["events_processed_total"].is_number());
+        assert!(json["buffer_capacity_pct"].is_number());
+    }
+
+    #[tokio::test]
+    async fn metrics_endpoint_returns_text() {
+        let state = test_state();
+        let app = test_app(state);
+
+        let response = app
+            .oneshot(Request::builder().uri("/metrics").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn ingest_valid_payload_returns_ok() {
+        let state = test_state();
+        let app = Router::new()
+            .route("/streams/ingest", post(ingest_sensor_data))
+            .with_state(state);
+
+        let payload = serde_json::json!({
+            "sensor_id": "TEST-001",
+            "metric_type": "temperature",
+            "value": 45.0,
+            "unit": "celsius",
+            "location": {"lat": -1.29, "lng": 36.82}
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/streams/ingest")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = hyper::body::to_bytes(response.into_body()).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["accepted"], true);
+        assert!(json["event_id"].is_string());
+    }
+
+    #[tokio::test]
+    async fn ingest_invalid_json_returns_422() {
+        let state = test_state();
+        let app = Router::new()
+            .route("/streams/ingest", post(ingest_sensor_data))
+            .with_state(state);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/streams/ingest")
+                    .header("content-type", "application/json")
+                    .body(Body::from("not valid json"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    }
+
+    #[tokio::test]
+    async fn events_counter_increments_on_ingest() {
+        let state = test_state();
+        assert_eq!(state.events_processed.load(Ordering::Relaxed), 0);
+
+        let app = Router::new()
+            .route("/streams/ingest", post(ingest_sensor_data))
+            .with_state(state.clone());
+
+        let payload = serde_json::json!({
+            "sensor_id": "SENSOR-A",
+            "metric_type": "pressure",
+            "value": 30.0,
+            "unit": "psi",
+            "location": null
+        });
+
+        app.oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/streams/ingest")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(state.events_processed.load(Ordering::Relaxed), 1);
+    }
+
+    #[tokio::test]
+    async fn severity_critical_for_high_value() {
+        let state = test_state();
+        let app = Router::new()
+            .route("/streams/ingest", post(ingest_sensor_data))
+            .with_state(state.clone());
+
+        let payload = serde_json::json!({
+            "sensor_id": "SENSOR-C",
+            "metric_type": "voltage",
+            "value": 95.0,
+            "unit": "pu",
+            "location": {"lat": -1.29, "lng": 36.82}
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/streams/ingest")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&payload).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+    }
 }

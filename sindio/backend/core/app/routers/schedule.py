@@ -17,7 +17,7 @@ except ImportError:
 
 
 @router.get("/api/v1/next_updates")
-def next_updates():
+async def next_updates():
     """Return ISO-8601 timestamps for each infrastructure type's next scheduled run.
 
     Falls back to unified registry config when celery/alert_scheduler is unavailable.
