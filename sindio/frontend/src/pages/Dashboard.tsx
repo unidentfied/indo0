@@ -11,7 +11,7 @@ import MonitorOverview from '../components/MonitorOverview'
 import ScheduleStatus from '../components/ScheduleStatus'
 import ClassificationPanel from '../components/ClassificationPanel'
 import type { Metric, Alert, SimulationResult, InfrastructureStatus, SimulationSummary } from '../types'
-import { Activity, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react'
+import { Gauge, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react'
 
 const infraTitles: Record<string, string> = {
   power: 'Power System Analysis',
@@ -182,7 +182,7 @@ export default function Dashboard() {
             <div className="xl:col-span-2">
               <div className="panel p-3 mb-4">
                 <div className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-sindio-accent" />
+                  <Gauge className="w-4 h-4 text-sindio-accent" />
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Infrastructure Stress Map</h3>
                   {infra && (
                     <div className="ml-auto flex items-center gap-3">

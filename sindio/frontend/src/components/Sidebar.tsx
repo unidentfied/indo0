@@ -1,17 +1,17 @@
 import { Link } from 'react-router-dom'
 import {
-  Droplets, Zap, Route, Trash2, Footprints, TrainFront, TrainTrack, Plane,
-  Bell, BookOpen,
+  Droplet, Zap, Route, Recycle, Footprints, TrainFront, Train, Plane,
+  BellRing, BookOpen,
 } from 'lucide-react'
 
 const menuItems = [
   { icon: Zap, label: 'Power Systems', id: 'power' },
-  { icon: Droplets, label: 'Water Grid', id: 'water' },
+  { icon: Droplet, label: 'Water Grid', id: 'water' },
   { icon: Route, label: 'Road Networks', id: 'roads' },
-  { icon: Trash2, label: 'Solid Waste', id: 'solid_waste' },
+  { icon: Recycle, label: 'Solid Waste', id: 'solid_waste' },
   { icon: Footprints, label: 'Sidewalks', id: 'sidewalks' },
   { icon: TrainFront, label: 'LRT Trains', id: 'lrt' },
-  { icon: TrainTrack, label: 'SGR Trains', id: 'sgr' },
+  { icon: Train, label: 'SGR Trains', id: 'sgr' },
   { icon: Plane, label: 'Airports', id: 'airports' },
 ]
 
@@ -61,14 +61,14 @@ export default function Sidebar({ activeSystem, onSelect }: SidebarProps) {
               : 'text-sindio-muted hover:text-sindio-text hover:bg-sindio-border/50 border-l-transparent'
           }`}
         >
-          <Bell className="w-4 h-4" />
+          <BellRing className="w-4 h-4" />
           Alert Feed
         </button>
       </nav>
 
       <div className="p-4 border-t border-sindio-border space-y-1">
         <Link to="/dashboard?system=alerts" className="flex items-center gap-3 px-3 py-2 text-sm text-sindio-muted hover:text-sindio-text hover:bg-sindio-border/50 rounded-lg transition-colors">
-          <Bell className="w-4 h-4" />
+          <BellRing className="w-4 h-4" />
           Alerts History
         </Link>
         <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm text-sindio-muted hover:text-sindio-text hover:bg-sindio-border/50 rounded-lg transition-colors">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BarChart3, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react'
+import { ChartNoAxesCombined, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react'
 import type { ClassificationSummary, ClassificationType } from '../types'
 import { InfraIcon } from './InfraIcons'
 
@@ -89,7 +89,7 @@ export default function ClassificationPanel() {
     return (
       <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="w-4 h-4 text-sindio-accent" />
+          <ChartNoAxesCombined className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Stress Classification</h3>
         </div>
         <div className="text-xs text-sindio-muted text-center py-8">Loading classification data...</div>
@@ -101,7 +101,7 @@ export default function ClassificationPanel() {
     <div className="panel">
       <div className="p-4 border-b border-sindio-border">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-sindio-accent" />
+          <ChartNoAxesCombined className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Stress Classification</h3>
           <span className="ml-auto text-[10px] bg-sindio-accent/10 text-sindio-accent px-2 py-0.5 rounded uppercase font-bold">
             {summaries.length} Types

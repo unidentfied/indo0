@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
-  Play,
+  PlayCircle,
   Sparkles,
-  Download,
+  ArrowDownToLine,
   X,
   Loader2,
   CheckCircle2,
@@ -284,7 +284,7 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
     <div className="panel p-5 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Play className="w-4 h-4 text-sindio-accent" />
+        <PlayCircle className="w-4 h-4 text-sindio-accent" />
         <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Simulation Controls</h3>
       </div>
 
@@ -367,7 +367,7 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
             </>
           ) : (
             <>
-              <Play className="w-3.5 h-3.5" />
+              <PlayCircle className="w-3.5 h-3.5" />
               Run Simulation
             </>
           )}
@@ -471,7 +471,7 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
             onClick={downloadGeoJSON}
             className="btn-secondary text-xs w-full justify-center"
           >
-            <Download className="w-3.5 h-3.5" />
+            <ArrowDownToLine className="w-3.5 h-3.5" />
             Download Stress Layer as GeoJSON
           </button>
         </div>

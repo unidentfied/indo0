@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Activity } from 'lucide-react'
+import { Gauge } from 'lucide-react'
 import infraIcons from './InfraIcons'
 
 interface PerTypeSummary {
@@ -51,7 +51,7 @@ export default function MonitorOverview() {
     return (
       <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-4 h-4 text-sindio-accent" />
+          <Gauge className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Unified Monitor</h3>
         </div>
         <div className="text-xs text-sindio-muted text-center py-8">Loading monitoring data...</div>
@@ -63,7 +63,7 @@ export default function MonitorOverview() {
     return (
       <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-4 h-4 text-sindio-accent" />
+          <Gauge className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Unified Monitor</h3>
         </div>
         <div className="text-xs text-sindio-muted text-center py-8">Monitor unavailable</div>
@@ -79,7 +79,7 @@ export default function MonitorOverview() {
     <div className="panel">
       <div className="p-4 border-b border-sindio-border">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-sindio-accent" />
+          <Gauge className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Unified Monitor</h3>
           <span className="ml-auto text-[10px] bg-sindio-accent/10 text-sindio-accent px-2 py-0.5 rounded uppercase font-bold">
             {data.per_type_summary.length} Types

@@ -1,4 +1,4 @@
-import { X, Activity, Info } from 'lucide-react'
+import { X, Gauge, Info } from 'lucide-react'
 import type { AssetDetail } from '../types'
 
 interface StressDrawerProps {
@@ -47,7 +47,7 @@ export default function StressDrawer({ asset, onClose }: StressDrawerProps) {
     <div className="fixed inset-y-0 right-0 w-full max-w-sm panel border-l border-sindio-border z-50 overflow-y-auto shadow-2xl animate-slide-in">
       <div className="sticky top-0 bg-sindio-dark p-4 border-b border-sindio-border flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-sindio-accent" />
+          <Gauge className="w-4 h-4 text-sindio-accent" />
           <h2 className="text-sm font-semibold uppercase tracking-wider">Asset Detail</h2>
         </div>
         <button onClick={onClose} className="text-sindio-muted hover:text-sindio-text transition-colors">

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { Activity, Download, Loader2 } from 'lucide-react'
+import { Gauge, ArrowDownToLine, Loader2 } from 'lucide-react'
 import type { SimulationResult } from '../types'
 
 type NetId = 'power' | 'water' | 'roads' | 'solid_waste' | 'sidewalks' | 'lrt' | 'sgr' | 'airports'
@@ -45,7 +45,7 @@ export default function SimulationChart({
     <div className="panel p-5">
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-sindio-accent" />
+          <Gauge className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Projected Impact</h3>
         </div>
         {data.length > 0 && (
@@ -53,7 +53,7 @@ export default function SimulationChart({
             onClick={handleDownload}
             className="text-xs text-sindio-muted hover:text-sindio-accent flex items-center gap-1 transition-colors"
           >
-            <Download className="w-3 h-3" />
+            <ArrowDownToLine className="w-3 h-3" />
             Download Data
           </button>
         )}

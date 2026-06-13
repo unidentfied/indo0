@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock } from 'lucide-react'
+import { CalendarClock } from 'lucide-react'
 import infraIcons from './InfraIcons'
 
 interface UpdateEntry {
@@ -61,7 +61,7 @@ export default function ScheduleStatus() {
     return (
       <div className="panel p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Clock className="w-4 h-4 text-sindio-accent" />
+          <CalendarClock className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Schedule Status</h3>
         </div>
         <div className="text-xs text-sindio-muted text-center py-8">Loading schedule...</div>
@@ -76,7 +76,7 @@ export default function ScheduleStatus() {
     <div className="panel">
       <div className="p-4 border-b border-sindio-border">
         <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-sindio-accent" />
+          <CalendarClock className="w-4 h-4 text-sindio-accent" />
           <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Schedule Status</h3>
         </div>
       </div>
