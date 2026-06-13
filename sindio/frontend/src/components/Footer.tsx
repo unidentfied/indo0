@@ -131,7 +131,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-sindio-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sindio-muted">
-          <p>&copy; {new Date().getFullYear()} SINDIO.AI. All rights reserved.</p>
+          COPYRIGHT &copy; 2026 SINDIO.AI ALL RIGHTS RESERVED.
           <div className="flex items-center gap-4">
             <span>v0.1.0-alpha</span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
