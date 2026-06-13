@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Sun, Moon } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Menu, X, Sun, Moon, Maximize, Minimize } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
 
 const TABS: { label: string; system: string }[] = [
   { label: 'Power',      system: 'power' },
@@ -34,6 +34,22 @@ export default function Navbar() {
     }
   }, [dark])
 
+  const [fullscreen, setFullscreen] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      document.documentElement.requestFullscreen()
+    }
+  }, [])
+
   return (
     <nav className="border-b border-sindio-border dark:border-slate-800 bg-sindio-panel/90 dark:bg-slate-950/90 backdrop-blur sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -65,6 +81,13 @@ export default function Navbar() {
             >
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-lg text-sindio-muted dark:text-slate-400 hover:text-sindio-text dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+              title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            >
+              {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            </button>
             <Link to="/dashboard" className="btn-primary text-sm">
               Launch Dashboard
             </Link>
@@ -93,6 +116,13 @@ export default function Navbar() {
           >
             {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {dark ? 'Light Mode' : 'Dark Mode'}
+          </button>
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center gap-2 text-sm text-sindio-muted dark:text-slate-400 hover:text-sindio-text dark:hover:text-slate-200"
+          >
+            {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
           <Link to="/dashboard" className="btn-primary w-full justify-center mt-2">
             Launch Dashboard
