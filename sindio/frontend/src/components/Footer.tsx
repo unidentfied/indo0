@@ -130,13 +130,8 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-sindio-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-sindio-muted">
+        <div className="mt-16 pt-8 border-t border-sindio-border text-xs text-sindio-muted">
           COPYRIGHT &copy; 2026 SINDIO.AI ALL RIGHTS RESERVED.
-          <div className="flex items-center gap-4">
-            <span>v0.1.0-alpha</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <span>System Operational</span>
-          </div>
         </div>
       </div>
     </footer>
