@@ -91,12 +91,8 @@ export default function Footer() {
               <li><Link to="/dashboard?system=lrt" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">LRT</Link></li>
               <li><Link to="/dashboard?system=sgr" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">SGR</Link></li>
               <li><Link to="/dashboard?system=airports" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Airports</Link></li>
-              <li className="pt-3 mt-3 border-t border-sindio-border/50">
-                <Link to="/dashboard" className="text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">Simulation Dashboard</Link>
-              </li>
-              <li>
-                <Link to="/dashboard?system=alerts" className="text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">Alert Feed</Link>
-              </li>
+              <li><Link to="/dashboard" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Simulation Dashboard</Link></li>
+              <li><Link to="/dashboard?system=alerts" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Alert Feed</Link></li>
             </ul>
           </div>
         </div>
