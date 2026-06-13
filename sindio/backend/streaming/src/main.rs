@@ -13,8 +13,9 @@ use std::sync::{
     Arc,
 };
 use tokio::sync::broadcast;
+use tokio::signal;
 use tower_http::cors::CorsLayer;
-use tracing::info;
+use tracing::{error, info};
 use uuid::Uuid;
 
 lazy_static::lazy_static! {
@@ -104,14 +105,26 @@ async fn main() {
     info!("Sindio Streaming (Rust) listening on {addr}");
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let serve = axum::serve(listener, app);
+
+    let shutdown = async {
+        signal::ctrl_c().await.expect("failed to listen for ctrl-c");
+        info!("Shutdown signal received, draining connections...");
+    };
+
+    serve.with_graceful_shutdown(shutdown).await.unwrap();
 }
 
-async fn health_check() -> Json<serde_json::Value> {
+async fn health_check(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    let deps = serde_json::json!({
+        "broadcast_channel": if state.tx.receiver_count() > 0 || state.tx.len() < state.tx.max_capacity() { "ok" } else { "draining" },
+        "events_processed": state.events_processed.load(Ordering::Relaxed),
+    });
     Json(serde_json::json!({
         "status": "ok",
         "service": "sindio-streaming-rust",
-        "timestamp": Utc::now().to_rfc3339()
+        "timestamp": Utc::now().to_rfc3339(),
+        "dependencies": deps
     }))
 }
 
@@ -189,6 +202,7 @@ mod tests {
         let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(json["status"], "ok");
         assert_eq!(json["service"], "sindio-streaming-rust");
+        assert!(json["dependencies"].is_object());
     }
 
     #[tokio::test]

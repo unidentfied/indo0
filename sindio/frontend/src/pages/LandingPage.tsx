@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight, Map, GitBranch, Layers, BarChart3, Play,
-  Clock, Binary, BrainCircuit, Database, Wifi, Shield,
+  ArrowRight, Map, BrainCircuit, Clock, BarChart3, Play,
+  Binary, Wifi, Shield, Database, AlertTriangle, GitBranch,
 } from 'lucide-react'
 
 const features = [
@@ -9,46 +9,30 @@ const features = [
     icon: Map,
     title: 'Unified Infrastructure Monitor',
     description:
-      'Single parameterized system for all 8 infrastructure types — power, water, roads, solid waste, sidewalks, LRT, SGR, and airports. One config key, one API endpoint, one dashboard view.',
-    tags: ['Unified Registry', 'Single Stress API', '8 Infrastructure Types'],
+      'Eight infrastructure types — power, water, roads, solid waste, sidewalks, LRT, SGR, and airports — monitored through a single parameterized pipeline. One configuration key per type, one API endpoint, one stress dashboard.',
+    tags: ['8 Infrastructure Types', 'Single Registry', 'Unified Stress API'],
   },
   {
     icon: BrainCircuit,
-    title: 'RAG Classification Engine',
+    title: 'Long-Window Stress Classification',
     description:
-      'Long-window classification using STL seasonal decomposition and rolling Spearman correlation. Detects recurring stress vs density-driven patterns across 18+ months of data.',
-    tags: ['STL Decomposition', 'Spearman ρ > 0.6', 'TimescaleDB Hypertables'],
+      'STL seasonal decomposition and rolling Spearman correlation across up to 18 months of TimescaleDB hypertable data. Detects recurring temporal patterns versus population-driven growth — enabling targeted intervention strategies per classification type.',
+    tags: ['STL Decomposition', 'Spearman ρ Detection', 'TimescaleDB Hypertables'],
   },
   {
     icon: Clock,
-    title: 'Dynamic Scheduling',
+    title: 'Registry-Driven Scheduling',
     description:
-      'Registry-driven scheduler with per-infrastructure-type intervals. Graceful fallback when Celery is unavailable — always returns schedule state from unified config.',
-    tags: ['Registry-Driven Intervals', 'Celery Fallback', 'Per-Type Thresholds'],
+      'Per-infrastructure-type intervals configured centrally in the unified registry. Graceful fallback when Celery is unavailable — the API always returns schedule state from the static config, never a blank screen.',
+    tags: ['Configurable Intervals', 'Celery Fallback', 'Per-Type Thresholds'],
   },
 ]
 
 const capabilities = [
-  {
-    icon: Binary,
-    label: 'Unified Registry',
-    desc: 'Single source of truth for all per-type settings — thresholds, intervals, actions, data sources, and physics engines. Previously scattered across 7+ files.',
-  },
-  {
-    icon: Wifi,
-    label: 'Real-Time Monitoring',
-    desc: 'Unified stress endpoint returns all stressed assets across all types with baseline deviation, failure mode, time-to-breach, and recommendation.',
-  },
-  {
-    icon: Shield,
-    label: 'Graceful Fallbacks',
-    desc: 'Every component handles missing dependencies — no Celery, no DB, no Kafka. Synthetic data with mock_ratio tracking for data quality metrics.',
-  },
-  {
-    icon: Database,
-    label: 'Data Quality Tracking',
-    desc: 'Prometheus metrics for real data ratio, mock fallback rate, and model confidence per infrastructure type. Alert when mock > 10% for > 1h.',
-  },
+  { icon: Binary, label: 'Unified Registry', desc: 'Central configuration for thresholds, intervals, actions, data sources, and physics engines across all eight infrastructure types.' },
+  { icon: Wifi, label: 'Real-Time Monitoring', desc: 'A single stress endpoint returns stressed assets across all types with baseline deviation, failure mode, time-to-breach, and recommendation.' },
+  { icon: Shield, label: 'Graceful Fallbacks', desc: 'Every subsystem handles missing dependencies. Synthetic data with Prometheus-tracked mock ratio — alerting when fallback exceeds 10% for one hour.' },
+  { icon: Database, label: 'Data Quality Metrics', desc: 'Per-infrastructure-type Prometheus gauges for real-data ratio, mock fallback rate, and model confidence. Grafana dashboards pre-configured.' },
 ]
 
 export default function LandingPage() {
@@ -60,24 +44,21 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sindio-border bg-sindio-panel text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-sindio-accent animate-pulse" />
-              Simulation Active — Nairobi_Run_01
+              Simulation Active &mdash; Nairobi
             </div>
             <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-tight">
-              Predicting the <br />
-              Metabolic <br />
-              <span className="text-sindio-accent">Flow of Nairobi</span>
+              Infrastructure Resilience<br />
+              for the <span className="text-sindio-accent">Urban Future</span>
             </h1>
             <p className="text-sindio-muted text-lg mb-8 max-w-lg leading-relaxed">
-              High-fidelity spatial infrastructure modeling with long-window stress classification across eight infrastructure types. From recurring pattern detection to density-driven alerting — all data-driven, no policy mandates.
+              Predictive modelling across eight infrastructure types. From seasonal stress detection to density-driven alerts — engineered for the precision-era of city planning.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Link to="/dashboard" className="btn-primary">
                 Open Dashboard
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="#features" className="btn-secondary">
-                Explore Features
-              </a>
+              <a href="#features" className="btn-secondary">Explore Features</a>
             </div>
           </div>
         </div>
@@ -98,9 +79,7 @@ export default function LandingPage() {
           <div className="flex items-end justify-between mb-12">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Core Architecture</div>
-              <h2 className="text-3xl font-bold max-w-md">
-                Data-Driven Resilience for Dense Urban Environments
-              </h2>
+              <h2 className="text-3xl font-bold max-w-md">Data-Driven Resilience for Dense Urban Environments</h2>
             </div>
             <Link to="/dashboard" className="hidden sm:flex items-center gap-2 text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">
               Explore All Modules
@@ -137,7 +116,7 @@ export default function LandingPage() {
             <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform Capabilities</div>
             <h2 className="text-3xl font-bold mb-4">Built for Urban Engineering at Scale</h2>
             <p className="text-sindio-muted max-w-xl mx-auto">
-              Every component is verified against TimescaleDB, PostGIS, and Qdrant — operational on real Nairobi infrastructure data.
+              Every component verified against TimescaleDB, PostGIS, and Qdrant — operating on real Nairobi infrastructure data.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -158,10 +137,10 @@ export default function LandingPage() {
       <section className="border-t border-sindio-border py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform Previews</div>
-            <h2 className="text-3xl font-bold mb-4">Three Lenses on Nairobi</h2>
+            <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform</div>
+            <h2 className="text-3xl font-bold mb-4">Three Lenses on the City</h2>
             <p className="text-sindio-muted max-w-xl mx-auto">
-              From the stress heatmap to the alert feed, every view is powered by the same backend — PostGIS spatial queries, STL classification, and WebSocket streaming.
+              Stress heatmap, alert feed, and system overview — all powered by PostGIS spatial queries, STL classification, and WebSocket streaming.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -173,9 +152,9 @@ export default function LandingPage() {
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <Map className="w-4 h-4 text-sindio-accent" />
-                  <h3 className="font-semibold">Landing Overview</h3>
+                  <h3 className="font-semibold">System Overview</h3>
                 </div>
-                <p className="text-xs text-sindio-muted">Executive view into system health, infrastructure types, and active simulation campaigns.</p>
+                <p className="text-xs text-sindio-muted">Executive view of system health, infrastructure types, and active simulation campaigns.</p>
               </div>
             </div>
             <div className="panel overflow-hidden group">
@@ -188,7 +167,7 @@ export default function LandingPage() {
                   <GitBranch className="w-4 h-4 text-sindio-accent" />
                   <h3 className="font-semibold">Infrastructure Stress Map</h3>
                 </div>
-                <p className="text-xs text-sindio-muted">Deck.gl heatmap with toggleable layers, PostGIS spatial queries, and per-asset classification.</p>
+                <p className="text-xs text-sindio-muted">Deck.gl heatmap with toggleable layers and per-asset classification from PostGIS queries.</p>
               </div>
             </div>
             <div className="panel overflow-hidden group">
@@ -198,8 +177,8 @@ export default function LandingPage() {
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-2">
-                  <Layers className="w-4 h-4 text-sindio-accent" />
-                  <h3 className="font-semibold">Alert Feed &amp; Scheduling</h3>
+                  <AlertTriangle className="w-4 h-4 text-sindio-accent" />
+                  <h3 className="font-semibold">Live Alert Feed</h3>
                 </div>
                 <p className="text-xs text-sindio-muted">WebSocket live alerts grouped by infrastructure type with countdown timers and RAG explanations.</p>
               </div>
@@ -213,7 +192,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to engineer the future of your city?</h2>
           <p className="text-sindio-muted mb-8">
-            Join the world's most advanced urban planners in defining the next era of data-driven infrastructure resilience.
+            Deploy data-driven infrastructure resilience across all critical urban systems.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link to="/dashboard" className="btn-primary">

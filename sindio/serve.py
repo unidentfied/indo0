@@ -25,11 +25,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(resp.read())
                 conn.close()
-            except Exception as e:
+            except Exception:
                 self.send_response(502)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({'error': str(e)}).encode())
+                self.wfile.write(json.dumps({'error': 'Backend unreachable'}).encode())
         else:
             super().do_GET()
 
@@ -49,11 +49,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(resp.read())
                 conn.close()
-            except Exception as e:
+            except Exception:
                 self.send_response(502)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
-                self.wfile.write(json.dumps({'error': str(e)}).encode())
+                self.wfile.write(json.dumps({'error': 'Backend unreachable'}).encode())
         else:
             self.send_response(405)
             self.end_headers()

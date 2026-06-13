@@ -18,7 +18,6 @@ metadata:
 spec:
   hosts:
     - "sindio.urban"
-    - "sindio-api.sindio.svc.cluster.local"
   gateways:
     - sindio-gateway
   http:
@@ -117,4 +116,3 @@ spec:
         protocol: HTTP
       hosts:
         - "sindio.urban"
-        - "sindio-api.sindio.svc.cluster.local"

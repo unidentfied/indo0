@@ -132,7 +132,7 @@ def _get_db_url() -> str:
     return os.getenv(
         "DATABASE_URL",
         f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-        f"{os.getenv('DB_PASSWORD', 'sindio_pass')}@"
+        f"{os.getenv('DB_PASSWORD', '')}@"
         f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
         f"{os.getenv('DB_NAME', 'sindio')}",
     )

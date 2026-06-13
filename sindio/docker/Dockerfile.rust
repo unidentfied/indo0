@@ -5,19 +5,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends pkg-config libs
     rm -rf /var/lib/apt/lists/*
 
 COPY backend/streaming/Cargo.toml ./
-# Generate Cargo.lock if missing (should be committed to repo)
 RUN if [ ! -f Cargo.lock ]; then cargo generate-lockfile; fi
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release 2>/dev/null || true
+RUN cargo build --release
 
 RUN rm -rf src
 COPY backend/streaming/src/ ./src/
 RUN touch src/main.rs && cargo build --release
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
+RUN adduser --disabled-password --gecos '' sindio
+USER sindio
+
 COPY --from=builder /build/target/release/sindio-streaming /usr/local/bin/sindio-streaming
+
 EXPOSE 8082
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8082/health || exit 1
+
 CMD ["sindio-streaming"]

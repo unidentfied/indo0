@@ -14,7 +14,7 @@ logger = structlog.get_logger("sindio.auth")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", "60"))
+JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", os.getenv("JWT_EXPIRY_HOURS", "60")))
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
 

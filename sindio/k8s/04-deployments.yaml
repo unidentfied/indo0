@@ -106,10 +106,6 @@ spec:
         app.kubernetes.io/name: sindio
         app.kubernetes.io/component: simulator
         version: stable
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "8081"
-        prometheus.io/path: "/metrics"
     spec:
       terminationGracePeriodSeconds: 300
       serviceAccountName: sindio-backend

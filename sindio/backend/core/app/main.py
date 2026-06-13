@@ -118,7 +118,8 @@ async def health_ready():
         conn = psycopg2.connect(**DB_CONFIG)
         conn.close()
         deps["postgres"] = "ok"
-    except Exception:
+    except Exception as exc:
+        logger.warning("Postgres health check failed", error=str(exc))
         deps["postgres"] = "unreachable"
 
     all_ok = deps.get("postgres") == "ok"

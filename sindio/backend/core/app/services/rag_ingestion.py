@@ -148,7 +148,7 @@ def _get_pg_pool() -> Any:
         from psycopg2 import pool as pgpool
         db_url = os.getenv(
             "DATABASE_URL",
-            f"postgresql://{os.getenv('DB_USER','sindio_user')}:{os.getenv('DB_PASSWORD','sindio_pass')}"
+            f"postgresql://{os.getenv('DB_USER','sindio_user')}:{os.getenv('DB_PASSWORD','')}"
             f"@{os.getenv('DB_HOST','localhost')}:{os.getenv('DB_PORT','5432')}/{os.getenv('DB_NAME','sindio')}",
         )
         _pg_pool = pgpool.ThreadedConnectionPool(

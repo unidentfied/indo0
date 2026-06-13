@@ -16,7 +16,8 @@ data:
   DB_USER: "sindio_user"
   DB_POOL_MIN: "2"
   DB_POOL_MAX: "10"
-  DATABASE_URL: "postgresql://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
+  # DATABASE_URL is constructed at application startup from the individual DB_* vars and DB_PASSWORD secret.
+  # See backend/core/app/database.py for the canonical implementation.
 
   # --- Redis ---
   REDIS_HOST: "sindio-redis.sindio.svc.cluster.local"
