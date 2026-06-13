@@ -10,7 +10,7 @@ use metrics_exporter_prometheus::PrometheusBuilder;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::broadcast;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::info;
 use uuid::Uuid;
 
@@ -77,10 +77,13 @@ async fn main() {
     let (tx, _rx) = broadcast::channel::<String>(1024);
     let state = Arc::new(AppState { tx: tx.clone() });
 
+    let allowed_origin = std::env::var("CORS_ORIGINS").unwrap_or_else(|_| "http://localhost:3000".into());
     let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_origin(tower_http::cors::AllowOrigin::exact(
+            allowed_origin.parse::<axum::http::HeaderValue>().unwrap_or_else(|_| "http://localhost:3000".parse().unwrap()),
+        ))
+        .allow_methods([axum::http::Method::GET, axum::http::Method::POST])
+        .allow_headers([axum::http::header::CONTENT_TYPE, axum::http::header::AUTHORIZATION]);
 
     let app = Router::new()
         .route("/health", get(health_check))

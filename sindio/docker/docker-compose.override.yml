@@ -2,5 +2,3 @@ services:
   postgres:
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - /Users/jordanmafumbo/sindio-migrations:/docker-entrypoint-initdb.d:ro
-

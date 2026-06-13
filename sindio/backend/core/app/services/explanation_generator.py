@@ -179,10 +179,12 @@ def _fallback_historical_alerts(alert_dict: Dict[str, Any]) -> List[Dict[str, An
         db_url = os.getenv(
             "DATABASE_URL",
             f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-            f"{os.getenv('DB_PASSWORD', 'sindio_pass')}@"
+            f"{os.getenv('DB_PASSWORD', '')}@"
             f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
             f"{os.getenv('DB_NAME', 'sindio')}",
         )
+        if ':@' in db_url or ':/' in db_url.split('@')[0]:
+            raise RuntimeError("DB_PASSWORD environment variable is required")
         engine = create_engine(db_url)
         infra = alert_dict.get("infrastructure_type", "water")
 
@@ -566,10 +568,12 @@ def _persist_explanation(result: Dict[str, Any]):
         db_url = os.getenv(
             "DATABASE_URL",
             f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-            f"{os.getenv('DB_PASSWORD', 'sindio_pass')}@"
+            f"{os.getenv('DB_PASSWORD', '')}@"
             f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
             f"{os.getenv('DB_NAME', 'sindio')}",
         )
+        if ':@' in db_url or ':/' in db_url.split('@')[0]:
+            raise RuntimeError("DB_PASSWORD environment variable is required")
         engine = create_engine(db_url)
 
         with engine.begin() as conn:

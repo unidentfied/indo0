@@ -6,6 +6,7 @@ Endpoints for stressed assets, classification results, infrastructure types,
 and official report summaries across ALL infrastructure types.
 """
 
+import os
 from fastapi import APIRouter, Query
 from typing import Optional
 from datetime import datetime, timezone
@@ -302,9 +303,10 @@ def get_classification_examples(
     # Try PostGIS first
     try:
         from sqlalchemy import create_engine, text
-        import os
 
-        db_url = os.environ.get("DATABASE_URL", "postgresql://sindio:sindio@localhost:5432/sindio")
+        db_url = os.environ.get("DATABASE_URL")
+        if not db_url:
+            raise RuntimeError("DATABASE_URL environment variable is required")
         engine = create_engine(db_url)
 
         with engine.connect() as conn:

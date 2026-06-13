@@ -82,14 +82,11 @@ def retry_external(
                     )
                     time.sleep(delay)
                 except Exception as exc:
-                    attempt += 1
-                    last_exc = exc
-                    delay = backoff_base * (2 ** (attempt - 1))
-                    logger.warning(
-                        "%s — attempt %d/%d failed with unclassified error (%s). Retrying in %.1f s…",
-                        description, attempt, retries, exc, delay,
+                    logger.error(
+                        "%s — non-retriable error (%s). Not retrying.",
+                        description, exc,
                     )
-                    time.sleep(delay)
+                    raise
 
             logger.warning(
                 "%s — all %d retries exhausted (last: %s).",

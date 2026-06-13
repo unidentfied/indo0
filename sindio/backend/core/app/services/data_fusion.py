@@ -33,14 +33,11 @@ import pyarrow.parquet as pq
 import requests
 import shapely
 import xarray as xr
-from dotenv import load_dotenv
 from shapely.geometry import box
 
 from .retry_utils import retry_external
 from .fallback_data import mobility_pressure_fallback
 from .data_quality_metrics import metrics as dq_metrics
-
-load_dotenv()
 
 logger = logging.getLogger("sindio.fusion")
 logger.setLevel(logging.INFO)
@@ -115,10 +112,12 @@ class DataFusionEngine:
         self.db_url = db_url or os.getenv(
             "DATABASE_URL",
             f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-            f"{os.getenv('DB_PASSWORD', 'sindio_pass')}@"
+            f"{os.getenv('DB_PASSWORD', '')}@"
             f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
             f"{os.getenv('DB_NAME', 'sindio')}",
         )
+        if ':@' in self.db_url or ':/' in self.db_url.split('@')[0]:
+            raise RuntimeError("DB_PASSWORD environment variable is required")
 
         # Lazy-generated
         self._grid: Optional[gpd.GeoDataFrame] = None

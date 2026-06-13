@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import os
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
@@ -139,7 +140,12 @@ POWER = _register(InfraConfig(
             fallback_query="SELECT bus_id, voltage_pu, load_mw FROM power_scada WHERE updated_at > NOW() - INTERVAL '1 hour'",
             data_type="telemetry", freshness_threshold_sec=300,
         ),
-        # TODO: Add Kenya Power API endpoint when available
+        InfraDataSource(
+            source_name="Kenya Power API",
+            query=os.environ.get("KENYA_POWER_API_URL", ""),
+            fallback_query=os.environ.get("KENYA_POWER_FALLBACK_URL", ""),
+            data_type="telemetry", freshness_threshold_sec=900,
+        ),
     ],
     report_source="Kenya Power Annual Report",
     report_frequency="monthly",
@@ -175,7 +181,12 @@ WATER = _register(InfraConfig(
             fallback_query="SELECT node_id, pressure_m, flow_lps FROM water_scada WHERE updated_at > NOW() - INTERVAL '1 hour'",
             data_type="telemetry", freshness_threshold_sec=300,
         ),
-        # TODO: Add Nairobi Water API endpoint when available
+        InfraDataSource(
+            source_name="Nairobi Water API",
+            query=os.environ.get("NAIROBI_WATER_API_URL", ""),
+            fallback_query=os.environ.get("NAIROBI_WATER_FALLBACK_URL", ""),
+            data_type="telemetry", freshness_threshold_sec=900,
+        ),
     ],
     report_source="Nairobi Water & Sewerage Company Report",
     report_frequency="monthly",
@@ -211,7 +222,12 @@ ROADS = _register(InfraConfig(
             fallback_query="SELECT h3_index, vehicle_count FROM mobility_aggregates WHERE time > NOW() - INTERVAL '1 hour'",
             data_type="telemetry", freshness_threshold_sec=300,
         ),
-        # TODO: Add real-time GPS probe / traffic API endpoint when available
+        InfraDataSource(
+            source_name="GPS Probe / Traffic API",
+            query=os.environ.get("TRAFFIC_PROBE_API_URL", ""),
+            fallback_query=os.environ.get("TRAFFIC_PROBE_FALLBACK_URL", ""),
+            data_type="telemetry", freshness_threshold_sec=120,
+        ),
     ],
     report_source="Kenya National Highway Authority Report",
     report_frequency="quarterly",

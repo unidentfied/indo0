@@ -14,7 +14,7 @@ services:
       - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER:-sindio_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-sindio_pass}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
       POSTGRES_DB: ${DB_NAME:-sindio}
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -42,7 +42,7 @@ services:
       - qdrantdata:/qdrant/storage
     environment:
       QDRANT__SERVICE__GRPC_PORT: "6334"
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-}
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?QDRANT_API_KEY must be set in .env}
       QDRANT__LOG_LEVEL: INFO
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/6333"]
@@ -65,7 +65,7 @@ services:
     command: >
       redis-server
         --appendonly yes
-        --requirepass ${REDIS_PASSWORD:-}
+        --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
         --maxmemory 512mb
         --maxmemory-policy allkeys-lru
         --save 900 1
@@ -93,8 +93,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
+      MINIO_ROOT_USER: ${MINIO_USER:?MINIO_USER must be set in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?MINIO_PASSWORD must be set in .env}
       MINIO_DEFAULT_BUCKETS: sindio-satellite-imagery,sindio-gis-rasters
     volumes:
       - miniodata:/data
@@ -116,7 +116,7 @@ services:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_USER:-minioadmin} ${MINIO_PASSWORD:-minioadmin};
+      mc alias set local http://minio:9000 ${MINIO_USER:?MINIO_USER must be set in .env} ${MINIO_PASSWORD:?MINIO_PASSWORD must be set in .env};
       mc mb --ignore-existing local/sindio-satellite-imagery;
       mc mb --ignore-existing local/sindio-gis-rasters;
       mc anonymous set download local/sindio-gis-rasters;
@@ -137,7 +137,7 @@ services:
       - "5050:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@sindio.urban}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-sindio_admin}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD must be set in .env}
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
@@ -218,7 +218,8 @@ services:
       - "9300:9300"
     environment:
       discovery.type: single-node
-      xpack.security.enabled: "false"
+      xpack.security.enabled: "${ELASTICSEARCH_SECURITY:-true}"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD must be set in .env or set ELASTICSEARCH_SECURITY=false}
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
       - esdata:/usr/share/elasticsearch/data

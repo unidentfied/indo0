@@ -32,10 +32,12 @@ class DataIngestor:
         self.db_url = db_url or os.getenv(
             "DATABASE_URL",
             f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-            f"{os.getenv('DB_PASSWORD', 'sindio_pass')}@"
+            f"{os.getenv('DB_PASSWORD', '')}@"
             f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
             f"{os.getenv('DB_NAME', 'sindio')}",
         )
+        if ':@' in self.db_url or ':/' in self.db_url.split('@')[0]:
+            raise RuntimeError("DB_PASSWORD environment variable is required")
         self._real_count = 0
         self._mock_count = 0
 

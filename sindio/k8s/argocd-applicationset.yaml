@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: sindio
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - environment: dev
+            namespace: sindio-dev
+            server: https://kubernetes.default.svc
+          - environment: prod
+            namespace: sindio
+            server: https://kubernetes.default.svc
+  template:
+    metadata:
+      name: sindio-{{environment}}
+      namespace: argocd
+      labels:
+        app: sindio
+        environment: "{{environment}}"
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:unidentfied/indo0.git
+        targetRevision: main
+        path: sindio/k8s/overlays/{{environment}}
+      destination:
+        server: "{{server}}"
+        namespace: "{{namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+        retry:
+          limit: 5
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 5m

@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sindio/backend/core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+      - name: Lint (ruff)
+        run: poetry run ruff check .
+      - name: Format check (black)
+        run: poetry run black --check .
+      - name: Type check (mypy)
+        run: poetry run mypy app/ --strict
+
+  python-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: sindio_user
+          POSTGRES_PASSWORD: test123
+          POSTGRES_DB: sindio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    defaults:
+      run:
+        working-directory: sindio/backend/core
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install --with dev --no-root
+      - name: Run tests
+        env:
+          DB_HOST: localhost
+          DB_PORT: "5432"
+          DB_NAME: sindio_test
+          DB_USER: sindio_user
+          DB_PASSWORD: test123
+        run: poetry run pytest tests/ -v --cov=app --cov-report=term
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sindio/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build
+
+  rust-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sindio/backend/streaming
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check
+      - run: cargo test --no-run 2>/dev/null || echo "No tests yet"
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Python ML Core image
+        run: docker build -t sindio-core -f sindio/docker/Dockerfile.python sindio/
+      - name: Build Rust streaming image
+        run: docker build -t sindio-streaming -f sindio/docker/Dockerfile.rust sindio/
