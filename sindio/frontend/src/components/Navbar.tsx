@@ -2,6 +2,24 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Sun, Moon, Maximize, Minimize } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 
+function readStoredTheme(): 'dark' | 'light' | null {
+  try {
+    const stored = window.localStorage?.getItem('theme')
+    if (stored === 'dark' || stored === 'light') return stored
+  } catch {
+    // localStorage may be unavailable in private mode or restricted contexts
+  }
+  return null
+}
+
+function prefersDarkMode(): boolean {
+  try {
+    return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? false
+  } catch {
+    return false
+  }
+}
+
 const TABS: { label: string; system: string }[] = [
   { label: 'Power',      system: 'power' },
   { label: 'Water',      system: 'water' },
@@ -19,18 +37,21 @@ export default function Navbar() {
   const isDash = location.pathname.startsWith('/dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dark, setDark] = useState(() => {
-    const stored = localStorage.getItem('theme')
+    const stored = readStoredTheme()
     if (stored) return stored === 'dark'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
+    return prefersDarkMode()
   })
 
   useEffect(() => {
     if (dark) {
       document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
+    }
+    try {
+      window.localStorage?.setItem('theme', dark ? 'dark' : 'light')
+    } catch {
+      // ignore storage failures
     }
   }, [dark])
 

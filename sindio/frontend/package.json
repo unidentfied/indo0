@@ -4,12 +4,12 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "dev": "node ./node_modules/vite/bin/vite.js",
+    "build": "node ./node_modules/typescript/bin/tsc && node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview",
+    "test": "node ./node_modules/vitest/vitest.mjs run",
+    "test:watch": "node ./node_modules/vitest/vitest.mjs",
+    "lint": "node ./node_modules/typescript/bin/tsc --noEmit"
   },
   "dependencies": {
     "@deck.gl/aggregation-layers": "^9.3.2",
@@ -24,18 +24,19 @@
     "recharts": "^2.10.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
     "@types/geojson": "^7946.0.14",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
+    "jsdom": "^23.2.0",
+    "playwright": "^1.49.1",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.9.3",
     "vite": "^5.0.8",
-    "vitest": "^1.2.0",
-    "@testing-library/react": "^14.1.2",
-    "@testing-library/jest-dom": "^6.2.0",
-    "jsdom": "^23.2.0"
+    "vitest": "^1.6.1"
   }
 }

@@ -1,24 +1,31 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
 describe('App', () => {
-  it('renders landing page at / route', () => {
+  it('renders landing page at / route', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>
     )
-    expect(screen.getByText(/Sindio/i)).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { level: 1 })
+    expect(heading.textContent).toContain('Infrastructure Resilience')
   })
 
-  it('renders dashboard at /dashboard route', () => {
+  it('renders dashboard at /dashboard route', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <App />
       </MemoryRouter>
     )
-    expect(screen.getByText(/Dashboard/i)).toBeInTheDocument()
+    // Wait for Suspense to resolve (Loading dashboard... disappears)
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading dashboard\.\.\./i)).not.toBeInTheDocument()
+    }, { timeout: 3000 })
+    
+    // Now it should show the loading message or content of the dashboard
+    expect(screen.getByText(/Power System Analysis/i)).toBeInTheDocument()
   })
 })

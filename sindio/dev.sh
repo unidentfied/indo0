@@ -54,7 +54,7 @@ start_frontend() {
   echo " Sindio Frontend → http://localhost:3000"
   echo "──────────────────────────────────────"
   cd "$FRONTEND_DIR"
-  ./node_modules/.bin/vite
+  node ./node_modules/vite/bin/vite.js
 }
 
 case "${1:-all}" in
