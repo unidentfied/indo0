@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import structlog
 import os
+import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -12,9 +13,12 @@ from pydantic import BaseModel
 
 logger = structlog.get_logger("sindio.auth")
 
+# Environment variables
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", os.getenv("JWT_EXPIRY_HOURS", "60")))
+# Prefer explicit minutes, otherwise compute from hours (default 1 hour)
+_JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
+JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", str(_JWT_EXPIRY_HOURS * 60)))
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
 
@@ -66,9 +70,8 @@ async def optional_auth(request: Request, credentials: Optional[HTTPAuthorizatio
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if not AUTH_PASSWORD:
         raise HTTPException(status_code=500, detail="AUTH_PASSWORD environment variable is not set")
-    if form_data.username != AUTH_USERNAME or form_data.password != AUTH_PASSWORD:
+    if not (hmac.compare_digest(form_data.username, AUTH_USERNAME) and hmac.compare_digest(form_data.password, AUTH_PASSWORD)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     expires_in = JWT_EXPIRY_MINUTES * 60
     access_token = create_access_token(data={"sub": form_data.username})
     return TokenResponse(access_token=access_token, expires_in=expires_in)
-

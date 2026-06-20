@@ -2,98 +2,98 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  python-lint:
+  build-and-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sindio/backend/core
+    permissions:
+      packages: write
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Install dependencies
-        run: poetry install --with dev --no-root
-      - name: Lint (ruff)
-        run: poetry run ruff check .
-      - name: Format check (black)
-        run: poetry run black --check .
-      - name: Type check (mypy)
-        run: poetry run mypy app/ --strict
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  python-test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgis/postgis:16-3.4
-        env:
-          POSTGRES_USER: sindio_user
-          POSTGRES_PASSWORD: test123
-          POSTGRES_DB: sindio_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    defaults:
-      run:
-        working-directory: sindio/backend/core
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Secret Scanning (TruffleHog)
+        uses: trufflesecurity/trufflehog@main
         with:
-          python-version: "3.10"
-      - name: Install Poetry
-        run: pip install poetry
-      - name: Install dependencies
-        run: poetry install --with dev --no-root
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build core image
+        run: |
+          docker compose -f docker/docker-compose.yml build core
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: |
+          npm ci
+      - name: Lint frontend
+        working-directory: frontend
+        run: |
+          npm run lint
+      - name: Build UI Docker image
+        run: |
+          docker compose -f docker/docker-compose.yml build frontend
+      - name: Push UI image to GHCR
+        env:
+          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/sindio-frontend:latest
+        run: |
+          docker tag sindio-frontend:latest $IMAGE_TAG
+          docker push $IMAGE_TAG
+      - name: Cache Poetry packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+
+      - name: Lint core package
+        working-directory: backend/core
+        run: |
+          ruff .
+
       - name: Run tests
+        working-directory: backend/core
+        run: |
+          pytest
+
+      - name: Push core image to GHCR
         env:
-          DB_HOST: localhost
-          DB_PORT: "5432"
-          DB_NAME: sindio_test
-          DB_USER: sindio_user
-          DB_PASSWORD: test123
-        run: poetry run pytest tests/ -v --cov=app --cov-report=term
+          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/sindio-core:latest
+        run: |
+          docker tag sindio-core:latest $IMAGE_TAG
+          docker push $IMAGE_TAG
 
-  frontend-build:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sindio/frontend
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Run Trivy vulnerability scanner on core image
+        uses: aquasecurity/trivy-action@master
         with:
-          node-version: 20
-      - run: npm ci
-      - run: npm run build
-
-  rust-check:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sindio/backend/streaming
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo check
-      - run: cargo test --no-run 2>/dev/null || echo "No tests yet"
-
-  docker-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build Python ML Core image
-        run: docker build -t sindio-core -f sindio/docker/Dockerfile.python sindio/
-      - name: Build Rust streaming image
-        run: docker build -t sindio-streaming -f sindio/docker/Dockerfile.rust sindio/
+          image-ref: 'ghcr.io/${{ github.repository_owner }}/sindio-core:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'

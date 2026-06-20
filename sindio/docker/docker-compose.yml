@@ -1,21 +1,25 @@
-version: "3.9"
+
 
 services:
   # ============================================================
   # PostgreSQL 16 + PostGIS + TimescaleDB
   # ============================================================
   postgres:
+    user: ${NON_ROOT_UID:-1000}
     build:
       context: ./postgres
       dockerfile: Dockerfile
-    container_name: sindio-postgres
+    env_file:
+      - ../.env
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER:-sindio_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: ${DB_NAME:-sindio}
+    secrets:
+      - db_password
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ../backend/migrations:/docker-entrypoint-initdb.d:ro
@@ -32,7 +36,9 @@ services:
   # Qdrant — Vector Database (RAG embeddings)
   # ============================================================
   qdrant:
-    image: qdrant/qdrant:v1.9.4
+    image: qdrant/qdrant:latest
+    env_file:
+      - ../.env
     container_name: sindio-qdrant
     restart: unless-stopped
     ports:
@@ -42,7 +48,7 @@ services:
       - qdrantdata:/qdrant/storage
     environment:
       QDRANT__SERVICE__GRPC_PORT: "6334"
-      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?QDRANT_API_KEY must be set in .env}
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY}
       QDRANT__LOG_LEVEL: INFO
     healthcheck:
       test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/6333"]
@@ -57,7 +63,10 @@ services:
   # Redis — Celery broker + caching layer
   # ============================================================
   redis:
+    env_file:
+      - ../.env
     image: redis:7-alpine
+    user: ${NON_ROOT_UID:-1000}
     container_name: sindio-redis
     restart: unless-stopped
     ports:
@@ -65,7 +74,7 @@ services:
     command: >
       redis-server
         --appendonly yes
-        --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set in .env}
+        --requirepass sindio_redis_local
         --maxmemory 512mb
         --maxmemory-policy allkeys-lru
         --save 900 1
@@ -73,7 +82,7 @@ services:
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "sindio_redis_local", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -82,24 +91,110 @@ services:
       - sindio_net
 
   # ============================================================
+  core:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.python
+    container_name: sindio-core
+    restart: unless-stopped
+    ports:
+      - "8080:8081"
+    env_file:
+      - ../.env
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      QDRANT_HOST: qdrant
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+      MINIO_HOST: minio
+      AWS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+      - minio
+      - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - sindio_net
+
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.python
+    container_name: sindio-celery-worker
+    restart: unless-stopped
+    command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=info"]
+    env_file:
+      - ../.env
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      QDRANT_HOST: qdrant
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+      MINIO_HOST: minio
+      AWS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - sindio_net
+
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.python
+    container_name: sindio-celery-beat
+    restart: unless-stopped
+    command: ["celery", "-A", "app.worker.celery_app", "beat", "--loglevel=info"]
+    env_file:
+      - ../.env
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      QDRANT_HOST: qdrant
+      ELASTICSEARCH_HOST: http://elasticsearch:9200
+      MINIO_HOST: minio
+      AWS_ENDPOINT_URL: http://localstack:4566
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - sindio_net
+  # ============================================================
   # MinIO — S3-compatible satellite / raster imagery storage
   # ============================================================
   minio:
     image: minio/minio:RELEASE.2024-03-21T23-13-43Z
+    user: ${NON_ROOT_UID:-1000}
     container_name: sindio-minio
+    env_file:
+      - ../.env
     restart: unless-stopped
     command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER:?MINIO_USER must be set in .env}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:?MINIO_PASSWORD must be set in .env}
-      MINIO_DEFAULT_BUCKETS: sindio-satellite-imagery,sindio-gis-rasters
     volumes:
+      - ./docker/certs:/certs:ro
       - miniodata:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+      MINIO_DEFAULT_BUCKETS: sindio-satellite-imagery,sindio-gis-rasters
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -109,20 +204,39 @@ services:
 
   # Auto-create default buckets on startup
   minio-init:
+    restart: unless-stopped
     image: minio/mc:latest
-    container_name: sindio-minio-init
+    env_file:
+      - ../.env
     depends_on:
       minio:
         condition: service_healthy
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 ${MINIO_USER:?MINIO_USER must be set in .env} ${MINIO_PASSWORD:?MINIO_PASSWORD must be set in .env};
+      mc alias set local http://minio:9000 minioadmin $${MINIO_PASSWORD};
       mc mb --ignore-existing local/sindio-satellite-imagery;
       mc mb --ignore-existing local/sindio-gis-rasters;
       mc anonymous set download local/sindio-gis-rasters;
       echo 'MinIO buckets created.';
       exit 0
       "
+    networks:
+      - sindio_net
+
+  # ============================================================
+  # Frontend UI – Vite built image
+  # ============================================================
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    image: sindio-frontend:latest
+    container_name: sindio-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - core
     networks:
       - sindio_net
 
@@ -135,9 +249,11 @@ services:
     restart: unless-stopped
     ports:
       - "5050:80"
+    env_file:
+      - ../.env
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@sindio.urban}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:?PGADMIN_PASSWORD must be set in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: "False"
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
@@ -185,6 +301,7 @@ services:
 
   # Auto-create SQS queues on startup
   localstack-init:
+    restart: unless-stopped
     image: amazon/aws-cli:latest
     container_name: sindio-localstack-init
     depends_on:
@@ -210,6 +327,8 @@ services:
   # Elasticsearch — Hybrid text search for alerts
   # ============================================================
   elasticsearch:
+    env_file:
+      - ../.env
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
     container_name: sindio-elasticsearch
     restart: unless-stopped
@@ -219,7 +338,7 @@ services:
     environment:
       discovery.type: single-node
       xpack.security.enabled: "${ELASTICSEARCH_SECURITY:-true}"
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?ELASTIC_PASSWORD must be set in .env or set ELASTICSEARCH_SECURITY=false}
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
       ES_JAVA_OPTS: "-Xms512m -Xmx512m"
     volumes:
       - esdata:/usr/share/elasticsearch/data
@@ -265,3 +384,7 @@ networks:
   sindio_net:
     name: sindio_net
     driver: bridge
+
+secrets:
+  db_password:
+    environment: "DB_PASSWORD"

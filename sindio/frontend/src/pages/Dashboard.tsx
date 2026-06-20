@@ -61,13 +61,13 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true)
     const promises = [
-      fetch(`/api/dashboard/metrics?system=${activeSystem}`)
+      fetch(`/api/v1/dashboard/metrics?system=${activeSystem}`)
         .then(r => r.ok ? r.json() : Promise.reject())
         .catch(() => []),
-      fetch('/api/dashboard/alerts')
+      fetch('/api/v1/dashboard/alerts')
         .then(r => r.ok ? r.json() : Promise.reject())
         .catch(() => []),
-      fetch(`/api/infrastructure/${activeSystem}`)
+      fetch(`/api/v1/infrastructure/${activeSystem}`)
         .then(r => r.ok ? r.json() : Promise.reject())
         .catch(() => null),
     ]

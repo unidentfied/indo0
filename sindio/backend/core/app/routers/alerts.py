@@ -2,7 +2,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Query
 
-from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
+from app.services.monitor import get_all_configs, get_config
+from app.database import get_engine
+from sqlalchemy import text
 
 router = APIRouter()
 
@@ -12,24 +14,44 @@ def get_alerts(
     infra_type: Optional[str] = Query(None, description="Filter by infrastructure type"),
     limit: int = Query(10, ge=1, le=100),
 ):
-    configs = [get_config(infra_type)] if infra_type else get_all_configs()
+    engine = get_engine()
+    query = """
+        SELECT id, created_at as timestamp, category, infrastructure_type, asset_id,
+               severity, recommended_action, location
+        FROM alerts
+    """
+    params = {}
+    if infra_type:
+        query += " WHERE infrastructure_type = :infra"
+        params["infra"] = infra_type
+        
+    query += " ORDER BY severity DESC, created_at DESC LIMIT :limit"
+    params["limit"] = limit
+
     alerts = []
-    for cfg in configs:
-        monitor = InfrastructureMonitor(cfg.name)
-        result = monitor.run(force_mock=False)
-        for asset in result.assets[: max(2, limit // len(configs))]:
-            level = "critical" if asset.stress >= 0.8 else "warning" if asset.stress >= 0.5 else "advisory"
-            alerts.append({
-                "id": f"ALT-{asset.asset_id}",
-                "timestamp": result.timestamp,
-                "level": level,
-                "category": cfg.name,
-                "title": f"{cfg.display_name}: {asset.failure_mode or 'stress detected'} on {asset.asset_id}",
-                "description": asset.recommendation or f"Stress: {asset.stress:.1%} at {asset.ward}",
-                "location": asset.ward,
-                "confidence": asset.confidence,
-                "data_sources_used": [asset.data_source] if asset.data_source else ["simulation"],
-            })
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(query), params)
+            for row in result:
+                level = "critical" if row.severity >= 0.8 else "warning" if row.severity >= 0.5 else "advisory"
+                alerts.append({
+                    "id": f"ALT-{row.id}",
+                    "timestamp": row.timestamp.isoformat() if row.timestamp else "",
+                    "level": level,
+                    "category": row.infrastructure_type or row.category,
+                    "title": f"{row.category}: Stress detected on {row.asset_id}",
+                    "description": row.recommended_action or f"Severity: {row.severity}",
+                    "location": row.location or "",
+                    "confidence": 1.0,
+                    "data_sources_used": ["database"],
+                })
+    except Exception as e:
+        # Fallback if DB is empty or table doesn't exist yet
+        return [
+            {"id": "ALT-ERR", "timestamp": "", "level": "advisory", "category": "system",
+             "title": "Database connection or query failed", "description": str(e),
+             "location": "", "confidence": 1.0, "data_sources_used": []},
+        ]
 
     if not alerts:
         return [
@@ -38,5 +60,4 @@ def get_alerts(
              "location": "", "confidence": 1.0, "data_sources_used": []},
         ]
 
-    alerts.sort(key=lambda a: a["level"] == "critical", reverse=True)
-    return alerts[:limit]
+    return alerts

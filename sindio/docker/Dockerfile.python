@@ -1,20 +1,38 @@
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
 
+# ---------- Builder ----------
+FROM python:3.11-slim AS builder
 WORKDIR /app
 
+# Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc g++ libpq-dev libgeos-dev proj-bin proj-data libproj-dev && \
-    rm -rf /var/lib/apt/lists/*
+    gcc g++ libpq-dev libgeos-dev proj-bin proj-data libproj-dev gdal-bin libgdal-dev \
+    && rm -rf /var/lib/apt/lists/*
+ENV POETRY_HTTP_TIMEOUT=3600 PIP_DEFAULT_TIMEOUT=1200
 
-COPY backend/core/pyproject.toml ./
+# Install Poetry
 RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --only main
+    poetry config installer.max-workers 1
 
+# Copy project files for dependency installation
+COPY backend/core/pyproject.toml ./
+COPY backend/core/poetry.lock ./
+RUN POETRY_HTTP_TIMEOUT=1800 poetry config virtualenvs.create false &&     poetry install --only main
+
+# Copy application source
 COPY backend/core/ .
 COPY models/ /app/models
 COPY data/ /app/data
 
+# ---------- Runtime ----------
+FROM python:3.11-slim AS runtime
+WORKDIR /app
+
+# Copy only the required runtime artifacts
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /app /app
+
+# Create non‑root user and set ownership
 RUN adduser --disabled-password --gecos '' sindio && chown -R sindio:sindio /app
 USER sindio
 

@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.auth import require_auth
+from app.auth import optional_auth
 
 from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
 
@@ -26,7 +26,7 @@ class SimulationResponse(BaseModel):
 
 
 @router.post("/run", response_model=SimulationResponse)
-async def run_simulation(request: SimulationRequest, _auth: dict = Depends(require_auth)):
+async def run_simulation(request: SimulationRequest, _auth: dict = Depends(optional_auth)):
     try:
         config = get_config(request.network)
     except KeyError:

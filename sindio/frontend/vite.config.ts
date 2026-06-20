@@ -4,32 +4,13 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 4000,
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: process.env.VITE_API_URL || 'http://localhost:8081',
         changeOrigin: true,
         ws: true,
-      },
-      '/api/v1/monitor': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
-      },
-      '/api/v1/next_updates': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
-      },
-      '/api/simulations': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
-      },
-      '/health': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/metrics': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
       },
     },
   },

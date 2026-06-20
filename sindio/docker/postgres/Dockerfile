@@ -20,6 +20,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN echo "shared_preload_libraries = 'timescaledb'" >> /usr/share/postgresql/postgresql.conf.sample
+
+# Ensure TimescaleDB extension is created on first init
 RUN echo "CREATE EXTENSION IF NOT EXISTS timescaledb;" >> /docker-entrypoint-initdb.d/001_init.sql
 
 ENV POSTGRES_USER=${POSTGRES_USER}

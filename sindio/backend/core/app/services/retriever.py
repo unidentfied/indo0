@@ -79,15 +79,9 @@ def _get_qdrant() -> Any:
 
 
 def _get_pg_conn():
-    """Return a raw psycopg2 connection (caller must close)."""
-    import psycopg2
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        dbname=os.getenv("DB_NAME", "sindio"),
-        user=os.getenv("DB_USER", "sindio_user"),
-        password=os.getenv("DB_PASSWORD", ""),
-    )
+    """Return a raw connection from the SQLAlchemy pool (caller must close)."""
+    from app.database import get_engine
+    return get_engine().raw_connection()
 
 
 # ---------------------------------------------------------------------------

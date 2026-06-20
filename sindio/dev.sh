@@ -14,7 +14,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-BACKEND_DIR="$SCRIPT_DIR/backend/app"
+BACKEND_DIR="$SCRIPT_DIR/backend/core/app"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 VENV_PYTHON="/tmp/sindio-venv/bin/python3"
 
@@ -42,11 +42,11 @@ trap cleanup INT TERM
 
 start_backend() {
   echo "──────────────────────────────────────"
-  echo " Sindio Backend  → http://localhost:8080"
-  echo " API docs        → http://localhost:8080/docs"
+  echo " Sindio Backend  → http://localhost:${CORE_PORT:-8080}"
+  echo " API docs        → http://localhost:${CORE_PORT:-8080}/docs"
   echo "──────────────────────────────────────"
   cd "$SCRIPT_DIR/backend"
-  "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+  "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port ${CORE_PORT:-8080} --reload
 }
 
 start_frontend() {

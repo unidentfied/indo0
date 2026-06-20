@@ -1,14 +1,26 @@
 import json
 import os
-import structlog
-from contextlib import asynccontextmanager
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
+from fastapi.staticfiles import StaticFiles
+from slowapi.util import get_remote_address
+
+import structlog
 from fastapi.middleware.cors import CORSMiddleware
+
+structlog.configure(
+    processors=[structlog.processors.JSONRenderer()],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+)
+logger = structlog.get_logger()
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable is required")
+
 
 from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard
 from app.auth import auth_router, require_auth, optional_auth
@@ -24,28 +36,11 @@ DB_CONFIG = {
     "connect_timeout": 3,
 }
 
+
+
+
 if not DB_CONFIG["password"]:
-    raise RuntimeError("DB_PASSWORD environment variable is required")
-
-structlog.configure(
-    processors=[
-        structlog.stdlib.filter_by_level,
-        structlog.stdlib.add_logger_name,
-        structlog.stdlib.add_log_level,
-        structlog.stdlib.PositionalArgumentsFormatter(),
-        structlog.processors.TimeStamper(fmt="iso"),
-        structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        structlog.processors.UnicodeDecoder(),
-        structlog.dev.ConsoleRenderer(),
-    ],
-    context_class=dict,
-    logger_factory=structlog.PrintLoggerFactory(),
-    wrapper_class=structlog.stdlib.BoundLogger,
-    cache_logger_on_first_use=True,
-)
-
-logger = structlog.get_logger("sindio.core")
+    raise RuntimeError("DB_PASSWORD environment variable is required for database connectivity")
 
 
 @asynccontextmanager
@@ -57,7 +52,8 @@ async def lifespan(app: FastAPI):
     logger.info("Sindio Core stopped")
 
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+REDIS_URL = f"redis://{(':' + os.getenv('REDIS_PASSWORD') + '@') if os.getenv('REDIS_PASSWORD') else ''}{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1"
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"], storage_uri=REDIS_URL)
 app = FastAPI(
     title="Sindio Core",
     description="Python ML core for predictive urban planning simulations",
@@ -90,12 +86,17 @@ model_registry = ModelRegistry()
 
 app.include_router(health.router, prefix="/health")
 app.include_router(auth_router, prefix="/auth")
-app.include_router(simulations.router, prefix="/api/simulations")
-app.include_router(infrastructure.router, prefix="/api/infrastructure")
-app.include_router(dashboard.router, prefix="/api")
-app.include_router(alerts.router, prefix="/api")
+app.include_router(simulations.router, prefix="/api/v1/simulations")
+
+app.include_router(infrastructure.router, prefix="/api/v1/infrastructure")
+
+app.include_router(dashboard.router, prefix="/api/v1")
+
+app.include_router(alerts.router, prefix="/api/v1")
+
 app.include_router(schedule.router)
-app.include_router(monitor.router)
+app.mount("/static", StaticFiles(directory="../../frontend/dist", html=True), name="static")
+
 
 
 @app.get("/metrics")
@@ -114,9 +115,10 @@ async def health_ready():
     deps["models_loaded"] = len(model_registry.models) > 0
 
     try:
-        import psycopg2
-        conn = psycopg2.connect(**DB_CONFIG)
-        conn.close()
+        from app.database import get_engine
+        from sqlalchemy import text
+        with get_engine().connect() as conn:
+            conn.execute(text("SELECT 1"))
         deps["postgres"] = "ok"
     except Exception as exc:
         logger.warning("Postgres health check failed", error=str(exc))

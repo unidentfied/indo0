@@ -38,8 +38,12 @@ logger = get_task_logger(__name__)
 # ──────────────────────────────────────────────────────────────
 # Celery app
 # ──────────────────────────────────────────────────────────────
-CELERY_BROKER = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
+_redis_pw = os.getenv("REDIS_PASSWORD", "sindio_redis_local")
+_redis_host = os.getenv("REDIS_HOST", "localhost")
+_redis_port = os.getenv("REDIS_PORT", "6379")
+
+CELERY_BROKER = os.getenv("CELERY_BROKER_URL", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/0")
+CELERY_BACKEND = os.getenv("CELERY_RESULT_BACKEND", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/1")
 
 app = Celery(
     "sindio_inference",

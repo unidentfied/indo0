@@ -66,3 +66,4 @@ logs/
 
 # OS
 Thumbs.db
+docker/secrets/

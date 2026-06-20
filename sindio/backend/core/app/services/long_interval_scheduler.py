@@ -40,8 +40,12 @@ logger = logging.getLogger("sindio.long_scheduler")
 # Celery app
 # ======================================================================
 
-CELERY_BROKER = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/2")
+_redis_pw = os.getenv("REDIS_PASSWORD", "sindio_redis_local")
+_redis_host = os.getenv("REDIS_HOST", "localhost")
+_redis_port = os.getenv("REDIS_PORT", "6379")
+
+CELERY_BROKER = os.getenv("CELERY_BROKER_URL", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/0")
+CELERY_BACKEND = os.getenv("CELERY_RESULT_BACKEND", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/2")
 
 long_app = Celery(
     "sindio_long_scheduler",
@@ -140,9 +144,8 @@ def _get_db_url() -> str:
 
 def _init_schedule_table() -> None:
     """Idempotent table creation."""
-    import psycopg2
-
-    conn = psycopg2.connect(_get_db_url())
+    from app.database import get_engine
+    conn = get_engine().raw_connection()
     try:
         with conn.cursor() as cur:
             cur.execute("""
@@ -178,8 +181,8 @@ def _init_schedule_table() -> None:
 
 
 def _pg_conn():
-    import psycopg2
-    return psycopg2.connect(_get_db_url())
+    from app.database import get_engine
+    return get_engine().raw_connection()
 
 
 # ======================================================================
@@ -514,16 +517,8 @@ def run_stress_test_for_type(
 
 
 # ======================================================================
-# Celery Beat schedule
+# Celery Beat schedule (Centralized in worker.py)
 # ======================================================================
-
-long_app.conf.beat_schedule = {
-    "long-dispatcher": {
-        "task": "sindio.long_dispatcher",
-        "schedule": timedelta(minutes=DISPatCH_TICK_MINUTES),
-        "options": {"queue": "sindio_long_interval"},
-    },
-}
 
 # ======================================================================
 # API helper — used by /api/v1/next_updates

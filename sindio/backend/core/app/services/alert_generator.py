@@ -372,9 +372,10 @@ class AlertGenerator:
             return 0
 
         try:
-            from sqlalchemy import create_engine, text
+            from app.database import get_engine
+            from sqlalchemy import text
 
-            engine = create_engine(self.db_url)
+            engine = get_engine()
             count = 0
 
             with engine.begin() as conn:
@@ -495,9 +496,10 @@ class AlertGenerator:
     def _fetch_latest_simulations(self) -> Dict[str, Dict[str, Any]]:
         """Fetch the most recent simulation results per asset."""
         try:
-            from sqlalchemy import create_engine, text
+            from app.database import get_engine
+            from sqlalchemy import text
 
-            engine = create_engine(self.db_url)
+            engine = get_engine()
             with engine.connect() as conn:
                 rows = conn.execute(
                     text("""
@@ -534,9 +536,10 @@ class AlertGenerator:
     ) -> Dict[str, Dict[str, Any]]:
         """Fetch simulation results from `since` for delta comparison."""
         try:
-            from sqlalchemy import create_engine, text
+            from app.database import get_engine
+            from sqlalchemy import text
 
-            engine = create_engine(self.db_url)
+            engine = get_engine()
             with engine.connect() as conn:
                 rows = conn.execute(
                     text("""
@@ -564,9 +567,10 @@ class AlertGenerator:
     def _fetch_last_classifications(self) -> Dict[str, Dict[str, Any]]:
         """Fetch the second-most-recent classification per asset for change detection."""
         try:
-            from sqlalchemy import create_engine, text
+            from app.database import get_engine
+            from sqlalchemy import text
 
-            engine = create_engine(self.db_url)
+            engine = get_engine()
             with engine.connect() as conn:
                 rows = conn.execute(
                     text("""
@@ -597,9 +601,10 @@ class AlertGenerator:
     def _fetch_last_alert_timestamps(self) -> Dict[str, datetime]:
         """Fetch most recent alert timestamp per asset for temporal spacing."""
         try:
-            from sqlalchemy import create_engine, text
+            from app.database import get_engine
+            from sqlalchemy import text
 
-            engine = create_engine(self.db_url)
+            engine = get_engine()
             with engine.connect() as conn:
                 rows = conn.execute(
                     text("""
@@ -641,11 +646,16 @@ def _get_alert_app():
     except ImportError:
         return None
 
-    broker = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    _redis_pw = os.getenv("REDIS_PASSWORD", "sindio_redis_local")
+    _redis_host = os.getenv("REDIS_HOST", "localhost")
+    _redis_port = os.getenv("REDIS_PORT", "6379")
+    broker = os.getenv("CELERY_BROKER_URL", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/0")
+    backend = os.getenv("CELERY_RESULT_BACKEND", f"redis://:{_redis_pw}@{_redis_host}:{_redis_port}/2")
+
     app = Celery(
         "sindio_alert_gen",
         broker=broker,
-        backend=os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/2"),
+        backend=backend,
         task_serializer="json",
         accept_content=["json"],
     )
@@ -653,13 +663,6 @@ def _get_alert_app():
         task_default_queue="sindio_alerts",
         timezone="Africa/Nairobi",
         enable_utc=True,
-        beat_schedule={
-            "poll-simulation-outputs": {
-                "task": "sindio.generate_alerts",
-                "schedule": timedelta(minutes=5),
-                "options": {"queue": "sindio_alerts"},
-            },
-        },
     )
     return app
 
