@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BarChart3, ChevronDown, ChevronUp, Info, ExternalLink } from 'lucide-react'
 import type { ClassificationSummary, ClassificationType } from '../types'
+import { api } from '../services/api'
 import { InfraIcon } from './InfraIcons'
 
 const typeColors: Record<ClassificationType, string> = {
@@ -70,8 +71,7 @@ export default function ClassificationPanel() {
   const [examplesLoading, setExamplesLoading] = useState(false)
 
   useEffect(() => {
-    fetch('/api/v1/monitor/classification')
-      .then(r => r.ok ? r.json() : null)
+    api.monitor.classification()
       .then(d => { setSummaries(d?.summaries || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
@@ -79,8 +79,7 @@ export default function ClassificationPanel() {
   useEffect(() => {
     if (!selectedClass) return
     setExamplesLoading(true)
-    fetch(`/api/v1/monitor/classification/examples?infra_type=${selectedClass.infraType}&classification_type=${selectedClass.classType}&limit=5`)
-      .then(r => r.ok ? r.json() : null)
+    api.monitor.classificationExamples(selectedClass.infraType, selectedClass.classType, 5)
       .then(d => { setExamples(d?.examples || []); setExamplesLoading(false) })
       .catch(() => setExamplesLoading(false))
   }, [selectedClass])

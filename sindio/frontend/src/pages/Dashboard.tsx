@@ -11,6 +11,7 @@ import MonitorOverview from '../components/MonitorOverview'
 import ScheduleStatus from '../components/ScheduleStatus'
 import ClassificationPanel from '../components/ClassificationPanel'
 import type { Metric, Alert, SimulationResult, InfrastructureStatus, SimulationSummary } from '../types'
+import { api } from '../services/api'
 import { Gauge, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react'
 
 const infraTitles: Record<string, string> = {
@@ -60,19 +61,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     setLoading(true)
-    const promises = [
-      fetch(`/api/v1/dashboard/metrics?system=${activeSystem}`)
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .catch(() => []),
-      fetch('/api/v1/dashboard/alerts')
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .catch(() => []),
-      fetch(`/api/v1/infrastructure/${activeSystem}`)
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .catch(() => null),
-    ]
-
-    Promise.all(promises).then(([m, a, i]) => {
+    Promise.all([
+      api.dashboard.metrics(activeSystem).catch(() => []),
+      api.dashboard.alerts().catch(() => []),
+      api.infrastructure.status(activeSystem).catch(() => null),
+    ]).then(([m, a, i]) => {
       setMetrics(m)
       setAlerts(a)
       setInfra(i)

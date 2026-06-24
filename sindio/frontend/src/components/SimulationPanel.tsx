@@ -12,11 +12,8 @@ import {
 import type { SimulateResponse, SimulateTaskStatus, ScenarioGenerateResponse, SimulationSummary } from '../types'
 import { isOnline } from '../services/swRegister'
 import { enqueueSimulation, getPendingSimulations, removeSimulation } from '../services/offlineStore'
+import { api } from '../services/api'
 import infraIcons from './InfraIcons'
-
-const SIM_RUN_URL = '/api/v1/simulate/run'
-const SIM_STATUS_URL = (id: string) => `/api/v1/simulate/status/${id}`
-const SCENARIO_URL = '/api/v1/scenario/generate'
 
 interface SimulationPanelProps {
   onSimulationComplete?: (summary: SimulationSummary, result: SimulateTaskStatus['result']) => void
@@ -142,23 +139,14 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
     }
 
     try {
-      const res = await fetch(SIM_RUN_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const data: SimulateResponse = await res.json()
+      const data = await api.v1.simulateRun(payload)
       setTaskId(data.task_id)
       setSimState('running')
 
       // Poll for progress
       pollRef.current = setInterval(async () => {
         try {
-          const statusRes = await fetch(SIM_STATUS_URL(data.task_id))
-          if (!statusRes.ok) return
-          const status: SimulateTaskStatus = await statusRes.json()
+          const status = await api.v1.simulateStatus(data.task_id)
           setProgress(status.progress)
 
           if (status.status === 'completed' || status.status === 'success') {
@@ -213,43 +201,17 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
     setScenarioResult(null)
 
     try {
-      const res = await fetch(SCENARIO_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: scenarioPrompt }),
-      })
-
-      if (res.ok) {
-        const data: ScenarioGenerateResponse = await res.json()
-        setScenarioResult(data)
-        setYear(data.year)
-        setDensityGrowth(data.density_growth_rate)
-        setSelectedTypes(new Set(data.infrastructure_types))
-      } else {
-        // Fallback: mock RAG response
-        const mock: ScenarioGenerateResponse = {
-          year: 2032,
-          density_growth_rate: 14,
-          infrastructure_types: ['power', 'water', 'roads', 'solid_waste'],
-          explanation: 'Based on similar urban expansion patterns in rapidly growing African cities (Lagos 2023, Addis Ababa 2025), high-density growth compounds stress on primary power corridors and water distribution networks. The 2032 projection aligns with Nairobi Metro 2030 development targets.',
-          similar_scenarios: [
-            { name: 'Lagos Lekki Corridor 2023', year: 2023, density_growth: 12, similarity: 0.87 },
-            { name: 'Addis Ababa Bole District 2025', year: 2025, density_growth: 15, similarity: 0.82 },
-            { name: 'Nairobi Upper Hill 2024', year: 2024, density_growth: 10, similarity: 0.91 },
-          ],
-        }
-        setScenarioResult(mock)
-        setYear(mock.year)
-        setDensityGrowth(mock.density_growth_rate)
-        setSelectedTypes(new Set(mock.infrastructure_types))
-      }
+      const data = await api.v1.scenarioGenerate(scenarioPrompt)
+      setScenarioResult(data as ScenarioGenerateResponse)
+      setYear((data as ScenarioGenerateResponse).year)
+      setDensityGrowth((data as ScenarioGenerateResponse).density_growth_rate)
+      setSelectedTypes(new Set((data as ScenarioGenerateResponse).infrastructure_types))
     } catch {
-      // Mock fallback
       const mock: ScenarioGenerateResponse = {
         year: 2032,
         density_growth_rate: 14,
         infrastructure_types: ['power', 'water', 'roads', 'solid_waste'],
-        explanation: 'RAG analysis of similar urban expansion scenarios suggests elevated stress on power and water infrastructure at 14% annual density growth projected through 2032.',
+        explanation: 'Based on similar urban expansion patterns in rapidly growing African cities (Lagos 2023, Addis Ababa 2025), high-density growth compounds stress on primary power corridors and water distribution networks. The 2032 projection aligns with Nairobi Metro 2030 development targets.',
         similar_scenarios: [
           { name: 'Lagos Lekki Corridor 2023', year: 2023, density_growth: 12, similarity: 0.87 },
           { name: 'Addis Ababa Bole District 2025', year: 2025, density_growth: 15, similarity: 0.82 },

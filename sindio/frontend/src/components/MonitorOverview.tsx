@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Gauge } from 'lucide-react'
+import { api, type MonitorStressResponse } from '../services/api'
 import infraIcons from './InfraIcons'
 
 interface PerTypeSummary {
@@ -41,9 +42,8 @@ export default function MonitorOverview() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/v1/monitor/stress')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { setData(d); setLoading(false) })
+    api.monitor.stress()
+      .then(d => { setData(d as unknown as MonitorData); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
 

@@ -10,10 +10,9 @@ import {
   Clock,
 } from 'lucide-react'
 import type { AlertV1, NextUpdate } from '../types'
+import { api } from '../services/api'
 import infraIcons from './InfraIcons'
 
-const REST_URL = '/api/v1/alerts'
-const UPDATES_URL = '/api/v1/next_updates'
 const PAGE_SIZE = 20
 
 // ---------------------------------------------------------------------------
@@ -107,17 +106,11 @@ export default function AlertFeed() {
   const fetchData = useCallback(async () => {
     try {
       const [alertsRes, updatesRes] = await Promise.all([
-        fetch(REST_URL),
-        fetch(UPDATES_URL),
+        api.v1.alerts(),
+        api.v1.nextUpdates(),
       ])
-      if (alertsRes.ok) {
-        const data = await alertsRes.json()
-        setAlerts(data.alerts || [])
-      }
-      if (updatesRes.ok) {
-        const data = await updatesRes.json()
-        setUpdates(data.updates || [])
-      }
+      setAlerts(alertsRes?.alerts || [])
+      setUpdates(updatesRes?.updates || [])
     } catch {
       // keep current state on fetch failure
     } finally {

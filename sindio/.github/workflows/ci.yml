@@ -53,6 +53,10 @@ jobs:
         working-directory: frontend
         run: |
           npm run lint
+      - name: Run frontend tests
+        working-directory: frontend
+        run: |
+          npm run test
       - name: Build UI Docker image
         run: |
           docker compose -f docker/docker-compose.yml build frontend
@@ -62,6 +66,42 @@ jobs:
         run: |
           docker tag sindio-frontend:latest $IMAGE_TAG
           docker push $IMAGE_TAG
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      - name: Lint Go API
+        working-directory: backend/api
+        run: |
+          go vet ./...
+      - name: Test Go API
+        working-directory: backend/api
+        run: |
+          go test ./... -v
+
+      - name: Cache Rust crates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backend/streaming/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('backend/streaming/Cargo.lock') }}
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Check Rust compile
+        working-directory: backend/streaming
+        run: |
+          cargo check --all-targets
+      - name: Test Rust
+        working-directory: backend/streaming
+        run: |
+          cargo test
+      - name: Build streaming Docker image
+        run: |
+          docker compose -f docker/docker-compose.yml build streaming
+
       - name: Cache Poetry packages
         uses: actions/cache@v4
         with:
@@ -69,7 +109,6 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
-
 
       - name: Lint core package
         working-directory: backend/core

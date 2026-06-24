@@ -17,43 +17,26 @@ logger = structlog.get_logger()
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-JWT_SECRET = os.getenv("JWT_SECRET")
-if not JWT_SECRET:
-    raise RuntimeError("JWT_SECRET environment variable is required")
-
+from .config import config
 
 from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard
 from app.auth import auth_router, require_auth, optional_auth
 from app.services.data_quality_metrics import registry as dq_registry
 from app.services.model_registry import ModelRegistry
 
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-    "dbname": os.getenv("DB_NAME", "sindio"),
-    "user": os.getenv("DB_USER", "sindio_user"),
-    "password": os.getenv("DB_PASSWORD"),
-    "connect_timeout": 3,
-}
-
-
-
-
-if not DB_CONFIG["password"]:
-    raise RuntimeError("DB_PASSWORD environment variable is required for database connectivity")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting Sindio Core", port=int(os.getenv("CORE_PORT", "8081")))
-    await model_registry.load_models()
+    logger.info("Starting Sindio Core", port=config.port)
+    try:
+        await model_registry.load_models()
+    except Exception:
+        logger.warning("Model registry loading failed — running with heuristics only")
     yield
     await model_registry.unload_models()
     logger.info("Sindio Core stopped")
 
 
-REDIS_URL = f"redis://{(':' + os.getenv('REDIS_PASSWORD') + '@') if os.getenv('REDIS_PASSWORD') else ''}{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1"
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"], storage_uri=REDIS_URL)
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"], storage_uri=config.redis_url)
 app = FastAPI(
     title="Sindio Core",
     description="Python ML core for predictive urban planning simulations",
@@ -62,6 +45,12 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Global exception handler for unexpected errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error("Unhandled exception", exc_info=exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,6 +84,7 @@ app.include_router(dashboard.router, prefix="/api/v1")
 app.include_router(alerts.router, prefix="/api/v1")
 
 app.include_router(schedule.router)
+app.include_router(monitor.router)
 app.mount("/static", StaticFiles(directory="../../frontend/dist", html=True), name="static")
 
 

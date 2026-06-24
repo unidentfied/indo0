@@ -64,6 +64,9 @@ docker/volumes/
 *.log
 logs/
 
+# Vendored dependencies (should use proper pip installs)
+backend/app/.deps/
+
 # OS
 Thumbs.db
 docker/secrets/

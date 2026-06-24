@@ -1,11 +1,13 @@
 from fastapi import APIRouter, HTTPException
 
 from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
+from fastapi import Depends, Path
+from ..dependencies.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.get("")
+@router.get("", dependencies=[Depends(get_current_user)])
 def get_all():
     return {
         "systems": [
@@ -26,8 +28,8 @@ def get_all():
     }
 
 
-@router.get("/{system}")
-def get_infrastructure(system: str):
+@router.get("/{system}", dependencies=[Depends(get_current_user)])
+def get_infrastructure(system: str = Path(..., regex="^[a-z0-9_-]+$")):
     try:
         config = get_config(system)
     except KeyError:
@@ -50,8 +52,8 @@ def get_infrastructure(system: str):
         "grid_stability": round(100 * (1 - avg_stress), 1),
         "current_load": f"{round(config.default_capacity * avg_stress, 1)} {config.unit}",
         "active_nodes": result.assets[0].current_value if result.assets else config.default_asset_count,
-        "latency_ms": 12,
-        "region": "Central District",
+        "latency_ms": 12,  # TODO: replace with real latency metric
+        "region": "Central District",  # TODO: move to config per system
         "capacity_percent": round(100 * (1 - avg_stress), 1),
         "stressed_nodes": stressed_count,
         "critical_nodes": critical_count,

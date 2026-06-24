@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CalendarClock } from 'lucide-react'
+import { api } from '../services/api'
 import infraIcons from './InfraIcons'
 
 interface UpdateEntry {
@@ -43,8 +44,7 @@ export default function ScheduleStatus() {
   const [, setTick] = useState(0)
 
   useEffect(() => {
-    fetch('/api/v1/next_updates')
-      .then(r => r.ok ? r.json() : null)
+    api.v1.nextUpdates()
       .then(d => {
         setEntries(d?.updates || [])
         setLoading(false)

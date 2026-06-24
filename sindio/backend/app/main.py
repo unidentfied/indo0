@@ -38,7 +38,7 @@ app.include_router(api_router, prefix="/api")
 # ── Optional proxy to ML Core (port 8081) for health/metrics ─────
 
 _CORE_URL = os.getenv("CORE_URL", "http://localhost:8081")
-_USE_CORE = os.getenv("SINDIO_USE_CORE", "0") == "1"
+_USE_CORE = os.getenv("SINDIO_USE_CORE", "1") == "1"
 
 
 async def _proxy_optional(request: Request, path: str):
@@ -81,8 +81,6 @@ async def health_ready():
             password=os.getenv("DB_PASSWORD", ""),
             connect_timeout=3,
         )
-        if not os.getenv("DB_PASSWORD"):
-            raise RuntimeError("DB_PASSWORD environment variable is required")
         conn.close()
         deps["postgres"] = "ok"
     except Exception:

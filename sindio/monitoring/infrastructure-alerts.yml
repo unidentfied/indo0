@@ -1,0 +1,115 @@
+groups:
+  - name: sindio-infrastructure
+    interval: 30s
+    rules:
+      # ── Alert: rapid increase in fallback events across any infra type ──
+      - alert: SindioFallbackRateSpike
+        expr: rate(data_quality_fallback_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "Fallback rate spiking for {{ $labels.infrastructure_type }} ({{ $labels.source }})"
+          description: >
+            Infrastructure "{{ $labels.infrastructure_type }}" has fallback rate
+            of {{ $value | humanize }}/s from source "{{ $labels.source }}".
+            Real data fetches may be failing.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+
+      # ── Alert: no real data fetches for an infra type in 2 hours ──
+      - alert: SindioNoRealData
+        expr: increase(data_quality_real_fetch_total[2h]) == 0
+        for: 0m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "No real data fetches for {{ $labels.infrastructure_type }} in 2h"
+          description: >
+            Infrastructure "{{ $labels.infrastructure_type }}" has not fetched
+            any real data from source "{{ $labels.source }}" in the last 2 hours.
+            All requests are being served from mock data.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+
+      # ── Alert: model confidence drops below 0.50 for any type ──
+      - alert: SindioModelConfidenceCritical
+        expr: data_quality_model_confidence < 0.50
+        for: 15m
+        labels:
+          severity: critical
+          team: sindio
+        annotations:
+          summary: "Model confidence below 50% for {{ $labels.infrastructure_type }}"
+          description: >
+            Model confidence for "{{ $labels.infrastructure_type }}" is
+            {{ $value | humanizePercentage }}. Predictions are unreliable.
+            Consider retraining or checking input data quality.
+          dashboard: "/d/sindio-data-quality/sindio-data-quality-monitor"
+
+  - name: sindio-api-gateway
+    interval: 30s
+    rules:
+      # ── Alert: high 5xx error rate on Go API gateway ──
+      - alert: SindioHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: sindio
+        annotations:
+          summary: "5xx error rate > 5% on {{ $labels.job }}"
+          description: >
+            API service "{{ $labels.job }}" is returning elevated 5xx errors
+            ({{ $value | humanize }}/s). Check downstream service health.
+          dashboard: "/d/sindio-api-gateway/sindio-api-overview"
+
+      # ── Alert: p95 latency > 5 seconds ──
+      - alert: SindioHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "p95 latency > 5s on {{ $labels.job }} ({{ $labels.path }})"
+          description: >
+            API endpoint "{{ $labels.path }}" has p95 latency of {{ $value }}s.
+            Check backend service response times and database query performance.
+          dashboard: "/d/sindio-api-gateway/sindio-api-overview"
+
+      # ── Alert: total request rate anomaly (too low = possible outage) ──
+      - alert: SindioLowTraffic
+        expr: rate(http_requests_total[10m]) < 0.01
+        for: 15m
+        labels:
+          severity: warning
+          team: sindio
+        annotations:
+          summary: "Request rate near zero on {{ $labels.job }} for 15 minutes"
+          description: >
+            API service "{{ $labels.job }}" is receiving almost no traffic.
+            Possible DNS or load balancer misconfiguration.
+          dashboard: "/d/sindio-api-gateway/sindio-api-overview"
+
+  - name: sindio-recording-rules
+    interval: 60s
+    rules:
+      # ── 1-hour average mock ratio for trending ──
+      - record: data_quality_mock_fallback_ratio:avg1h
+        expr: avg_over_time(data_quality_mock_fallback_ratio[1h])
+
+      # ── 5-minute rate of real fetches ──
+      - record: data_quality_real_fetch_total:rate5m
+        expr: rate(data_quality_real_fetch_total[5m])
+
+      # ── 5-minute rate of fallback events ──
+      - record: data_quality_fallback_total:rate5m
+        expr: rate(data_quality_fallback_total[5m])
+
+      # ── p50 and p99 latency by endpoint ──
+      - record: http_request_duration_seconds:p50
+        expr: histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))
+
+      - record: http_request_duration_seconds:p99
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))

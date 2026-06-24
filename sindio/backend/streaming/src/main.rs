@@ -10,7 +10,7 @@ use metrics_exporter_prometheus::PrometheusBuilder;
 use serde::{Deserialize, Serialize};
 use std::sync::{
     atomic::{AtomicU64, Ordering},
-    Arc,
+    Arc, OnceLock,
 };
 use tokio::sync::broadcast;
 use tokio::signal;
@@ -18,9 +18,9 @@ use tower_http::cors::CorsLayer;
 use tracing::{error, info};
 use uuid::Uuid;
 
-lazy_static::lazy_static! {
-    static ref METRICS_HANDLE: metrics_exporter_prometheus::PrometheusHandle =
-        PrometheusBuilder::new().install_recorder().expect("failed to install recorder");
+fn metrics_handle() -> &'static metrics_exporter_prometheus::PrometheusHandle {
+    static HANDLE: OnceLock<metrics_exporter_prometheus::PrometheusHandle> = OnceLock::new();
+    HANDLE.get_or_init(|| PrometheusBuilder::new().install_recorder().expect("failed to install recorder"))
 }
 
 fn record_real_fetch(infra_type: &str, source: &str) {
@@ -161,7 +161,7 @@ async fn stream_status(State(state): State<Arc<AppState>>) -> Json<serde_json::V
 }
 
 async fn metrics_endpoint() -> String {
-    METRICS_HANDLE.render()
+    metrics_handle().render()
 }
 
 #[cfg(test)]

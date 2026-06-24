@@ -19,8 +19,10 @@ COPY backend/core/pyproject.toml ./
 COPY backend/core/poetry.lock ./
 RUN POETRY_HTTP_TIMEOUT=1800 poetry config virtualenvs.create false &&     poetry install --only main
 
-# Copy application source
-COPY backend/core/ .
+# Copy application source (explicit — excludes dev artifacts, tests, data)
+COPY backend/core/app/ ./app/
+COPY backend/core/pyproject.toml ./
+COPY backend/core/poetry.lock ./
 COPY models/ /app/models
 COPY data/ /app/data
 

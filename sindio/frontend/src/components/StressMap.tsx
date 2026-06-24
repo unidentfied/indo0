@@ -10,6 +10,7 @@ import type { MapRef } from 'react-map-gl/maplibre'
 import { ZoomIn, ZoomOut, Home } from 'lucide-react'
 import MapLegend from './MapLegend'
 import StressDrawer from './StressDrawer'
+import { api } from '../services/api'
 import type { AssetDetail, GridCellFeature, WaterMainLine } from '../types'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -139,8 +140,7 @@ export default function StressMap() {
     const activeSystem = searchParams.get('system') || 'power'
     setPointsLoading(true)
 
-    fetch(`/api/v1/spatial/stress-points?infrastructure_type=${activeSystem}&limit=60`)
-      .then(r => r.ok ? r.json() : null)
+    api.spatial.stressPoints(activeSystem, 60)
       .then(data => {
         if (data?.features) {
           setStressPoints(mapGeoJsonToPoints(data.features))
@@ -153,8 +153,7 @@ export default function StressMap() {
   // Fetch grid cells for the grid layer
   useEffect(() => {
     const activeSystem = searchParams.get('system') || 'power'
-    fetch(`/api/v1/spatial/stress-heatmap?bbox=36.65,-1.43,37.10,-0.98&infrastructure_type=${activeSystem}`)
-      .then(r => r.json())
+    api.spatial.stressHeatmap(activeSystem, '36.65,-1.43,37.10,-0.98')
       .then(data => { if (data?.features) setGridCells(data.features) })
       .catch(() => {})
   }, [searchParams])

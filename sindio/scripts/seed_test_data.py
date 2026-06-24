@@ -27,13 +27,18 @@ NAIROBI_BBOX = {
     "lng_max": 37.1000,
 }
 
-SYSTEM_TYPES = ["power", "water", "road"]
+SYSTEM_TYPES = ["power", "water", "roads", "solid_waste", "sidewalks", "lrt", "sgr", "airports"]
 METRICS = {
-    "power": [("voltage_kv", "kV"), ("current_a", "A"), ("temperature_c", "°C")],
-    "water": [("pressure_psi", "PSI"), ("flow_rate", "m³/h"), ("quality_ph", "pH")],
-    "road": [("speed_kmh", "km/h"), ("congestion_pct", "%"), ("vehicle_count", "vehicles")],
+    "power":       [("voltage_kv", "kV"), ("current_a", "A"), ("temperature_c", "°C")],
+    "water":       [("pressure_psi", "PSI"), ("flow_rate", "m³/h"), ("quality_ph", "pH")],
+    "roads":       [("speed_kmh", "km/h"), ("congestion_pct", "%"), ("vehicle_count", "vehicles")],
+    "solid_waste": [("collection_pct", "%"), ("bin_fill_pct", "%"), ("route_efficiency", "ratio")],
+    "sidewalks":   [("pedestrian_flow", "ppl/h"), ("surface_condition", "index"), ("width_m", "m")],
+    "lrt":         [("headway_min", "min"), ("ridership", "ppl/h"), ("on_time_pct", "%")],
+    "sgr":         [("freight_tonnes", "tonnes/h"), ("track_condition", "index"), ("delay_min", "min")],
+    "airports":    [("flight_delay_min", "min"), ("passenger_flow", "ppl/h"), ("gate_occupancy", "%")],
 }
-SEVERITY_LEVELS = ["critical", "warning", "advisory", "info"]
+SEVERITY_LEVELS = ["critical", "warning", "advisory"]
 CATEGORIES = ["electricity", "water", "roads", "traffic", "utilities"]
 
 LANDMARKS = [

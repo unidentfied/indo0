@@ -9,3 +9,4 @@ numpy>=1.24
 redis>=4.5
 prometheus-client>=0.20.0
 beautifulsoup4>=4.12.0
+psycopg2-binary>=2.9.9
