@@ -158,8 +158,6 @@ export default function AlertFeed() {
     return Array.from(set).sort()
   }, [alerts])
 
-  // --- visible alerts ---
-  const visibleAlerts = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount])
   const hasMore = visibleCount < filtered.length
 
   // --- toggle accordion ---
@@ -177,7 +175,7 @@ export default function AlertFeed() {
   }
 
   // --- type label ---
-  const typeLabel = (t: string) => {
+  const typeLabel = (t: string): string => {
     switch (t) {
       case 'power': return 'Power Systems'
       case 'water': return 'Water Grid'

@@ -2,6 +2,10 @@ import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Sun, Moon, Maximize, Minimize } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 
+function prefetchDashboard() {
+  import('../pages/Dashboard')
+}
+
 function readStoredTheme(): 'dark' | 'light' | null {
   try {
     const stored = window.localStorage?.getItem('theme')
@@ -109,7 +113,7 @@ export default function Navbar() {
             >
               {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>
-            <Link to="/dashboard" className="btn-primary text-sm">
+            <Link to="/dashboard" className="btn-primary text-sm" onMouseEnter={prefetchDashboard}>
               Launch Dashboard
             </Link>
           </div>
@@ -145,7 +149,7 @@ export default function Navbar() {
             {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
-          <Link to="/dashboard" className="btn-primary w-full justify-center mt-2">
+          <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard}>
             Launch Dashboard
           </Link>
         </div>

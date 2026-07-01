@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Gauge } from 'lucide-react'
-import { api, type MonitorStressResponse } from '../services/api'
+import { api } from '../services/api'
 import infraIcons from './InfraIcons'
 
 interface PerTypeSummary {

@@ -5,14 +5,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { api } from './api'
 
 describe('api client', () => {
-  let fetchSpy: ReturnType<typeof vi.spyOn>
+  let fetchSpy: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    fetchSpy = vi.spyOn(globalThis, 'fetch')
+    fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
   })
 
   afterEach(() => {
-    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('health returns status', async () => {
@@ -41,7 +42,7 @@ describe('api client', () => {
     )
 
     const result = await api.dashboard.metrics()
-    expect(result.power).toBeDefined()
+    expect(Array.isArray(result)).toBe(true)
     expect(fetchSpy).toHaveBeenCalledWith('/api/v1/dashboard/metrics', expect.any(Object))
   })
 

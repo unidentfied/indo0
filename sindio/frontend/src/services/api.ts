@@ -1,18 +1,50 @@
 const API_BASE = '/api'
+const REQUEST_TIMEOUT = 8000
+
+const pending = new Map<string, Promise<unknown>>()
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const key = `${options?.method || 'GET'}:${path}`
+
+  if (pending.has(key)) {
+    return pending.get(key) as Promise<T>
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
+  const promise = fetch(`${API_BASE}${path}`, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
+    signal: controller.signal,
     ...options,
   })
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`API ${res.status} on ${path}: ${body}`)
-  }
-  return res.json()
+    .then(async (res) => {
+      if (!res.ok) {
+        const body = await res.text()
+        throw new Error(`API ${res.status} on ${path}: ${body}`)
+      }
+      return res.json() as T
+    })
+    .finally(() => {
+      clearTimeout(timeoutId)
+      pending.delete(key)
+    })
+
+  pending.set(key, promise)
+  return promise
 }
 
 export type InfraType = 'power' | 'water' | 'roads' | 'solid_waste' | 'sidewalks' | 'lrt' | 'sgr' | 'airports'
+
+import type {
+  Metric,
+  AlertsV1Response,
+  NextUpdatesResponse,
+  SimulateTaskStatus,
+  InfrastructureStatus,
+  ClassificationResponse,
+  Alert as TypesAlert,
+} from '../types'
 
 export interface DashboardMetrics {
   power: { load_mw: number; redundancy: number; stress_index: number }
@@ -38,19 +70,6 @@ export interface SimulationResult {
   failure_risk: 'low' | 'medium' | 'high'
   recommendation: string
   status: string
-}
-
-export interface SimulateTaskStatus {
-  task_id: string
-  status: string
-  progress: number
-  result?: {
-    total_alerts_generated?: number
-    alerts_by_type?: Record<string, number>
-    stress_geojson?: Record<string, unknown>
-    summary_text?: string
-    recommendation?: string
-  }
 }
 
 export interface MonitorStressResponse {
@@ -92,46 +111,17 @@ export interface GeoJsonFeature {
   properties: Record<string, unknown>
 }
 
-export interface AlertsEnvelope {
-  alerts: Alert[]
-}
-
-export interface UpdatesEnvelope {
-  updates: {
-    infrastructure_type: string
-    next_update_seconds: number
-    data_freshness_seconds: number
-    source: string
-  }[]
-}
-
-export interface ClassificationEnvelope {
-  summaries: {
-    class_type: string
-    count: number
-    infra_type: string
-  }[]
-}
-
-export interface ExamplesEnvelope {
-  examples: {
-    asset_id: string
-    class_type: string
-    confidence: number
-  }[]
-}
-
 export const api = {
   health: () => request<{ status: string }>('/health'),
 
   dashboard: {
     metrics: (system?: string) =>
-      request<DashboardMetrics>(`/v1/dashboard/metrics${system ? `?system=${system}` : ''}`),
-    alerts: () => request<Alert[]>('/v1/dashboard/alerts'),
+      request<Metric[]>(`/v1/dashboard/metrics${system ? `?system=${system}` : ''}`),
+    alerts: () => request<TypesAlert[]>('/v1/dashboard/alerts'),
   },
 
   infrastructure: {
-    status: (system: string) => request<Record<string, unknown>>(`/v1/infrastructure/${system}`),
+    status: (system: string) => request<InfrastructureStatus | null>(`/v1/infrastructure/${system}`),
   },
 
   simulations: {
@@ -143,9 +133,9 @@ export const api = {
   monitor: {
     stress: () => request<MonitorStressResponse>('/v1/monitor/stress'),
     types: () => request<string[]>('/v1/monitor/types'),
-    classification: () => request<ClassificationEnvelope>('/v1/monitor/classification'),
+    classification: () => request<ClassificationResponse>('/v1/monitor/classification'),
     classificationExamples: (infraType: string, classType: string, limit = 5) =>
-      request<ExamplesEnvelope>(
+      request<{ examples: { asset_id: string; class_type: string; confidence: number; ward: string; stress_ml: number; failure_mode: string; recommendation: string; spearman_rho: number | null; recurrence_pct: number | null; density_pct: number | null; dominant_period_hours: number | null; updated_at: string }[] }>(
         `/v1/monitor/classification/examples?infra_type=${infraType}&classification_type=${classType}&limit=${limit}`,
       ),
   },
@@ -162,8 +152,8 @@ export const api = {
   },
 
   v1: {
-    alerts: () => request<AlertsEnvelope>('/v1/alerts'),
-    nextUpdates: () => request<UpdatesEnvelope>('/v1/next_updates'),
+    alerts: () => request<AlertsV1Response>('/v1/alerts'),
+    nextUpdates: () => request<NextUpdatesResponse>('/v1/next_updates'),
     simulateRun: (payload: Record<string, unknown>) =>
       request<SimulationResult>('/v1/simulate/run', {
         method: 'POST',

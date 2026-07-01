@@ -1,48 +1,18 @@
 import { Link } from 'react-router-dom'
-import { Map, Plus, Minus } from 'lucide-react'
-import { useState } from 'react'
+import { Map } from 'lucide-react'
 
 const resources = [
   { label: 'Privacy Policy', href: '/privacy' },
   { label: 'Cookie Policy', href: '/cookies' },
   { label: 'Terms & Conditions', href: '/terms' },
-  { label: 'Service Status', href: '/status' },
 ]
 
 const company = [
-  { label: 'Careers', href: '/careers' },
+  { label: 'People', href: '/people' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'Contact Us', href: '/contact' },
-  { label: 'Press', href: '/press' },
-  { label: 'About', href: '/about' },
-]
-
-const faqItems = [
-  {
-    q: 'What infrastructure types does Sindio monitor?',
-    a: 'Sindio supports eight infrastructure types through a single unified registry: power grids, water networks, road systems, solid waste collection, pedestrian sidewalks, light rail transit (LRT), standard gauge railway (SGR), and airport operations. Each type uses the same parameterized monitoring pipeline with configurable thresholds, physics engines, and data sources.',
-  },
-  {
-    q: 'How does stress classification work?',
-    a: 'Sindio employs long-window classification combining STL seasonal decomposition and rolling Spearman rank correlation across up to 18 months of TimescaleDB hypertable data. Assets are classified as recurring-only, density-driven, mixed, or unstable — enabling targeted intervention strategies.',
-  },
-  {
-    q: 'What happens when a data source becomes unavailable?',
-    a: 'Every component includes graceful degradation. If PostGIS, Kafka, or an external API is unreachable, the system falls back to configurable synthetic data while tracking the mock-data ratio via Prometheus metrics. An alert triggers when fallback exceeds 10% for more than one hour.',
-  },
-  {
-    q: 'Is Sindio suitable for cities other than Nairobi?',
-    a: 'The unified registry and parameterized infrastructure monitor are designed for any dense urban environment. The current deployment is calibrated for Nairobi with local GIS boundaries, WorldPop raster data, and region-specific planning documents — the core engine is location-agnostic.',
-  },
-  {
-    q: 'What physics engines are integrated?',
-    a: 'Power grid simulations use pandapower. Water networks use EPANET hydraulic models. Road networks use a modified cell-transmission model. Infrastructure types without dedicated physics engines use configurable heuristic stress calculations.',
-  },
 ]
 
 export default function Footer() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null)
-
   return (
     <footer className="border-t border-sindio-border bg-sindio-panel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -53,7 +23,7 @@ export default function Footer() {
               <span className="text-lg font-bold text-sindio-accent">Sindio</span>
             </Link>
             <p className="text-sindio-muted text-sm leading-relaxed max-w-xs">
-              Predictive infrastructure modelling for dense urban environments. Real-time stress monitoring across eight infrastructure types, unified under a single parameterized pipeline.
+              Predictive infrastructure modelling and stress monitoring aimed at Nairobi. Eight systems, one unified pipeline.
             </p>
           </div>
           <div>
@@ -90,48 +60,8 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* FAQ — Accordion */}
-        <div className="mt-16 pt-10 border-t border-sindio-border">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-8">
-            Frequently Asked Questions
-          </h4>
-          <div className="max-w-3xl">
-            {faqItems.map((item, i) => (
-              <div
-                key={i}
-                className="border-b border-sindio-border/50 last:border-b-0"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between py-4 text-left group"
-                >
-                  <span className="text-sm font-medium text-white group-hover:text-sindio-accent transition-colors pr-4">
-                    {item.q}
-                  </span>
-                  <span className="flex-shrink-0 text-sindio-muted group-hover:text-sindio-accent transition-colors">
-                    {openFaq === i ? (
-                      <Minus className="w-4 h-4" />
-                    ) : (
-                      <Plus className="w-4 h-4" />
-                    )}
-                  </span>
-                </button>
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    openFaq === i ? 'max-h-96 pb-4' : 'max-h-0'
-                  }`}
-                >
-                  <p className="text-sm text-sindio-muted leading-relaxed">
-                    {item.a}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         <div className="mt-16 pt-8 border-t border-sindio-border text-xs text-sindio-muted">
-          COPYRIGHT &copy; 2026 SINDIO.AI ALL RIGHTS RESERVED.
+          COPYRIGHT &copy; 2026 SINDIO.NET ALL RIGHTS RESERVED.
         </div>
       </div>
     </footer>

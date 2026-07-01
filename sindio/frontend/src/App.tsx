@@ -4,7 +4,11 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import LandingPage from './pages/LandingPage'
-import PlaceholderPage from './pages/PlaceholderPage'
+import FAQPage from './pages/FAQPage'
+import PeoplePage from './pages/PeoplePage'
+import PrivacyPage from './pages/PrivacyPage'
+import CookiesPage from './pages/CookiesPage'
+import TermsPage from './pages/TermsPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -25,19 +29,11 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              
-              {/* Auxiliary Footer Routes */}
-              <Route path="/privacy" element={<PlaceholderPage title="Privacy Policy" />} />
-              <Route path="/cookies" element={<PlaceholderPage title="Cookie Policy" />} />
-              <Route path="/terms" element={<PlaceholderPage title="Terms & Conditions" />} />
-              <Route path="/status" element={<PlaceholderPage title="Service Status" />} />
-              <Route path="/careers" element={<PlaceholderPage title="Careers" />} />
-              <Route path="/faq" element={<PlaceholderPage title="Frequently Asked Questions" />} />
-              <Route path="/contact" element={<PlaceholderPage title="Contact Us" />} />
-              <Route path="/press" element={<PlaceholderPage title="Press" />} />
-              <Route path="/about" element={<PlaceholderPage title="About Sindio" />} />
-              
-              {/* Fallback */}
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/cookies" element={<CookiesPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/people" element={<PeoplePage />} />
+              <Route path="/faq" element={<FAQPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>

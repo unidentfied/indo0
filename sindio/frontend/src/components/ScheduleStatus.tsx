@@ -15,11 +15,6 @@ const CRITICAL_INTERVALS: Record<string, number> = {
   sidewalks: 90, lrt: 20, sgr: 45, airports: 60,
 }
 
-const CRITICAL_THRESHOLDS: Record<string, number> = {
-  power: 0.8, water: 0.75, roads: 0.7, solid_waste: 0.8,
-  sidewalks: 0.7, lrt: 0.65, sgr: 0.6, airports: 0.7,
-}
-
 function fmtSec(s: number): string {
   if (s < 60) return `${s}s`
   if (s < 3600) return `${Math.round(s / 60)}m`
@@ -96,7 +91,6 @@ export default function ScheduleStatus() {
               const e = entries.find(x => x.update_type === t)
               if (!e) return null
               const critInt = CRITICAL_INTERVALS[t] || 60
-              const threshold = CRITICAL_THRESHOLDS[t] || 0.7
               const nextIn = countdownStr(e.next_at)
               const isNear = new Date(e.next_at).getTime() - Date.now() < critInt * 1000
               return (

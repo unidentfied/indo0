@@ -25,3 +25,6 @@ sindio/backend/api/api
 
 # Image/asset directories
 imagg/
+
+# Local Netlify folder
+.netlify

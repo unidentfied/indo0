@@ -18,4 +18,15 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'deck-gl': ['@deck.gl/react', '@deck.gl/layers', '@deck.gl/aggregation-layers'],
+          maplibre: ['maplibre-gl'],
+          recharts: ['recharts'],
+        },
+      },
+    },
+  },
 })

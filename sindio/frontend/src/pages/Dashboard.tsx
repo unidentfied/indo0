@@ -1,18 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import MetricCard from '../components/MetricCard'
 import AlertPanel from '../components/AlertPanel'
-import SimulationChart from '../components/SimulationChart'
-import StressMap from '../components/StressMap'
-import SimulationPanel from '../components/SimulationPanel'
-import AlertFeed from '../components/AlertFeed'
-import MonitorOverview from '../components/MonitorOverview'
-import ScheduleStatus from '../components/ScheduleStatus'
-import ClassificationPanel from '../components/ClassificationPanel'
 import type { Metric, Alert, SimulationResult, InfrastructureStatus, SimulationSummary } from '../types'
 import { api } from '../services/api'
 import { Gauge, AlertTriangle, AlertOctagon, Loader2 } from 'lucide-react'
+
+const StressMap = lazy(() => import('../components/StressMap'))
+const SimulationChart = lazy(() => import('../components/SimulationChart'))
+const SimulationPanel = lazy(() => import('../components/SimulationPanel'))
+const MonitorOverview = lazy(() => import('../components/MonitorOverview'))
+const ScheduleStatus = lazy(() => import('../components/ScheduleStatus'))
+const AlertFeed = lazy(() => import('../components/AlertFeed'))
+const ClassificationPanel = lazy(() => import('../components/ClassificationPanel'))
+
+function SkeletonBlock({ className = '' }: { className?: string }) {
+  return <div className={`panel animate-pulse bg-sindio-panel ${className}`}>
+    <div className="p-4 border-b border-sindio-border">
+      <div className="h-4 w-32 bg-sindio-border rounded" />
+    </div>
+    <div className="p-4 space-y-3">
+      <div className="h-3 w-full bg-sindio-border rounded" />
+      <div className="h-3 w-3/4 bg-sindio-border rounded" />
+      <div className="h-3 w-1/2 bg-sindio-border rounded" />
+    </div>
+  </div>
+}
 
 const infraTitles: Record<string, string> = {
   power: 'Power System Analysis',
@@ -38,39 +52,35 @@ const infraDescriptions: Record<string, string> = {
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [activeSystem, setActiveSystem] = useState(searchParams.get('system') || 'power')
+  const activeSystem = searchParams.get('system') || 'power'
+
+  const setActiveSystem = (system: string) => {
+    setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('system', system); return n }, { replace: true })
+  }
+
   const [metrics, setMetrics] = useState<Metric[]>([])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [simulation, setSimulation] = useState<SimulationResult | undefined>()
   const [infra, setInfra] = useState<InfrastructureStatus | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [simLoading, setSimLoading] = useState(false)
-
-  // Sync URL → state (Navbar tabs use Link which changes URL directly)
-  useEffect(() => {
-    const fromUrl = searchParams.get('system')
-    if (fromUrl) {
-      setActiveSystem(prev => fromUrl !== prev ? fromUrl : prev)
-    }
-  }, [searchParams, setActiveSystem])
-
-  // Sync state → URL (Sidebar calls onSelect which sets state directly)
-  useEffect(() => {
-    setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('system', activeSystem); return n })
-  }, [activeSystem])
+  const [metricsReady, setMetricsReady] = useState(false)
+  const [alertsReady, setAlertsReady] = useState(false)
 
   useEffect(() => {
-    setLoading(true)
-    Promise.all([
-      api.dashboard.metrics(activeSystem).catch(() => []),
-      api.dashboard.alerts().catch(() => []),
-      api.infrastructure.status(activeSystem).catch(() => null),
-    ]).then(([m, a, i]) => {
-      setMetrics(m)
-      setAlerts(a)
-      setInfra(i)
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    setMetricsReady(false)
+    setAlertsReady(false)
+    setInfra(null)
+
+    api.dashboard.metrics(activeSystem)
+      .then(m => { setMetrics(m); setMetricsReady(true) })
+      .catch(() => setMetricsReady(true))
+
+    api.dashboard.alerts()
+      .then(a => { setAlerts(a); setAlertsReady(true) })
+      .catch(() => setAlertsReady(true))
+
+    api.infrastructure.status(activeSystem)
+      .then(i => setInfra(i))
+      .catch(() => {})
   }, [activeSystem])
 
   const handleSimulationComplete = (summary: SimulationSummary, result: SimulationResult | null) => {
@@ -83,34 +93,24 @@ export default function Dashboard() {
         ...prev,
       ])
     }
-    setSimLoading(false)
   }
 
   const riskAlerts = alerts.filter(a => a.level !== 'advisory').slice(0, 3)
   const showAlertFeed = activeSystem === 'alerts'
   const title = infraTitles[activeSystem] || 'Infrastructure Analysis'
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-sindio-dark">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 text-sindio-accent animate-spin" />
-          <span className="text-sm text-sindio-muted">Loading {infraTitles[activeSystem] || 'dashboard'}...</span>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-1 w-full">
       <Sidebar activeSystem={activeSystem} onSelect={setActiveSystem} />
       {showAlertFeed ? (
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl">
-          <AlertFeed />
+        <main className="flex-1 p-4 sm:p-6 lg:p-6 max-w-6xl">
+          <Suspense fallback={<SkeletonBlock className="h-96" />}>
+            <AlertFeed />
+          </Suspense>
         </main>
       ) : (
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+        <main className="flex-1 p-6 sm:p-8 lg:p-12">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold mb-2">{title}</h1>
               <p className="text-sindio-muted text-sm max-w-xl">
@@ -135,14 +135,27 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {metrics.map(m => <MetricCard key={m.label} metric={m} />)}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {metricsReady
+              ? metrics.map(m => <MetricCard key={m.label} metric={m} />)
+              : Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="panel p-4 animate-pulse">
+                    <div className="h-3 w-16 bg-sindio-border rounded mb-2" />
+                    <div className="h-6 w-24 bg-sindio-border rounded mb-1" />
+                    <div className="h-3 w-12 bg-sindio-border rounded" />
+                  </div>
+                ))
+            }
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
             <div className="xl:col-span-1 space-y-4">
-              <SimulationPanel onSimulationComplete={handleSimulationComplete} />
-              <MonitorOverview />
+              <Suspense fallback={<SkeletonBlock />}>
+                <SimulationPanel onSimulationComplete={handleSimulationComplete} />
+              </Suspense>
+              <Suspense fallback={<SkeletonBlock />}>
+                <MonitorOverview />
+              </Suspense>
               <div className="panel">
                 <div className="p-4 border-b border-sindio-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -152,20 +165,33 @@ export default function Dashboard() {
                   <span className="text-[10px] bg-sindio-critical/10 text-sindio-critical px-2 py-0.5 rounded uppercase font-bold">{riskAlerts.length} Active</span>
                 </div>
                 <div className="divide-y divide-sindio-border">
-                  {riskAlerts.map(a => (
-                    <div key={a.id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-0.5 ${a.level === 'critical' ? 'text-sindio-critical' : 'text-sindio-warning'}`}>
-                          {a.level === 'critical' ? <AlertOctagon className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                  {alertsReady
+                    ? riskAlerts.map(a => (
+                        <div key={a.id} className="p-4">
+                          <div className="flex items-start gap-3">
+                            <div className={`mt-0.5 ${a.level === 'critical' ? 'text-sindio-critical' : 'text-sindio-warning'}`}>
+                              {a.level === 'critical' ? <AlertOctagon className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-medium mb-1">{a.title}</h4>
+                              <p className="text-xs text-sindio-muted">{a.description}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-medium mb-1">{a.title}</h4>
-                          <p className="text-xs text-sindio-muted">{a.description}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  {riskAlerts.length === 0 && (
+                      ))
+                      : Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="p-4 animate-pulse">
+                            <div className="flex items-start gap-3">
+                              <div className="w-4 h-4 bg-sindio-border rounded mt-0.5" />
+                              <div className="flex-1 space-y-2">
+                                <div className="h-4 w-32 bg-sindio-border rounded" />
+                                <div className="h-3 w-full bg-sindio-border rounded" />
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                  }
+                  {alertsReady && riskAlerts.length === 0 && (
                     <div className="p-4 text-xs text-sindio-muted text-center">No active critical or warning alerts.</div>
                   )}
                 </div>
@@ -187,21 +213,43 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <StressMap />
+              <Suspense fallback={
+                <div className="panel h-[500px] lg:h-[600px] flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-sindio-accent animate-spin" />
+                </div>
+              }>
+                <StressMap />
+              </Suspense>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
             <div className="xl:col-span-2">
-              <SimulationChart result={simulation} />
+              <Suspense fallback={<SkeletonBlock className="h-52" />}>
+                <SimulationChart result={simulation} />
+              </Suspense>
             </div>
             <div className="space-y-6">
-              <AlertPanel alerts={alerts} />
-              <ScheduleStatus />
+              {alertsReady
+                ? <AlertPanel alerts={alerts} />
+                : <div className="panel p-6 animate-pulse">
+                    <div className="h-4 w-24 bg-sindio-border rounded mb-3" />
+                    <div className="space-y-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="h-8 bg-sindio-border rounded" />
+                      ))}
+                    </div>
+                  </div>
+              }
+              <Suspense fallback={<SkeletonBlock />}>
+                <ScheduleStatus />
+              </Suspense>
             </div>
           </div>
 
-          <ClassificationPanel />
+          <Suspense fallback={<SkeletonBlock className="h-96" />}>
+            <ClassificationPanel />
+          </Suspense>
         </main>
       )}
     </div>

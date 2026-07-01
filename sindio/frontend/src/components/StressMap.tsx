@@ -131,14 +131,12 @@ export default function StressMap() {
   }, [])
 
   const [stressPoints, setStressPoints] = useState<StressPoint[]>([])
-  const [pointsLoading, setPointsLoading] = useState(true)
   const [waterMains] = useState<WaterMainLine[]>(generateWaterMains)
   const [gridCells, setGridCells] = useState<GridCellFeature[]>([])
 
   // Fetch stress points from backend with infrastructure type filter
   useEffect(() => {
     const activeSystem = searchParams.get('system') || 'power'
-    setPointsLoading(true)
 
     api.spatial.stressPoints(activeSystem, 60)
       .then(data => {
@@ -147,14 +145,13 @@ export default function StressMap() {
         }
       })
       .catch(() => {})
-      .finally(() => setPointsLoading(false))
   }, [searchParams])
 
   // Fetch grid cells for the grid layer
   useEffect(() => {
     const activeSystem = searchParams.get('system') || 'power'
     api.spatial.stressHeatmap(activeSystem, '36.65,-1.43,37.10,-0.98')
-      .then(data => { if (data?.features) setGridCells(data.features) })
+      .then(data => { if (data?.features) setGridCells(data.features as unknown as GridCellFeature[]) })
       .catch(() => {})
   }, [searchParams])
 

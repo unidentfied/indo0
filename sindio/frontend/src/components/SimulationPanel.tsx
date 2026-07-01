@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   WifiOff,
 } from 'lucide-react'
-import type { SimulateResponse, SimulateTaskStatus, ScenarioGenerateResponse, SimulationSummary } from '../types'
+import type { SimulateTaskStatus, ScenarioGenerateResponse, SimulationSummary } from '../types'
 import { isOnline } from '../services/swRegister'
 import { enqueueSimulation, getPendingSimulations, removeSimulation } from '../services/offlineStore'
 import { api } from '../services/api'
@@ -171,7 +171,7 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
                   airports: Math.floor(Math.random() * 2),
                 },
               stress_geojson:
-                result?.stress_geojson ?? generateMockStressGeojson(),
+                (result?.stress_geojson ?? generateMockStressGeojson()) as GeoJSON.FeatureCollection | null,
               summary_text:
                 result?.summary_text ??
                 result?.recommendation ??
@@ -201,11 +201,11 @@ export default function SimulationPanel({ onSimulationComplete }: SimulationPane
     setScenarioResult(null)
 
     try {
-      const data = await api.v1.scenarioGenerate(scenarioPrompt)
-      setScenarioResult(data as ScenarioGenerateResponse)
-      setYear((data as ScenarioGenerateResponse).year)
-      setDensityGrowth((data as ScenarioGenerateResponse).density_growth_rate)
-      setSelectedTypes(new Set((data as ScenarioGenerateResponse).infrastructure_types))
+      const data = await api.v1.scenarioGenerate(scenarioPrompt) as unknown as ScenarioGenerateResponse
+      setScenarioResult(data)
+      setYear(data.year)
+      setDensityGrowth(data.density_growth_rate)
+      setSelectedTypes(new Set(data.infrastructure_types))
     } catch {
       const mock: ScenarioGenerateResponse = {
         year: 2032,

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight, Map, BrainCircuit, Clock, BarChart3, Play,
+  ArrowRight, Map, BrainCircuit, Clock, Play,
   Binary, Wifi, Shield, Database, AlertTriangle, GitBranch,
 } from 'lucide-react'
 
@@ -40,7 +40,7 @@ export default function LandingPage() {
     <div>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-20 pb-24">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sindio-border bg-sindio-panel text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-sindio-accent animate-pulse" />
@@ -75,7 +75,7 @@ export default function LandingPage() {
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="flex items-end justify-between mb-12">
             <div>
               <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Core Architecture</div>
@@ -111,7 +111,7 @@ export default function LandingPage() {
 
       {/* Capability Grid */}
       <section className="border-t border-sindio-border py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-12">
             <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform Capabilities</div>
             <h2 className="text-3xl font-bold mb-4">Built for Urban Engineering at Scale</h2>
@@ -135,7 +135,7 @@ export default function LandingPage() {
 
       {/* Platform Previews */}
       <section className="border-t border-sindio-border py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-12">
             <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform</div>
             <h2 className="text-3xl font-bold mb-4">Three Lenses on Nairobi’s Dynamics</h2>
@@ -189,7 +189,7 @@ export default function LandingPage() {
 
       {/* CTA */}
       <section className="border-t border-sindio-border py-20 bg-sindio-accent/5">
-        <div className="max-w-3xl mx-auto px-4 text-center">
+        <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to engineer the future of your city?</h2>
           <p className="text-sindio-muted mb-8">
             Join the next era of data-driven metropolitan planning and enhance infrastructure resilience.
