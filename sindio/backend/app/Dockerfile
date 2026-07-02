@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /workspace
 
-COPY sindio/backend/app/requirements.txt /workspace/app/requirements.txt
+COPY sindio/backend/requirements.txt /workspace/app/requirements.txt
 RUN pip install --no-cache-dir -r /workspace/app/requirements.txt
 
 COPY sindio/backend/app/ /workspace/app/
@@ -15,4 +15,4 @@ ENV PYTHONPATH=/workspace:.:..
 EXPOSE 8080
 
 WORKDIR /workspace/app
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

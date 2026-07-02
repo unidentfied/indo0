@@ -1,27 +1,78 @@
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-*.egg-info/
-dist/
-build/
-.eggs/
+# Python artifacts
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.egg-info/
+**/dist/
+**/build/
+**/.eggs/
 
-node_modules/
-.git/
-*.log
-.env
-.env.*
+# Node / frontend
+**/node_modules/
+**/frontend/dist/
 
-models/
-data/raw/
-data/processed/
+# Environment / secrets
+**/.env
+**/.env.*
+**/*.local
 
-k8s/
-terraform/
-monitoring/
+# Git / IDE
+**/.git/
+**/.gitignore
+**/.idea/
+**/.vscode/
+**/*.swp
+**/*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+**/*.log
+**/logs/
+
+# Large data / models (anywhere in repo tree)
+**/models/
+**/data/raw/
+**/data/processed/
+**/*.tif
+**/*.shp
+**/*.geojson
+**/*.pbf
+**/*.dbf
+**/*.shx
+**/*.parquet
+**/*.pth
+**/*.safetensors
+**/*.bin
+**/*.npy
+
+# Infrastructure / deployment config (not needed in image)
+**/k8s/
+**/terraform/
+**/monitoring/
 sindio/docker/
-venv/
-.venv/
+
+# Venvs
+**/venv/
+**/.venv/
+
+# Build artifacts from other languages
+**/target/        # Rust
+**/vendor/        # Go
+**/bin/           # Go
+**/.deps/         # vendored Python deps
+
+# Test / dev files (not needed at runtime)
+**/tests/
+**/.python-version
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*
+**/Procfile
+
+# Railway / CI config
+railway.toml
