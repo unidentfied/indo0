@@ -1,0 +1,14 @@
+__pycache__
+*.pyc
+.pytest_cache
+tests/
+node_modules
+.git
+frontend/
+docker/
+k8s/
+terraform/
+monitoring/
+models/
+data/
+*.log

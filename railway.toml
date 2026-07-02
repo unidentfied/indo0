@@ -1,7 +1,6 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "sindio/backend/app/Dockerfile"
+dockerfile = "sindio/backend/app/Dockerfile"
 
 [deploy]
-numReplicas = 1
 healthcheckPath = "/health"
