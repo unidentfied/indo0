@@ -37,9 +37,10 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # Production build uses .env.production; override here if needed
-          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+        # .env.production (committed) provides VITE_API_BASE_URL.
+        # To override per-environment, set a GitHub Variable named VITE_API_BASE_URL.
+        # env:
+        #   VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
 
       - name: Upload build artifact
         if: github.ref == 'refs/heads/main'
