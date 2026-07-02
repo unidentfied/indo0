@@ -22,9 +22,18 @@ app = FastAPI(
     version="0.1.0",
 )
 
+_CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
+if not _CORS_ORIGINS:
+    import logging
+    logging.getLogger("sindio.main").warning(
+        "CORS_ORIGINS is not set. CORS will default to localhost-only. "
+        "Set CORS_ORIGINS in your Railway/Render dashboard to your frontend URL(s)."
+    )
+    _CORS_ORIGINS = "http://localhost:3000"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")],
+    allow_origins=[o.strip() for o in _CORS_ORIGINS.split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,19 +80,23 @@ async def health_ready():
     """Kubernetes readiness probe — checks configured dependencies only."""
     deps = {}
 
-    # Check Postgres only if explicitly configured (not default localhost)
+    # ── Postgres ───────────────────────────────────────────────────
+    database_url = os.getenv("DATABASE_URL")
     db_host = os.getenv("DB_HOST")
-    if db_host and db_host != "localhost":
+    if database_url or (db_host and db_host != "localhost"):
         try:
             import psycopg2
-            conn = psycopg2.connect(
-                host=db_host,
-                port=os.getenv("DB_PORT", "5432"),
-                dbname=os.getenv("DB_NAME", "sindio"),
-                user=os.getenv("DB_USER", "sindio_user"),
-                password=os.getenv("DB_PASSWORD", ""),
-                connect_timeout=3,
-            )
+            if database_url:
+                conn = psycopg2.connect(database_url, connect_timeout=3)
+            else:
+                conn = psycopg2.connect(
+                    host=db_host,
+                    port=os.getenv("DB_PORT", "5432"),
+                    dbname=os.getenv("DB_NAME", "sindio"),
+                    user=os.getenv("DB_USER", "sindio_user"),
+                    password=os.getenv("DB_PASSWORD", ""),
+                    connect_timeout=3,
+                )
             conn.close()
             deps["postgres"] = "ok"
         except Exception:
@@ -91,17 +104,25 @@ async def health_ready():
     else:
         deps["postgres"] = "not_configured"
 
-    # Check Redis only if explicitly configured (not default localhost)
+    # ── Redis ──────────────────────────────────────────────────────
+    redis_url = os.getenv("REDIS_URL")
     redis_host = os.getenv("REDIS_HOST")
-    if redis_host and redis_host != "localhost":
+    if redis_url or (redis_host and redis_host != "localhost"):
         try:
             import redis
-            r = redis.Redis(
-                host=redis_host,
-                port=int(os.getenv("REDIS_PORT", "6379")),
-                password=os.getenv("REDIS_PASSWORD", ""),
-                socket_connect_timeout=3,
-            )
+            if redis_url:
+                r = redis.Redis.from_url(
+                    redis_url,
+                    socket_connect_timeout=3,
+                    socket_timeout=3,
+                )
+            else:
+                r = redis.Redis(
+                    host=redis_host,
+                    port=int(os.getenv("REDIS_PORT", "6379")),
+                    password=os.getenv("REDIS_PASSWORD", ""),
+                    socket_connect_timeout=3,
+                )
             r.ping()
             deps["redis"] = "ok"
         except Exception:
