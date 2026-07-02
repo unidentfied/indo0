@@ -3,8 +3,6 @@ import { Routes, Route } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-import BackendBanner from './components/BackendBanner'
-import { BackendStatusProvider } from './services/BackendStatus'
 import LandingPage from './pages/LandingPage'
 import FAQPage from './pages/FAQPage'
 import PeoplePage from './pages/PeoplePage'
@@ -18,10 +16,8 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 function App() {
   return (
     <ErrorBoundary>
-      <BackendStatusProvider>
-        <div className="min-h-screen bg-sindio-dark text-sindio-text font-sans flex flex-col">
-          <BackendBanner />
-          <Navbar />
+      <div className="min-h-screen bg-sindio-dark text-sindio-text font-sans flex flex-col">
+        <Navbar />
           <div className="flex-1 flex">
             <Suspense
               fallback={
@@ -42,9 +38,8 @@ function App() {
               </Routes>
             </Suspense>
           </div>
-          <Footer />
-        </div>
-      </BackendStatusProvider>
+        <Footer />
+      </div>
     </ErrorBoundary>
   )
 }
