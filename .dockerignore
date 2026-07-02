@@ -34,8 +34,7 @@ Thumbs.db
 **/*.log
 **/logs/
 
-# Large data / models (anywhere in repo tree)
-**/models/
+# Raw / processed GIS data (never needed in images)
 **/data/raw/
 **/data/processed/
 **/*.tif
@@ -45,10 +44,14 @@ Thumbs.db
 **/*.dbf
 **/*.shx
 **/*.parquet
-**/*.pth
+
+# Model training artifacts (not deployed weights)
 **/*.safetensors
-**/*.bin
-**/*.npy
+**/*.onnx
+**/*.h5
+
+# NOTE: trained model weights (.pth, .pt) and embeddings dirs ARE
+# included in the build context — the ML Core Dockerfile copies them.
 
 # Infrastructure / deployment config (not needed in image)
 **/k8s/

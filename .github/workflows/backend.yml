@@ -7,14 +7,16 @@ on:
       - 'sindio/backend/**'
       - '.github/workflows/backend.yml'
       - 'railway.toml'
+      - 'railway.core.toml'
   pull_request:
     branches: [main]
     paths:
       - 'sindio/backend/**'
       - 'railway.toml'
+      - 'railway.core.toml'
 
 jobs:
-  verify:
+  mock-api:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,18 +44,37 @@ jobs:
           python -m py_compile sindio/backend/app/main.py
           python -m py_compile sindio/backend/app/routers/api.py
 
-      - name: Validate Dockerfile
+      - name: Validate Mock API Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: sindio/backend/app/Dockerfile
 
-      - name: Build Docker image (smoke test)
+      - name: Build Mock API Docker image (smoke test)
         run: |
           docker build -f sindio/backend/app/Dockerfile -t sindio-backend:test .
 
-      - name: Run container smoke test
+      - name: Run Mock API container smoke test
         run: |
           docker run -d --name sindio-test -p 8080:8080 -e SINDIO_SKIP_RASTER=1 -e SINDIO_USE_CORE=0 sindio-backend:test
           sleep 5
           curl -f http://localhost:8080/health || (docker logs sindio-test && exit 1)
           docker stop sindio-test
+
+  ml-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate ML Core Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: sindio/backend/core/Dockerfile
+
+      - name: Validate Core config.py syntax
+        run: |
+          python -m py_compile sindio/backend/core/app/config.py
+
+      # NOTE: Full core Docker build is excluded from CI because it installs
+      # torch, transformers, and other heavy ML dependencies (~2-3 GB) and copies
+      # 300 MB of model weights. This exceeds free GitHub Actions time/disk limits.
+      # The build is tested locally and deployed directly via Railway.
