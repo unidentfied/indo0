@@ -40,3 +40,14 @@ def get_engine() -> Engine:
 
 def get_db_url() -> str:
     return os.getenv("DATABASE_URL") or _build_db_url()
+
+
+def init_ingestion_tables() -> None:
+    """Create ingestion tables if they do not exist."""
+    from app.ingestion.models import create_tables
+    db_url = get_db_url()
+    try:
+        create_tables(db_url)
+        logger.info("Ingestion tables verified/created")
+    except Exception as exc:
+        logger.warning("Ingestion table creation skipped: %s", exc)

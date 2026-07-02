@@ -27,10 +27,25 @@ from app.services.model_registry import ModelRegistry
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Sindio Core", port=config.port)
+
+    # Initialize database schema for ingestion
+    from app.database import init_ingestion_tables
+    init_ingestion_tables()
+
     try:
         await model_registry.load_models()
     except Exception:
         logger.warning("Model registry loading failed — running with heuristics only")
+
+    # Run external data ingestion on startup (async-safe: fire-and-forget)
+    if os.getenv("SINDIO_AUTO_INGEST", "1") == "1":
+        try:
+            from app.ingestion import run_all
+            results = run_all()
+            logger.info("Auto-ingestion complete", results=results)
+        except Exception as exc:
+            logger.warning("Auto-ingestion failed (non-critical): %s", exc)
+
     yield
     await model_registry.unload_models()
     logger.info("Sindio Core stopped")
