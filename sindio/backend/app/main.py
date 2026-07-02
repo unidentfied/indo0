@@ -68,39 +68,50 @@ async def health(request: Request):
 
 @app.get("/health/ready")
 async def health_ready():
-    """Kubernetes readiness probe — checks all dependencies."""
+    """Kubernetes readiness probe — checks configured dependencies only."""
     deps = {}
-    # Check Postgres
-    try:
-        import psycopg2
-        conn = psycopg2.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            port=os.getenv("DB_PORT", "5432"),
-            dbname=os.getenv("DB_NAME", "sindio"),
-            user=os.getenv("DB_USER", "sindio_user"),
-            password=os.getenv("DB_PASSWORD", ""),
-            connect_timeout=3,
-        )
-        conn.close()
-        deps["postgres"] = "ok"
-    except Exception:
-        deps["postgres"] = "unreachable"
 
-    # Check Redis
-    try:
-        import redis
-        r = redis.Redis(
-            host=os.getenv("REDIS_HOST", "localhost"),
-            port=int(os.getenv("REDIS_PORT", "6379")),
-            password=os.getenv("REDIS_PASSWORD", ""),
-            socket_connect_timeout=3,
-        )
-        r.ping()
-        deps["redis"] = "ok"
-    except Exception:
-        deps["redis"] = "unreachable"
+    # Check Postgres only if explicitly configured (not default localhost)
+    db_host = os.getenv("DB_HOST")
+    if db_host and db_host != "localhost":
+        try:
+            import psycopg2
+            conn = psycopg2.connect(
+                host=db_host,
+                port=os.getenv("DB_PORT", "5432"),
+                dbname=os.getenv("DB_NAME", "sindio"),
+                user=os.getenv("DB_USER", "sindio_user"),
+                password=os.getenv("DB_PASSWORD", ""),
+                connect_timeout=3,
+            )
+            conn.close()
+            deps["postgres"] = "ok"
+        except Exception:
+            deps["postgres"] = "unreachable"
+    else:
+        deps["postgres"] = "not_configured"
 
-    all_ok = all(v == "ok" for v in deps.values())
+    # Check Redis only if explicitly configured (not default localhost)
+    redis_host = os.getenv("REDIS_HOST")
+    if redis_host and redis_host != "localhost":
+        try:
+            import redis
+            r = redis.Redis(
+                host=redis_host,
+                port=int(os.getenv("REDIS_PORT", "6379")),
+                password=os.getenv("REDIS_PASSWORD", ""),
+                socket_connect_timeout=3,
+            )
+            r.ping()
+            deps["redis"] = "ok"
+        except Exception:
+            deps["redis"] = "unreachable"
+    else:
+        deps["redis"] = "not_configured"
+
+    # Ready if all configured deps are ok; degraded only if configured deps fail
+    configured = [v for v in deps.values() if v != "not_configured"]
+    all_ok = all(v == "ok" for v in configured) if configured else True
     return JSONResponse(
         {"status": "ready" if all_ok else "degraded", "dependencies": deps},
         status_code=200 if all_ok else 503,

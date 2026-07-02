@@ -1,1 +1,4 @@
-web: SINDIO_SKIP_RASTER=1 SINDIO_USE_CORE=0 CORS_ORIGINS=https://sindio.net,https://sindio.netlify.app PYTHONPATH=.:..: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+# Railway/Render/Heroku Procfile — used when platform does NOT use Dockerfile.
+# When deploying via Docker (railway.toml), this file is ignored.
+# CORS_ORIGINS must be set via platform environment variables.
+web: SINDIO_SKIP_RASTER=1 SINDIO_USE_CORE=0 PYTHONPATH=.:..: uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}

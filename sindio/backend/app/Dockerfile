@@ -9,8 +9,8 @@ COPY sindio/backend/app/ /workspace/app/
 
 ENV SINDIO_SKIP_RASTER=1
 ENV SINDIO_USE_CORE=0
-ENV CORS_ORIGINS=https://sindio.net,https://sindio.netlify.app,http://localhost:4000
 ENV PYTHONPATH=/workspace:.:..
+# CORS_ORIGINS is injected at runtime by Railway (do not hardcode production URLs).
 
 EXPOSE 8080
 

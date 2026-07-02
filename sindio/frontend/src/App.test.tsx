@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
@@ -14,21 +14,14 @@ describe('App', () => {
     expect(heading.textContent).toContain('Infrastructure Resilience')
   })
 
-  it.skip('renders dashboard at /dashboard route', async () => {
-    // SKIPPED: pre-existing test failure — App renders BrowserRouter internally,
-    // which conflicts with MemoryRouter wrapper. Requires refactoring App to accept
-    // router as prop or splitting App into routed + unrouted components.
+  it('renders dashboard at /dashboard route', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <App />
       </MemoryRouter>
     )
-    // Wait for Suspense to resolve (Loading dashboard... disappears)
-    await waitFor(() => {
-      expect(screen.queryByText(/Loading dashboard\.\.\./i)).not.toBeInTheDocument()
-    }, { timeout: 3000 })
-    
-    // Now it should show the loading message or content of the dashboard
-    expect(screen.getByText(/Power System Analysis/i)).toBeInTheDocument()
+    // Wait for the lazy Dashboard chunk to load and render
+    const heading = await screen.findByText(/Power System Analysis/i, {}, { timeout: 5000 })
+    expect(heading).toBeInTheDocument()
   })
 })

@@ -73,7 +73,7 @@ npm run test          # vitest run (jsdom, globals, setupFiles: src/test-setup.t
 npm run build         # tsc && vite build
 ```
 
-**No backend test suite exists yet.** The Poetry core declares `pytest`/`pytest-asyncio` as dev deps but no test files are present.
+**Backend smoke tests** exist in `backend/app/tests/test_api_smoke.py` (pytest + httpx ASGI client). CI runs them on every push. The Poetry core also declares `pytest`/`pytest-asyncio` as dev deps.
 
 ## Environment config
 

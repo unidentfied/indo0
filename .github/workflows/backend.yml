@@ -28,6 +28,15 @@ jobs:
         run: |
           pip install -r sindio/backend/requirements.txt
 
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-asyncio anyio
+
+      - name: Run backend tests
+        run: |
+          cd sindio/backend/app
+          PYTHONPATH=.:..: pytest tests/ -v
+
       - name: Validate Python syntax
         run: |
           python -m py_compile sindio/backend/app/main.py

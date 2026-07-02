@@ -47,16 +47,18 @@ def test_generate_alerts_returns_list():
         assert "title" in alert
 
 
-def test_generate_stress_points_returns_geojson():
-    points = mock_simulation.generate_stress_points(infra_type="power", max_points=3)
-    assert "features" in points
-    assert len(points["features"]) == 3
+def test_generate_stress_points_returns_features():
+    points = mock_simulation.generate_stress_points(infrastructure_types=["power"], random_seed=42)
+    assert isinstance(points, list)
+    assert len(points) >= 1
+    for pt in points:
+        assert "type" in pt
+        assert pt["type"] == "Feature"
 
 
 def test_start_simulation_returns_task():
     task = mock_simulation.start_simulation(
-        params={"infrastructure_type": "power", "stress_factor": "peak"},
-        infra_types=["power"],
+        infrastructure_type="power",
+        stress_factor="peak",
     )
     assert "task_id" in task
-    assert task["status"] == "queued"

@@ -1,5 +1,4 @@
 [build]
-builder = "DOCKERFILE"
 dockerfilePath = "sindio/backend/app/Dockerfile"
 
 [deploy]

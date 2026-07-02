@@ -101,8 +101,9 @@ async def test_v1_monitor_types(client):
     resp = await client.get("/api/v1/monitor/types")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
+    assert "types" in data
+    assert isinstance(data["types"], list)
+    assert len(data["types"]) >= 1
 
 
 @pytest.mark.anyio
