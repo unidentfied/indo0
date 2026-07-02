@@ -39,15 +39,59 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Mount mock API router at /api prefix ─────────────────────────
-
-app.include_router(api_router, prefix="/api")
-
-
-# ── Optional proxy to ML Core (port 8081) for health/metrics ─────
+# ── Optional proxy to ML Core (port 8081) ────────────────────────
 
 _CORE_URL = os.getenv("CORE_URL", "http://localhost:8081")
 _USE_CORE = os.getenv("SINDIO_USE_CORE", "1") == "1"
+
+
+@app.middleware("http")
+async def core_proxy_middleware(request: Request, call_next):
+    """Proxy /api/v1/* requests to ML Core when available.
+
+    If the core has the endpoint (returns non-404), we return the core's
+    response directly. If the core returns 404 or is unreachable, we fall
+    through to the mock API router so endpoints the core lacks still work.
+    """
+    if not _USE_CORE:
+        return await call_next(request)
+
+    path = request.url.path
+    if not path.startswith("/api/v1/"):
+        return await call_next(request)
+
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            method = request.method
+            url = f"{_CORE_URL}{path}"
+            headers = {
+                k: v
+                for k, v in request.headers.items()
+                if k.lower() not in ("host", "content-length", "transfer-encoding")
+            }
+            body = await request.body()
+            params = str(request.query_params)
+
+            resp = await client.request(
+                method, url, headers=headers, content=body, params=params
+            )
+
+            # Core has this endpoint — return its response
+            if resp.status_code != 404:
+                return Response(
+                    content=resp.content,
+                    status_code=resp.status_code,
+                    headers={
+                        k: v
+                        for k, v in resp.headers.items()
+                        if k.lower()
+                        not in ("transfer-encoding", "content-encoding", "content-length")
+                    },
+                )
+    except Exception:
+        pass  # Core unreachable — fall through to mock API
+
+    return await call_next(request)
 
 
 async def _proxy_optional(request: Request, path: str):
@@ -67,6 +111,10 @@ async def _proxy_optional(request: Request, path: str):
             )
     except Exception:
         return JSONResponse({"status": "ok", "source": "mock", "core_unreachable": True})
+
+
+# ── Mount mock API router at /api prefix ─────────────────────────
+app.include_router(api_router, prefix="/api")
 
 
 @app.get("/health")
