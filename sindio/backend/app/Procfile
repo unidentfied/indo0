@@ -1,0 +1,1 @@
+web: SINDIO_SKIP_RASTER=1 PYTHONPATH=.:..: uvicorn app.main:app --host 0.0.0.0 --port $PORT

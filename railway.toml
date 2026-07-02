@@ -1,5 +1,7 @@
 [build]
-buildCommand = "pip install -r sindio/backend/app/requirements.txt"
+builder = "DOCKERFILE"
+dockerfilePath = "sindio/backend/app/Dockerfile"
 
 [deploy]
-startCommand = "cd sindio/backend/app && SINDIO_SKIP_RASTER=1 PYTHONPATH=.:..: uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"
+numReplicas = 1
+healthcheckPath = "/health"
