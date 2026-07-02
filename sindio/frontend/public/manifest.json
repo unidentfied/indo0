@@ -1,0 +1,10 @@
+{
+  "name": "Sindio — Nairobi Urban Planning",
+  "short_name": "Sindio",
+  "description": "Predictive infrastructure modelling and stress monitoring for Nairobi.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": []
+}
