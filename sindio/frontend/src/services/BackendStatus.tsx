@@ -14,12 +14,20 @@ export function useBackendStatus() {
 
 const HEALTH_INTERVAL = 30000
 
+const HEALTH_URL = (() => {
+  try {
+    const base = (import.meta as any).env?.VITE_API_BASE_URL
+    if (base && typeof base === 'string') return `${base}/health`
+  } catch { /* vitest/jsdom may lack import.meta.env */ }
+  return '/health'
+})()
+
 export function BackendStatusProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<BackendStatus>({ healthy: true, checked: false, lastError: null })
 
   const check = useCallback(async () => {
     try {
-      const res = await fetch('/health', { signal: AbortSignal.timeout(5000) })
+      const res = await fetch(HEALTH_URL, { signal: AbortSignal.timeout(5000) })
       const body = await res.json().catch(() => ({}))
       const healthy = res.ok && (body.status === 'ok' || body.status === 'ready' || body.status === 'degraded')
       setStatus({

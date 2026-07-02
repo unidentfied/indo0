@@ -32,11 +32,12 @@ describe('api client', () => {
   it('dashboard.metrics calls correct path', async () => {
     fetchSpy.mockResolvedValueOnce(
       new Response(
-        JSON.stringify({
-          power: { load_mw: 100, redundancy: 0.8, stress_index: 50 },
-          water: { pressure_psi: 60, flow_m3h: 200, quality_ph: 7.2 },
-          roads: { congestion_pct: 30, avg_speed_kmh: 45 },
-        }),
+        JSON.stringify([
+          { label: 'Grid Stability', value: '95%', status: 'good' },
+          { label: 'Current Load', value: '1,200 MW', status: 'warning' },
+          { label: 'Active Nodes', value: '42', status: 'good' },
+          { label: 'Latency', value: '12ms', status: 'good' },
+        ]),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       ),
     )

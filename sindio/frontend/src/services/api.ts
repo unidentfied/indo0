@@ -1,4 +1,11 @@
-const API_BASE = '/api'
+const API_BASE = (() => {
+  try {
+    const base = (import.meta as any).env?.VITE_API_BASE_URL
+    if (base && typeof base === 'string') return `${base}/api`
+  } catch { /* vitest/jsdom may lack import.meta.env */ }
+  return '/api'
+})()
+
 const REQUEST_TIMEOUT = 8000
 
 const pending = new Map<string, Promise<unknown>>()

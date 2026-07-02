@@ -1,0 +1,50 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sindio/backend/**'
+      - '.github/workflows/backend.yml'
+      - 'railway.toml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sindio/backend/**'
+      - 'railway.toml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install backend dependencies
+        run: |
+          pip install -r sindio/backend/requirements.txt
+
+      - name: Validate Python syntax
+        run: |
+          python -m py_compile sindio/backend/app/main.py
+          python -m py_compile sindio/backend/app/routers/api.py
+
+      - name: Validate Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: sindio/backend/app/Dockerfile
+
+      - name: Build Docker image (smoke test)
+        run: |
+          docker build -f sindio/backend/app/Dockerfile -t sindio-backend:test .
+
+      - name: Run container smoke test
+        run: |
+          docker run -d --name sindio-test -p 8080:8080 -e SINDIO_SKIP_RASTER=1 -e SINDIO_USE_CORE=0 sindio-backend:test
+          sleep 5
+          curl -f http://localhost:8080/health || (docker logs sindio-test && exit 1)
+          docker stop sindio-test

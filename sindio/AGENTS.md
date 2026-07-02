@@ -128,6 +128,24 @@ SQL migrations in `backend/migrations/` auto-mount as PostgreSQL init scripts.
   - `data-quality-alerts.yml` — mock fallback ratio, model confidence, real data fetch alerts
   - `infrastructure-alerts.yml` — stress index, degraded assets, time-to-breach, simulation failures, API error/latency
 
+## Production deployment (Railway + Netlify)
+
+**Backend** is deployed to Railway via `railway.toml` (config-as-code) + `sindio/backend/app/Dockerfile`.
+- Railway auto-deploys on every push to `main`
+- Required env vars in Railway dashboard: `CORS_ORIGINS`, `SINDIO_SKIP_RASTER=1`, `SINDIO_USE_CORE=0`
+- `CORS_ORIGINS` must include the deployed Netlify frontend URL
+
+**Frontend** is deployed to Netlify via GitHub Actions (`.github/workflows/frontend.yml`).
+- GitHub Actions builds `sindio/frontend/` and deploys `dist/` to Netlify
+- Requires GitHub secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
+- Requires GitHub variable or `.env.production`: `VITE_API_BASE_URL=<railway-backend-url>`
+
+**API connection:**
+- Dev: Vite proxy (`/api` → `localhost:8080`)
+- Prod: `VITE_API_BASE_URL` is baked into the build; all `/api/*` and `/health` calls go directly to Railway
+
+Full instructions: `sindio/DEPLOY.md`
+
 ## Data quality metrics
 
 All services expose `/metrics` (Prometheus) with gauges keyed by `infrastructure_type`. The mock app always reports 100% mock ratio; the ML Core updates based on actual connectivity.

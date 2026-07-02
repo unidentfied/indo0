@@ -1,0 +1,20 @@
+# Netlify configuration for Sindio frontend
+# Place this file in sindio/frontend/ directory
+
+[build]
+  # GitHub Actions builds the frontend and deploys the dist/ folder directly.
+  # Netlify should not run its own build.
+  publish = "dist"
+  command = "echo 'Build handled by GitHub Actions'"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+
+[context.production]
+  environment = { NODE_VERSION = "20" }
+
+[context.deploy-preview]
+  environment = { NODE_VERSION = "20" }
