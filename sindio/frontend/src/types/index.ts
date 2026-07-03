@@ -5,6 +5,8 @@ export interface Metric {
   value: string
   delta?: string
   status: 'good' | 'warning' | 'critical'
+  last_updated?: string
+  data_source?: string
 }
 
 export interface Alert {

@@ -19,7 +19,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .config import config
 
-from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard
+from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard, training
 from app.auth import auth_router, require_auth, optional_auth
 from app.services.data_quality_metrics import registry as dq_registry
 from app.services.model_registry import ModelRegistry
@@ -46,7 +46,17 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("Auto-ingestion failed (non-critical): %s", exc)
 
+    # Start periodic scheduler for recurring ingestion + monitoring
+    if os.getenv("SINDIO_SCHEDULER", "1") == "1":
+        from app.scheduler import start_scheduler
+        start_scheduler()
+
     yield
+
+    # Shutdown
+    if os.getenv("SINDIO_SCHEDULER", "1") == "1":
+        from app.scheduler import stop_scheduler
+        stop_scheduler()
     await model_registry.unload_models()
     logger.info("Sindio Core stopped")
 
@@ -100,6 +110,7 @@ app.include_router(alerts.router, prefix="/api/v1")
 
 app.include_router(schedule.router)
 app.include_router(monitor.router)
+app.include_router(training.router, prefix="/api/v1")
 app.mount("/static", StaticFiles(directory="../../frontend/dist", html=True), name="static")
 
 

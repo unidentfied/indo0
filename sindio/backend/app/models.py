@@ -8,6 +8,8 @@ class Metric(BaseModel):
     value: str
     delta: Optional[str] = None
     status: Optional[Literal["good", "warning", "critical"]] = "good"
+    last_updated: Optional[str] = None
+    data_source: Optional[str] = None
 
 
 class Alert(BaseModel):

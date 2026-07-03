@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Query
 
 from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
@@ -5,8 +6,14 @@ from app.services.monitor import InfrastructureMonitor, get_all_configs, get_con
 router = APIRouter()
 
 
-def _metric(value, delta_str, status="good"):
-    return {"value": value, "delta": delta_str, "status": status}
+def _metric(value, delta_str, status="good", source="monitor"):
+    return {
+        "value": value,
+        "delta": delta_str,
+        "status": status,
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "data_source": source,
+    }
 
 
 @router.get("/dashboard/metrics")
@@ -25,11 +32,14 @@ async def dashboard_metrics(system: str = Query("power")):
     stressed_count = sum(1 for a in assets if a.stress >= config.thresholds.warning)
     critical_count = sum(1 for a in assets if a.stress >= config.thresholds.critical)
 
+    # Determine data source quality label
+    source_label = "real" if any(not a.is_mock for a in assets) else "heuristic"
+
     return [
-        {"label": "System Status", "value": "Nominal" if avg_stress < 0.5 else "Degraded", "delta": "stable", "status": "good" if avg_stress < 0.5 else "warning"},
-        {"label": "Avg Stress", "value": f"{round(avg_stress * 100, 1)}%", "delta": f"{round(avg_stress * 100 - 50, 1)}% from baseline", "status": "good" if avg_stress < 0.6 else "warning"},
-        {"label": "Active Assets", "value": f"{config.default_asset_count:,}", "delta": "stationary", "status": "good"},
-        {"label": "Stressed Assets", "value": str(stressed_count), "delta": f"+{critical_count} critical", "status": "good" if stressed_count < config.default_asset_count * 0.1 else "warning"},
+        _metric("Nominal" if avg_stress < 0.5 else "Degraded", "stable", "good" if avg_stress < 0.5 else "warning", source_label),
+        _metric(f"{round(avg_stress * 100, 1)}%", f"{round(avg_stress * 100 - 50, 1)}% from baseline", "good" if avg_stress < 0.6 else "warning", source_label),
+        _metric(f"{config.default_asset_count:,}", "stationary", "good", source_label),
+        _metric(str(stressed_count), f"+{critical_count} critical", "good" if stressed_count < config.default_asset_count * 0.1 else "warning", source_label),
     ]
 
 

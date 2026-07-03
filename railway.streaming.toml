@@ -1,0 +1,6 @@
+[build]
+dockerfilePath = "sindio/backend/streaming/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300

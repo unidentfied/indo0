@@ -3,6 +3,7 @@ from typing import Any, List, Literal
 from datetime import datetime, timezone, timedelta
 import random
 import time as _time_module
+import os
 
 from app.models import (
     Metric, Alert, SimulationResult, InfrastructureStatus, PredictiveParams,
@@ -29,6 +30,13 @@ _METRIC_LABELS: dict[str, list[str]] = {
     "sgr":         ["Track Integrity", "Active Trains", "Track Sensors", "Avg Delay"],
     "airports":    ["Operations Rate", "Flight Throughput", "Active Systems", "Runway Status"],
 }
+
+def _get_freshness() -> dict[str, str]:
+    """Return last_updated and data_source for mock API responses."""
+    return {
+        "last_updated": datetime.now(timezone.utc).isoformat(),
+        "data_source": "sindio-mock",
+    }
 
 _COUNT_LABELS: dict[str, str] = {
     "power": "Active Nodes", "water": "Sensor Nodes", "roads": "Monitored Junctions",
@@ -85,7 +93,11 @@ _CATEGORY_MAP: dict[str, str] = {
 @router.get("/dashboard/metrics", response_model=List[Metric])
 def get_metrics(system: str = "power"):
     status = generate_infrastructure_status(infra_type=system)
-    return [Metric(**m) for m in _derive_metrics(system, status)]
+    freshness = _get_freshness()
+    metrics = _derive_metrics(system, status)
+    for m in metrics:
+        m.update(freshness)
+    return [Metric(**m) for m in metrics]
 
 
 @router.get("/dashboard/alerts", response_model=List[Alert])
