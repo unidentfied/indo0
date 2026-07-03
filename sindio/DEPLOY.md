@@ -189,6 +189,40 @@ The mock API and ML Core both prefer `DATABASE_URL` / `REDIS_URL` but fall back 
 - [ ] (Optional) ML Core service health check passes
 - [ ] (Optional) `/health/ready` shows `postgres: ok` and `redis: ok`
 
+## 8. Monitoring & Alerting
+
+The ML Core exposes `GET /api/v1/monitoring/health` which returns:
+
+```json
+{
+  "scheduler": "running",
+  "ingestion": "2026-07-03T12:00:00Z",
+  "db": "ok",
+  "sensor_readings_rows": 14500,
+  "infrastructure_assets_rows": 320,
+  "population_density_rows": 500,
+  "ingestion_logs_rows": 12
+}
+```
+
+### Configuring Railway Uptime Alerts
+
+1. Go to your ML Core service in Railway → **Settings** → **Healthcheck**
+2. Set **Healthcheck Path** to `/api/v1/monitoring/health`
+3. Railway will ping this endpoint every 30 seconds
+4. If the response is not `200 OK` for 3 consecutive checks, Railway marks the service as unhealthy and logs the failure
+
+### Configuring External Uptime Monitoring
+
+Any HTTP uptime monitor (UptimeRobot, BetterStack, PagerDuty) can ping:
+```
+GET https://<ml-core-url>/api/v1/monitoring/health
+```
+
+Expected response: HTTP 200 with `"db": "ok"` and `"scheduler": "running"`.
+If `"scheduler"` is `"unavailable"`, apscheduler failed to start — check the deploy logs.
+If `"db"` is `"unreachable"`, the database connection is broken — check `DATABASE_URL`.
+
 ## 8. Rollback
 
 - **Backend:** Railway dashboard → Deployments → click previous deploy
