@@ -34,10 +34,12 @@ Thumbs.db
 **/*.log
 **/logs/
 
-# Raw / processed GIS data (never needed in images)
-**/data/raw/
+# Raw / processed GIS data
+# WorldPop GeoTIFF (sindio/backend/app/data/raw/ken_ppp_2020.tif) IS
+# allowed — the core ingestion fetcher reads it at runtime.
+sindio/backend/app/data/raw/*.tif
+!sindio/backend/app/data/raw/ken_ppp_2020.tif
 **/data/processed/
-**/*.tif
 **/*.shp
 **/*.geojson
 **/*.pbf

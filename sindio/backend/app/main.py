@@ -39,6 +39,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── API key auth middleware (write-protect POST/PUT/DELETE) ──
+
+_API_KEY = os.getenv("SINDIO_API_KEY", "")
+
+
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next):
+    """Require X-API-Key on write operations when SINDIO_API_KEY is set."""
+    if request.method in ("POST", "PUT", "DELETE", "PATCH") and _API_KEY:
+        header_key = request.headers.get("X-API-Key", "")
+        if header_key != _API_KEY:
+            return JSONResponse(
+                {"detail": "Unauthorized — missing or invalid API key"},
+                status_code=401,
+            )
+    return await call_next(request)
+
 # ── Optional proxy to ML Core (port 8081) ────────────────────────
 
 _CORE_URL = os.getenv("CORE_URL", "http://localhost:8081")

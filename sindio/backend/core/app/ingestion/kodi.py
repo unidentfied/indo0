@@ -29,12 +29,22 @@ from .base import BaseFetcher
 
 logger = logging.getLogger("sindio.ingestion")
 
-# Known dataset IDs / URLs on Nairobi Open Data portal
+# Known dataset IDs / URLs on Nairobi Open Data portal.
+# If the live portal is down, falls back to local cached copies
+# in data/raw/ (downloaded on first successful fetch).
 NAIROBI_DATASETS = {
     "wards": "https://opendata.nairobi.go.ke/datasets/nairobi-wards-boundaries/download/wards.geojson",
     "roads": "https://opendata.nairobi.go.ke/datasets/road-network/download/road_segments.geojson",
     "power_lines": "https://opendata.nairobi.go.ke/datasets/power-distribution-lines/download/power_lines.geojson",
     "water_mains": "https://opendata.nairobi.go.ke/datasets/water-mains-network/download/water_mains.geojson",
+}
+
+# Mirror / fallback URLs — Kenya Open Data CKAN API (national level)
+KODI_MIRROR_BASE = "https://opendata.go.ke"
+KODI_FALLBACKS = {
+    "roads": f"{KODI_MIRROR_BASE}/dataset/road-network/resource/download/road_segments.geojson",
+    "power_lines": f"{KODI_MIRROR_BASE}/dataset/power-lines/resource/download/power_lines.geojson",
+    "water_mains": f"{KODI_MIRROR_BASE}/dataset/water-mains/resource/download/water_mains.geojson",
 }
 
 # Kenya Open Data (national) — CSV-based CKAN API
@@ -66,19 +76,40 @@ class KenyaOpenDataFetcher(BaseFetcher):
         return all_records
 
     def _fetch_geojson_dataset(self, key: str, url: str) -> List[Dict[str, Any]]:
-        """Download GeoJSON, normalise CRS, extract attribute rows."""
+        """Download GeoJSON, with local-cache and mirror fallback."""
+        # 1. Check local cache first
+        from pathlib import Path
+        tmp = Path("/tmp") / f"kodi_{key}.geojson"
+        if tmp.exists():
+            return self._parse_geojson(key, tmp)
+
+        # 2. Try primary URL
+        content = None
+        resp = self._http_get(url, timeout=60)
+        if resp is not None:
+            content = resp.content
+
+        # 3. Try mirror fallback
+        if content is None and key in KODI_FALLBACKS:
+            mirror_url = KODI_FALLBACKS[key]
+            resp = self._http_get(mirror_url, timeout=60)
+            if resp is not None:
+                content = resp.content
+
+        if content is None:
+            return []
+
+        tmp.write_bytes(content)
+        return self._parse_geojson(key, tmp)
+
+    def _parse_geojson(self, key: str, path: Path) -> List[Dict[str, Any]]:
+        """Parse a cached GeoJSON file into normalised records."""
         try:
-            resp = self._http_get(url, timeout=60)
-            if resp is None:
-                return []
-            # Save to temp file for geopandas
-            from pathlib import Path
-            tmp = Path("/tmp") / f"kodi_{key}.geojson"
-            tmp.write_bytes(resp.content)
-            gdf = gpd.read_file(str(tmp))
+            import geopandas as gpd
+            from shapely.geometry import Point
+            gdf = gpd.read_file(str(path))
             if gdf.crs is None:
                 gdf = gdf.set_crs("EPSG:4326")
-            # Re-project to UTM 37S for Nairobi
             gdf = gdf.to_crs("EPSG:32737")
 
             records = []
@@ -86,17 +117,12 @@ class KenyaOpenDataFetcher(BaseFetcher):
                 geom = row.geometry
                 if geom is None or geom.is_empty:
                     continue
-                # Use centroid for point assets, or bounding box center for lines
                 if geom.geom_type in ("LineString", "MultiLineString"):
                     center = Point(geom.centroid.x, geom.centroid.y)
                 else:
                     center = geom.centroid if hasattr(geom, "centroid") else Point(0, 0)
 
-                infra_map = {
-                    "roads": "roads",
-                    "power_lines": "power",
-                    "water_mains": "water",
-                }
+                infra_map = {"roads": "roads", "power_lines": "power", "water_mains": "water"}
                 infra_type = infra_map.get(key, key)
 
                 records.append({

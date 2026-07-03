@@ -98,15 +98,140 @@ class IngestionLog(Base):
     finished_at = Column(DateTime, nullable=False)
 
 
+_MONITOR_DDL = {
+    "power_scada": """
+        CREATE TABLE IF NOT EXISTS power_scada (
+            id SERIAL PRIMARY KEY,
+            bus_id VARCHAR(64) NOT NULL,
+            voltage_pu FLOAT NOT NULL,
+            load_mw FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_power_scada_time ON power_scada(updated_at);
+        CREATE INDEX IF NOT EXISTS idx_power_scada_bus ON power_scada(bus_id);
+    """,
+    "water_scada": """
+        CREATE TABLE IF NOT EXISTS water_scada (
+            id SERIAL PRIMARY KEY,
+            node_id VARCHAR(64) NOT NULL,
+            pressure_m FLOAT NOT NULL,
+            flow_lps FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_water_scada_time ON water_scada(updated_at);
+        CREATE INDEX IF NOT EXISTS idx_water_scada_node ON water_scada(node_id);
+    """,
+    "mobility_aggregates": """
+        CREATE TABLE IF NOT EXISTS mobility_aggregates (
+            id SERIAL PRIMARY KEY,
+            h3_index VARCHAR(32) NOT NULL,
+            vehicle_count FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            time TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_mobility_time ON mobility_aggregates(time);
+        CREATE INDEX IF NOT EXISTS idx_mobility_h3 ON mobility_aggregates(h3_index);
+    """,
+    "waste_sensors": """
+        CREATE TABLE IF NOT EXISTS waste_sensors (
+            id SERIAL PRIMARY KEY,
+            station_id VARCHAR(64) NOT NULL,
+            fill_level FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_waste_sensors_time ON waste_sensors(updated_at);
+    """,
+    "sidewalk_counters": """
+        CREATE TABLE IF NOT EXISTS sidewalk_counters (
+            id SERIAL PRIMARY KEY,
+            path_id VARCHAR(64) NOT NULL,
+            pedestrian_count FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_sidewalk_counters_time ON sidewalk_counters(updated_at);
+    """,
+    "lrt_telemetry": """
+        CREATE TABLE IF NOT EXISTS lrt_telemetry (
+            id SERIAL PRIMARY KEY,
+            segment_id VARCHAR(64) NOT NULL,
+            train_count FLOAT NOT NULL,
+            headway_sec FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_lrt_telemetry_time ON lrt_telemetry(updated_at);
+    """,
+    "sgr_telemetry": """
+        CREATE TABLE IF NOT EXISTS sgr_telemetry (
+            id SERIAL PRIMARY KEY,
+            segment_id VARCHAR(64) NOT NULL,
+            stress_level FLOAT NOT NULL,
+            speed_limit FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_sgr_telemetry_time ON sgr_telemetry(updated_at);
+    """,
+    "airport_telemetry": """
+        CREATE TABLE IF NOT EXISTS airport_telemetry (
+            id SERIAL PRIMARY KEY,
+            runway_id VARCHAR(64) NOT NULL,
+            flight_rate FLOAT NOT NULL,
+            surface_condition FLOAT NOT NULL,
+            ward VARCHAR(64) DEFAULT '',
+            lat FLOAT DEFAULT 0,
+            lon FLOAT DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            inserted_at TIMESTAMP DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS idx_airport_telemetry_time ON airport_telemetry(updated_at);
+    """,
+}
+
+
 def create_tables(engine_url: str) -> None:
-    """Create all ingestion tables if they do not exist."""
+    """Create all ingestion and monitor tables if they do not exist."""
+    from sqlalchemy import text
     engine = create_engine(engine_url)
     inspector = inspect(engine)
-    tables = [InfrastructureAsset.__tablename__, SensorReading.__tablename__,
-              PopulationDensity.__tablename__, IngestionLog.__tablename__]
-    missing = [t for t in tables if not inspector.has_table(t)]
-    if missing:
-        Base.metadata.create_all(engine, tables=[Base.metadata.tables[t] for t in missing])
+
+    # ORM tables
+    orm_tables = [InfrastructureAsset.__tablename__, SensorReading.__tablename__,
+                  PopulationDensity.__tablename__, IngestionLog.__tablename__]
+    missing_orm = [t for t in orm_tables if not inspector.has_table(t)]
+    if missing_orm:
+        Base.metadata.create_all(engine, tables=[Base.metadata.tables[t] for t in missing_orm])
+
+    # Monitor tables (raw DDL)
+    with engine.begin() as conn:
+        for table_name, ddl in _MONITOR_DDL.items():
+            if not inspector.has_table(table_name):
+                conn.execute(text(ddl))
 
 
 def get_sessionmaker(engine_url: str):

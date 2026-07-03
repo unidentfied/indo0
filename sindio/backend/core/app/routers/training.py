@@ -54,6 +54,27 @@ async def start_training():
     if _training_status["state"] == "running":
         raise HTTPException(status_code=409, detail="Training already in progress")
 
+    # Guard: verify data exists before starting
+    try:
+        from app.database import get_engine
+        from sqlalchemy import text
+        with get_engine().connect() as conn:
+            count = conn.execute(text("SELECT COUNT(*) FROM sensor_readings")).scalar()
+            if count == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"No sensor data available ({count} rows in sensor_readings). "
+                           "Training requires at least 6 months of real sensor data. "
+                           "Run ingestion first: POST /api/v1/ingestion/run",
+                )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Cannot verify training data: {exc}. Ensure DATABASE_URL is configured.",
+        )
+
     thread = threading.Thread(target=_run_training, daemon=True)
     thread.start()
 
@@ -82,3 +103,49 @@ async def training_config():
         }
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Could not load training config: {exc}")
+
+
+# ── Ingestion trigger ────────────────────────────────────────
+
+@router.post("/ingestion/run")
+async def trigger_ingestion():
+    """Manually trigger all ingestion fetchers. Returns result counts."""
+    try:
+        from app.ingestion import run_all
+        results = run_all()
+        return results
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}")
+
+
+# ── Monitoring health ────────────────────────────────────────
+
+@router.get("/monitoring/health")
+async def monitoring_health():
+    """Return scheduler health, ingestion status, and DB connectivity."""
+    health = {"scheduler": "unknown", "ingestion": None, "db": "unknown"}
+    try:
+        from app.scheduler import get_health
+        health["scheduler"] = get_health()["status"]
+        health["ingestion"] = get_health()["last_ingestion"]
+    except Exception:
+        health["scheduler"] = "unavailable"
+
+    try:
+        from app.database import get_engine
+        from sqlalchemy import text
+        with get_engine().connect() as conn:
+            conn.execute(text("SELECT 1"))
+        health["db"] = "ok"
+
+        # Row counts
+        for table in ["sensor_readings", "infrastructure_assets", "population_density", "ingestion_logs"]:
+            try:
+                count = conn.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar()
+                health[f"{table}_rows"] = count
+            except Exception:
+                health[f"{table}_rows"] = "N/A"
+    except Exception:
+        health["db"] = "unreachable"
+
+    return health
