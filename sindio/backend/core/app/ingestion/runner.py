@@ -15,11 +15,46 @@ from .kodi import KenyaOpenDataFetcher
 from .nms import NairobiMetropolitanFetcher
 from .kenya_power import KenyaPowerFetcher
 from .worldpop import WorldPopFetcher
+from .weather_fetcher import WeatherFetcher
+from .osm_fetcher import OSMFetcher
+from .nairobi_water_fetcher import NairobiWaterFetcher
+from .kplc_fetcher import KPLCFetcher
+from .real_sources import (
+    OpenSkyFetcher,
+    NASA_POWER_Fetcher,
+    HERE_TrafficFetcher,
+    CHIRPS_Fetcher,
+    KenyaRailwaysFetcher,
+    VIIRS_Fetcher,
+    ESA_WorldCover_Fetcher,
+    WorldBankFetcher,
+    NairobiWasteFetcher,
+    NairobiSidewalksFetcher,
+)
 
 logger = logging.getLogger("sindio.ingestion")
 
-# All registered fetchers
+# All registered fetchers (18 total)
 FETCHERS = [
+    # ── Real-time / high-frequency ──
+    OpenSkyFetcher,          # Aviation (ADS-B) — every 5 min
+    HERE_TrafficFetcher,     # Road traffic — every 5 min
+    NASA_POWER_Fetcher,      # Climate — daily
+    CHIRPS_Fetcher,          # Rainfall — daily
+    # ── Operational / scheduled ──
+    KPLCFetcher,             # Power grid — hourly
+    NairobiWaterFetcher,     # Water — hourly
+    KenyaRailwaysFetcher,    # Rail — hourly
+    # ── Static / slow-changing ──
+    OSMFetcher,              # Infrastructure geometry — weekly
+    ESA_WorldCover_Fetcher,  # Land use — yearly
+    VIIRS_Fetcher,           # Night lights — monthly
+    WorldBankFetcher,        # Development indicators — yearly
+    # ── Modeled / derived ──
+    WeatherFetcher,          # Thermal stress — every 15 min
+    NairobiWasteFetcher,     # Solid waste — daily
+    NairobiSidewalksFetcher, # Pedestrian — weekly
+    # ── Legacy / baseline ──
     KenyaOpenDataFetcher,
     NairobiMetropolitanFetcher,
     KenyaPowerFetcher,

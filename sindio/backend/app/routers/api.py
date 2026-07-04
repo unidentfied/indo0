@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from typing import Any, List, Literal
 from datetime import datetime, timezone, timedelta
 import random
 import time as _time_module
 import os
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.models import (
     Metric, Alert, SimulationResult, InfrastructureStatus, PredictiveParams,
@@ -19,6 +22,7 @@ from app.mock_simulation import (
 )
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 _METRIC_LABELS: dict[str, list[str]] = {
     "power":       ["Grid Stability", "Current Load", "Active Nodes", "Latency"],
@@ -146,7 +150,8 @@ def get_simulation_status():
 
 
 @router.post("/simulations/run", response_model=SimulationResult)
-def run_simulation(network: str = "power", stress_factor: str = "Population Increase (+15%)"):
+@limiter.limit("10/minute")
+def run_simulation(request: Request, network: str = "power", stress_factor: str = "Population Increase (+15%)"):
     status = generate_infrastructure_status(infra_type=network)
     seed = hash(f"{network}:{stress_factor}:{_time_module.time()}") % 4294967295
     rng = random.Random(seed)

@@ -3,6 +3,9 @@ const API_BASE = (() => {
     const base = (import.meta as any).env?.VITE_API_BASE_URL
     if (base && typeof base === 'string') return `${base}/api`
   } catch { /* vitest/jsdom may lack import.meta.env */ }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    console.error('[Sindio] VITE_API_BASE_URL is not set. All API calls will fail with 404.')
+  }
   return '/api'
 })()
 
@@ -11,9 +14,11 @@ const REQUEST_TIMEOUT = 8000
 const pending = new Map<string, Promise<unknown>>()
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const key = `${options?.method || 'GET'}:${path}`
+  const method = options?.method || 'GET'
+  const key = `${method}:${path}`
 
-  if (pending.has(key)) {
+  // Only deduplicate GET requests to avoid POST body collisions
+  if (method === 'GET' && pending.has(key)) {
     return pending.get(key) as Promise<T>
   }
 
@@ -34,10 +39,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     })
     .finally(() => {
       clearTimeout(timeoutId)
-      pending.delete(key)
+      if (method === 'GET') {
+        pending.delete(key)
+      }
     })
 
-  pending.set(key, promise)
+  if (method === 'GET') {
+    pending.set(key, promise)
+  }
   return promise
 }
 

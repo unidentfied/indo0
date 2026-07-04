@@ -1,0 +1,181 @@
+name: Build & Push Container Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sindio/backend/**'
+      - 'sindio/frontend/**'
+      - '.github/workflows/build-images.yml'
+      - 'docker/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sindio/backend/**'
+      - 'sindio/frontend/**'
+      - 'docker/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: sindio
+
+jobs:
+  # ── Mock API ─────────────────────────────────────────────────
+  build-mock-api:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Mock API
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: sindio/backend/app/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-api:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ── ML Core ────────────────────────────────────────────────────
+  build-ml-core:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push ML Core
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: sindio/backend/core/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-simulator:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-simulator:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  # ── Go API ─────────────────────────────────────────────────────
+  build-go-api:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Go API
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: sindio/backend/api/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-go-api:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-go-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ── Rust Streaming ─────────────────────────────────────────────
+  build-rust-streaming:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Rust Streaming
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: sindio/backend/streaming/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-streaming:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-streaming:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ── Frontend ───────────────────────────────────────────────────
+  build-frontend:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: sindio/frontend
+          file: sindio/frontend/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64

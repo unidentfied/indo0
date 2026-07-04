@@ -22,10 +22,11 @@ terraform {
     }
   }
   backend "s3" {
-    bucket  = "sindio-tfstate"
-    key     = "terraform.tfstate"
-    region  = "us-east-1"
-    encrypt = true
+    bucket         = "sindio-tfstate"
+    key            = "terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "sindio-tfstate-lock"
   }
 }
 
@@ -453,7 +454,7 @@ resource "aws_iam_role" "sindio_backend" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "${replace(module.eks.oidc_provider_arn, "/^arn:aws:iam::[0-9]+:oidc-provider//", "")}:sub" : "system:serviceaccount:sindio:sindio-backend"
+            "${module.eks.oidc_provider}:sub" : "system:serviceaccount:sindio:sindio-backend"
           }
         }
       }

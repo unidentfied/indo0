@@ -11,8 +11,9 @@ import logging
 import threading
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from app.auth import require_auth
 from app.services.model_registry import ModelRegistry
 
 logger = logging.getLogger("sindio.training")
@@ -48,7 +49,7 @@ def _run_training():
             logger.warning("Model reload after training failed")
 
 
-@router.post("/training/start")
+@router.post("/training/start", dependencies=[Depends(require_auth)])
 async def start_training():
     """Trigger a full model training run in the background."""
     if _training_status["state"] == "running":
@@ -107,7 +108,7 @@ async def training_config():
 
 # ── Ingestion trigger ────────────────────────────────────────
 
-@router.post("/ingestion/run")
+@router.post("/ingestion/run", dependencies=[Depends(require_auth)])
 async def trigger_ingestion():
     """Manually trigger all ingestion fetchers. Returns result counts."""
     try:

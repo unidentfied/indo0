@@ -79,6 +79,15 @@ function generateAssetDetail(assetId: string, lat: number, lng: number, stress: 
   }
 }
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 function mapGeoJsonToPoints(features: any[]): StressPoint[] {
   if (!features || !Array.isArray(features)) return []
   return features.map((f: any) => {
@@ -203,13 +212,17 @@ export default function StressMap() {
   const getTooltip = useCallback(({ object }: PickingInfo) => {
     if (!object) return null
     if (object.asset_id) {
-      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">${object.classification}</div><div style="font-weight:600">${object.asset_id}</div><div>Stress: <span style="font-weight:600">${object.stress}%</span></div></div>` }
+      const safeAssetId = escapeHtml(String(object.asset_id))
+      const safeClassification = escapeHtml(String(object.classification))
+      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">${safeClassification}</div><div style="font-weight:600">${safeAssetId}</div><div>Stress: <span style="font-weight:600">${object.stress}%</span></div></div>` }
     }
     if (object.name) {
-      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">Water Main</div><div style="font-weight:600">${object.name}</div></div>` }
+      const safeName = escapeHtml(String(object.name))
+      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">Water Main</div><div style="font-weight:600">${safeName}</div></div>` }
     }
     if (object.properties?.stress !== undefined) {
-      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">Grid Cell</div><div>Stress: <span style="font-weight:600">${object.properties.stress}</span></div></div>` }
+      const safeStress = escapeHtml(String(object.properties.stress))
+      return { html: `<div style="font-family:Inter,sans-serif;font-size:12px;color:#f1f5f9;background:#0f172a;padding:8px 12px;border-radius:6px;border:1px solid #1e293b"><div style="color:#94a3b8;font-size:10px;text-transform:uppercase">Grid Cell</div><div>Stress: <span style="font-weight:600">${safeStress}</span></div></div>` }
     }
     return null
   }, [])

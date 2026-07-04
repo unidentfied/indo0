@@ -60,7 +60,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-sindio-border text-xs text-sindio-muted">
+        <div className="mt-16 pt-8 border-t border-sindio-border text-xs text-sindio-muted text-left">
           COPYRIGHT &copy; 2026 SINDIO.NET ALL RIGHTS RESERVED.
         </div>
       </div>

@@ -1,0 +1,58 @@
+# Sindio — Automated Model Retraining Pipeline
+# ==============================================
+# Trains all ML models weekly on synthetic data and pushes artifacts to S3.
+
+name: Model Retraining
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'  # Every Sunday 3am UTC
+  workflow_dispatch:
+
+env:
+  MODELS_BUCKET: sindio-prod-models
+  PYTHONPATH: sindio/backend/core
+
+jobs:
+  retrain-stress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install core dependencies
+        run: |
+          cd sindio/backend/core
+          pip install torch numpy pandas
+      - name: Train stress model
+        run: |
+          cd sindio/backend/core
+          python app/training/train_stress_model.py --epochs 50 --samples 50000 --output-dir ../../models/trained
+      - name: Train mobility model
+        run: |
+          cd sindio/backend/core
+          python app/training/train_mobility_model.py --epochs 30 --samples 10000 --output-dir ../../models/trained
+      - name: Train water demand model
+        run: |
+          cd sindio/backend/core
+          python app/training/train_water_model.py --epochs 30 --samples 5000 --output-dir ../../models/trained
+      - name: Upload to S3
+        run: |
+          aws s3 cp sindio/models/trained/ s3://${MODELS_BUCKET}/models/$(date +%Y%m%d)/ --recursive
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+      - name: Update model registry manifest
+        run: |
+          echo "{\"date\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\", \"models\": [\"urban_stress_v1.pth\", \"mobility_v2.pth\", \"water_demand_v1.pth\"]}" > models/manifest.json
+          aws s3 cp models/manifest.json s3://${MODELS_BUCKET}/manifest.json
+      - name: Notify on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {"text": "Model retraining failed — check GitHub Actions"}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

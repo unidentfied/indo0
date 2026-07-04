@@ -34,7 +34,7 @@ class TokenResponse(BaseModel):
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     if not JWT_SECRET:
-        raise RuntimeError("JWT_SECRET environment variable is not set")
+        raise HTTPException(status_code=401, detail="JWT_SECRET not configured — authentication unavailable")
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=JWT_EXPIRY_MINUTES))
     to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
@@ -43,7 +43,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 def decode_access_token(token: str) -> dict:
     if not JWT_SECRET:
-        raise RuntimeError("JWT_SECRET environment variable is not set")
+        raise HTTPException(status_code=401, detail="JWT_SECRET not configured — authentication unavailable")
     return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], options={"require": ["exp"]})
 
 

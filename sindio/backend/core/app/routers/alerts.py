@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Query, Depends
-from ..dependencies.auth import get_current_user
+from app.auth import optional_auth
 
 from app.services.monitor import get_all_configs, get_config
 from app.database import get_engine
@@ -10,7 +10,7 @@ from sqlalchemy import text
 router = APIRouter()
 
 
-@router.get("/dashboard", dependencies=[Depends(get_current_user)])
+@router.get("/dashboard/alerts", dependencies=[Depends(optional_auth)])
 def get_alerts(
     infra_type: Optional[str] = Query(None, description="Filter by infrastructure type"),
     limit: int = Query(10, ge=1, le=100),

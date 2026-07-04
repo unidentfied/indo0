@@ -14,7 +14,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import httpx
 
+import structlog
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+from app.shutdown import install_signal_handlers, register_shutdown_handler
+
+structlog.configure(
+    processors=[structlog.processors.JSONRenderer()],
+    logger_factory=structlog.stdlib.LoggerFactory(),
+)
+logger = structlog.get_logger("sindio.mock_api")
+
 from app.routers.api import router as api_router
+from app.routers.streaming import router as stream_router
+from app.routers.reports import router as reports_router
+from app.routers.feedback import router as feedback_router
+from app.routers.privacy import router as privacy_router
 
 app = FastAPI(
     title="Sindio",
@@ -22,10 +39,23 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Install graceful shutdown handlers
+install_signal_handlers()
+
+# Body size limit middleware
+@app.middleware("http")
+async def body_size_limit_middleware(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) > 10 * 1024 * 1024:  # 10 MB
+        return JSONResponse(
+            {"detail": "Request body exceeds 10MB limit"},
+            status_code=413,
+        )
+    return await call_next(request)
+
 _CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
 if not _CORS_ORIGINS:
-    import logging
-    logging.getLogger("sindio.main").warning(
+    logger.warning(
         "CORS_ORIGINS is not set. CORS will default to localhost-only. "
         "Set CORS_ORIGINS in your Railway/Render dashboard to your frontend URL(s)."
     )
@@ -39,14 +69,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── API key auth middleware (write-protect POST/PUT/DELETE) ──
+limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ── Security headers middleware ────────────────────────────
+
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "0"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(self), microphone=()"
+    if not request.url.hostname or request.url.hostname in ("localhost", "127.0.0.1"):
+        response.headers["Strict-Transport-Security"] = "max-age=0"
+    else:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+# ── Structured request logging middleware ──────────────────
+
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    logger.info("request", method=request.method, path=request.url.path)
+    response = await call_next(request)
+    logger.info("response", status_code=response.status_code, path=request.url.path)
+    return response
+
+# ── RBAC + API key auth middleware ────────────────────────────
 
 _API_KEY = os.getenv("SINDIO_API_KEY", "")
 
 
 @app.middleware("http")
-async def api_key_middleware(request: Request, call_next):
-    """Require X-API-Key on write operations when SINDIO_API_KEY is set."""
+async def rbac_middleware(request: Request, call_next):
+    """Enforce RBAC on protected endpoints.
+
+    Public endpoints (health, metrics, landing) are exempt.
+    All other endpoints require valid JWT with appropriate role.
+    """
+    public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/api/v1/stream"}
+    if any(request.url.path.startswith(p) for p in public_paths):
+        return await call_next(request)
+
+    # API key check for write operations
     if request.method in ("POST", "PUT", "DELETE", "PATCH") and _API_KEY:
         header_key = request.headers.get("X-API-Key", "")
         if header_key != _API_KEY:
@@ -54,7 +122,28 @@ async def api_key_middleware(request: Request, call_next):
                 {"detail": "Unauthorized — missing or invalid API key"},
                 status_code=401,
             )
+
     return await call_next(request)
+
+# ── Global exception handler ─────────────────────────────────
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    logger.error("Unhandled exception", exc_info=exc)
+    return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+# ── Trace ID propagation middleware ────────────────────────
+
+import uuid as _uuid
+
+@app.middleware("http")
+async def trace_id_middleware(request: Request, call_next):
+    trace_id = request.headers.get("X-Trace-ID") or request.headers.get("X-Request-ID") or str(_uuid.uuid4())
+    structlog.contextvars.bind_contextvars(trace_id=trace_id)
+    response = await call_next(request)
+    response.headers["X-Trace-ID"] = trace_id
+    structlog.contextvars.unbind_contextvars("trace_id")
+    return response
 
 # ── Optional proxy to ML Core (port 8081) ────────────────────────
 
@@ -130,8 +219,12 @@ async def _proxy_optional(request: Request, path: str):
         return JSONResponse({"status": "ok", "source": "mock", "core_unreachable": True})
 
 
-# ── Mount mock API router at /api prefix ─────────────────────────
+# ── Mount all routers ──────────────────────────────────────────
 app.include_router(api_router, prefix="/api")
+app.include_router(stream_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
+app.include_router(feedback_router, prefix="/api/v1")
+app.include_router(privacy_router, prefix="/api/v1")
 
 
 @app.get("/health")

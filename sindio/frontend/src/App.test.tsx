@@ -14,10 +14,7 @@ describe('App', () => {
     expect(heading.textContent).toContain('Infrastructure Resilience')
   })
 
-  it.skip('renders dashboard at /dashboard route', async () => {
-    // SKIPPED: App renders BrowserRouter internally, which conflicts with
-    // MemoryRouter in tests. Requires refactoring App to accept router as prop.
-    // The landing-page test above confirms the app bundle loads correctly.
+  it('renders dashboard at /dashboard route', async () => {
     render(
       <MemoryRouter initialEntries={['/dashboard']}>
         <App />

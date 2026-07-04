@@ -20,8 +20,8 @@ def get_current_user(
     secret = os.getenv("JWT_SECRET")
     if not secret:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="JWT secret not configured",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="JWT secret not configured — authentication unavailable",
         )
     try:
         payload = jwt.decode(token, secret, algorithms=["HS256"])

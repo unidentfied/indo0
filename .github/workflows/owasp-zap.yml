@@ -1,0 +1,34 @@
+name: OWASP ZAP Baseline Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * 1'  # Weekly Monday 4am
+
+jobs:
+  zap-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start mock API (for scan target)
+        run: |
+          cd sindio/backend/app
+          pip install -r requirements.txt
+          PYTHONPATH=.:..: uvicorn app.main:app --host 0.0.0.0 --port 8080 &
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:8080'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report
+          path: report_*

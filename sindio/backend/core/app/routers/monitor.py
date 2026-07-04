@@ -7,7 +7,8 @@ and official report summaries across ALL infrastructure types.
 """
 
 import os
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from app.auth import optional_auth
 from typing import Optional
 from datetime import datetime, timezone
 
@@ -16,7 +17,7 @@ from app.services.monitor import get_all_stressed_assets, get_all_configs, get_c
 router = APIRouter()
 
 
-@router.get("/api/v1/monitor/stress")
+@router.get("/api/v1/monitor/stress", dependencies=[Depends(optional_auth)])
 def get_stress(
     ward: Optional[str] = Query(None, description="Filter to one ward (e.g. 'Central')"),
     infra_type: Optional[str] = Query(None, description="Filter to one infrastructure type"),
@@ -112,7 +113,7 @@ def get_stress(
     return result
 
 
-@router.get("/api/v1/monitor/types")
+@router.get("/api/v1/monitor/types", dependencies=[Depends(optional_auth)])
 def get_infra_types():
     """List all registered infrastructure types with their configs."""
     return {
@@ -144,7 +145,7 @@ def get_infra_types():
     }
 
 
-@router.get("/api/v1/monitor/{infra_type}/report")
+@router.get("/api/v1/monitor/{infra_type}/report", dependencies=[Depends(optional_auth)])
 def get_report_summary(infra_type: str):
     """Get the official report summary for one infrastructure type."""
     from app.services.monitor import ReportIntegrator
@@ -159,7 +160,7 @@ def get_report_summary(infra_type: str):
     return integrator.get_report_summary(datetime.now(timezone.utc))
 
 
-@router.get("/api/v1/monitor/classification")
+@router.get("/api/v1/monitor/classification", dependencies=[Depends(optional_auth)])
 def get_classification_summary(
     infra_type: Optional[str] = Query(None, description="Filter to one infrastructure type"),
 ):
@@ -278,7 +279,7 @@ def get_classification_summary(
     }
 
 
-@router.get("/api/v1/monitor/classification/examples")
+@router.get("/api/v1/monitor/classification/examples", dependencies=[Depends(optional_auth)])
 def get_classification_examples(
     infra_type: str = Query(..., description="Infrastructure type to get examples for"),
     classification_type: str = Query(..., description="Classification type (recurring_only, density_driven_only, mixed, unstable)"),

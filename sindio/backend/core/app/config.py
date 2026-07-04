@@ -17,7 +17,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    jwt_secret: str = Field(default="dev-secret-change-me", validation_alias="JWT_SECRET")
+    jwt_secret: str = Field(default="", validation_alias="JWT_SECRET")
 
     # Database: prefer DATABASE_URL (Railway / Render standard), fall back to components
     database_url_raw: str | None = Field(default=None, validation_alias="DATABASE_URL")

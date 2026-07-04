@@ -1,0 +1,105 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly Monday 6am
+
+jobs:
+  # ── Python Dependency Audit ──────────────────────────────────
+  pip-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pip-audit
+        run: pip install pip-audit
+      - name: Audit mock API dependencies
+        run: |
+          cd sindio/backend/app
+          pip-audit -r requirements.txt || true
+      - name: Audit ML Core dependencies
+        run: |
+          cd sindio/backend/core
+          pip install poetry
+          poetry export --without-hashes -f requirements.txt | pip-audit || true
+
+  # ── Go Vulnerability Scan ────────────────────────────────────
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Scan Go API
+        run: |
+          cd sindio/backend/api
+          govulncheck ./...
+
+  # ── Rust Security Audit ───────────────────────────────────────
+  cargo-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+      - name: Audit Rust streaming
+        run: |
+          cd sindio/backend/streaming
+          cargo audit
+
+  # ── Container Image Scanning ──────────────────────────────────
+  trivy-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build images
+        run: |
+          docker build -f sindio/backend/app/Dockerfile -t sindio-api:test .
+          docker build -f sindio/backend/core/Dockerfile -t sindio-core:test .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'sindio-api:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ── npm Audit (Frontend) ─────────────────────────────────────
+  npm-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and audit
+        run: |
+          cd sindio/frontend
+          npm ci
+          npm audit --audit-level=moderate || true
+
+  # ── Secret Scanning (GitLeaks) ───────────────────────────────
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -20,6 +20,12 @@ __pycache__/
 # Terraform cruft
 **/.terraform/providers/
 
+# Environment files with secrets
+.env
+**/.env
+.env.*
+**/.env.*
+
 # Built binaries
 sindio/backend/api/api
 

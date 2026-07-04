@@ -371,3 +371,226 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
+---
+# ── sindio-postgres (single-replica; Dev only — Prod uses RDS) ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sindio-postgres
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sindio-postgres
+  template:
+    metadata:
+      labels:
+        app: sindio-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: sindio-secrets
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: sindio-config
+                  key: DB_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: sindio-config
+                  key: DB_NAME
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "sindio_user"]
+            initialDelaySeconds: 30
+            periodSeconds: 15
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: sindio-postgres-data
+---
+# ── sindio-redis (single-replica; Dev only — Prod uses ElastiCache) ──
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sindio-redis
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: redis
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sindio-redis
+  template:
+    metadata:
+      labels:
+        app: sindio-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - name: redis
+              containerPort: 6379
+          command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --maxmemory
+            - "512mb"
+            - --maxmemory-policy
+            - allkeys-lru
+          volumeMounts:
+            - name: redisdata
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "768Mi"
+          livenessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: redisdata
+          persistentVolumeClaim:
+            claimName: sindio-redis-data
+---
+# ── sindio-qdrant (single-replica; Dev only) ─────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sindio-qdrant
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: qdrant
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sindio-qdrant
+  template:
+    metadata:
+      labels:
+        app: sindio-qdrant
+    spec:
+      containers:
+        - name: qdrant
+          image: qdrant/qdrant:latest
+          ports:
+            - name: http
+              containerPort: 6333
+            - name: grpc
+              containerPort: 6334
+          volumeMounts:
+            - name: qdrantdata
+              mountPath: /qdrant/storage
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            tcpSocket:
+              port: 6333
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: qdrantdata
+          persistentVolumeClaim:
+            claimName: sindio-qdrant-data
+---
+# ── sindio-minio (single-replica; Dev only) ──────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sindio-minio
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+    app.kubernetes.io/component: minio
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sindio-minio
+  template:
+    metadata:
+      labels:
+        app: sindio-minio
+    spec:
+      containers:
+        - name: minio
+          image: minio/minio:latest
+          args:
+            - server
+            - /data
+            - --console-address
+            - ":9001"
+          ports:
+            - name: api
+              containerPort: 9000
+            - name: console
+              containerPort: 9001
+          envFrom:
+            - secretRef:
+                name: sindio-secrets
+          volumeMounts:
+            - name: miniodata
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "2Gi"
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+      volumes:
+        - name: miniodata
+          persistentVolumeClaim:
+            claimName: sindio-minio-data

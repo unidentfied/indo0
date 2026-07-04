@@ -163,6 +163,102 @@ All services expose `/metrics` (Prometheus) with gauges keyed by `infrastructure
 
 **To add an infrastructure type**: add one `InfraConfig` entry in `registry.py`. No other changes needed.
 
+## Real data ingestion
+
+`backend/core/app/ingestion/` contains fetchers that integrate with live Nairobi data sources:
+
+| Fetcher | Source | Data | Env Vars |
+|---|---|---|---|
+| `KPLCFetcher` | Kenya Power | Substation loading, generation dispatch, outages | `KPLC_API_URL`, `KPLC_API_KEY` |
+| `NairobiWaterFetcher` | NCWSC | Reservoirs, treatment plants, pipelines | `NCWSC_PORTAL_URL` |
+| `WeatherFetcher` | Open-Meteo / OpenWeatherMap | Thermal stress, UV, humidity | `OPENWEATHER_API_KEY` |
+| `OSMFetcher` | OpenStreetMap Overpass | Roads, sidewalks, power lines, water pipes, rail | `OVERPASS_API_URL` |
+| `KenyaOpenDataFetcher` | Kenya Open Data Initiative | Wards, roads, power lines GeoJSON | (none, public) |
+| `WorldPopFetcher` | WorldPop raster | Population density (297MB GeoTIFF) | `SINDIO_SKIP_RASTER` |
+| `NairobiMetropolitanFetcher` | NMS portal | Water supply, road maintenance (HTML scraping) | (none, public) |
+
+**Run all fetchers:**
+```bash
+cd backend/core && poetry run python -c "from app.ingestion import run_all; print(run_all())"
+```
+
+**Run single fetcher:**
+```bash
+cd backend/core && poetry run python -c "from app.ingestion import run_single; print(run_single('Kenya Power'))"
+```
+
+All fetchers follow the `BaseFetcher` pattern: retry with exponential backoff, insert to PostgreSQL, log run outcomes.
+
+## ML training pipeline
+
+```bash
+# Train the urban-stress prediction model
+cd backend/core && poetry run python app/training/train_stress_model.py --epochs 100 --samples 50000
+
+# Output: models/trained/urban_stress_v1.pth
+```
+
+The training script generates synthetic-but-realistic data matching known Nairobi patterns (peak-hour multipliers, wet/dry season, ward population densities) and trains a lightweight MLP (`StressPredictor`) that outputs stress prediction (0-1) and breach classification (4 classes).
+
+## Container images
+
+`.github/workflows/build-images.yml` builds and pushes all services to GitHub Container Registry:
+
+```bash
+# Images are built on every push to main
+docker pull ghcr.io/sindio/sindio-api:latest
+docker pull ghcr.io/sindio/sindio-simulator:latest
+docker pull ghcr.io/sindio/sindio-go-api:latest
+docker pull ghcr.io/sindio/sindio-streaming:latest
+docker pull ghcr.io/sindio/sindio-frontend:latest
+```
+
+## Terraform bootstrap
+
+Before first `terraform apply`, run the S3 backend bootstrap:
+
+```bash
+cd terraform && ./bootstrap.sh [aws-profile]
+```
+
+This creates the `sindio-tfstate` S3 bucket (versioned, encrypted, private) and the `sindio-tfstate-lock` DynamoDB table for state locking.
+
+## Backup & restore
+
+```bash
+# Automated backup (runs via scheduler every 24h)
+./scripts/backup_db.sh [s3-bucket-name]
+
+# Restore from backup (requires typing RESTORE to confirm)
+./scripts/restore_db.sh /tmp/sindio_backups/sindio_YYYYMMDD_HHMMSS.sql.gz
+
+# Disaster recovery procedures: scripts/disaster_recovery.sh
+```
+
+## Seed GIS data
+
+```bash
+# Generate synthetic-but-realistic Nairobi ward + infrastructure GeoJSON
+python scripts/generate_seed_gis.py
+# Output: data/fixtures/nairobi_wards.geojson, power_grid.geojson, water_network.geojson, road_network.geojson
+```
+
+## Load testing
+
+```bash
+# k6 (install: brew install k6)
+cd tests/load && k6 run k6-load-test.js --env API_URL=https://your-api.com
+
+# Locust (install: pip install locust)
+cd tests/load && locust -f locustfile.py --host http://localhost:8080
+```
+
+## Incident response
+
+Runbooks are in `docs/runbooks/`:
+- `incident-response.md` — Severity levels (SEV-1 to SEV-4), response procedures, PIR template
+- `alert-escalation.md` — Escalation matrix, notification channels, war room procedure, on-call rotation
+
 ## Key gotchas
 
 - `dev.sh` runs the **ML Core** from `backend/core/app/`, not the mock API. It exports `JWT_SECRET` and `DB_PASSWORD` with dev defaults so the ML Core can start without `.env`.

@@ -73,12 +73,20 @@ describe('api client', () => {
     expect(fetchSpy).toHaveBeenCalledWith('/api/v1/next_updates', expect.any(Object))
   })
 
-  it('throws on non-200 response', async () => {
+  it('dashboard.alerts calls correct path', async () => {
     fetchSpy.mockResolvedValueOnce(
-      new Response('Not Found', { status: 404 }),
+      new Response(
+        JSON.stringify([
+          { id: 'ALT-001', level: 'critical', title: 'Test', description: '', category: 'power', timestamp: '' },
+        ]),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
     )
 
-    await expect(api.dashboard.alerts()).rejects.toThrow('API 404')
+    const result = await api.dashboard.alerts()
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(1)
+    expect(fetchSpy).toHaveBeenCalledWith('/api/v1/dashboard/alerts', expect.any(Object))
   })
 
   it('simulations.run posts to correct URL', async () => {
