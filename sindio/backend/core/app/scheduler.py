@@ -29,13 +29,13 @@ def _build_jobstores():
     redis_url = os.getenv("REDIS_URL")
     if redis_url:
         try:
-            # Parse Redis URL to extract host/port/db for APScheduler RedisJobStore
-            # APScheduler RedisJobStore expects a host parameter, not full URL
-            # We try the URL-form first; if it fails, fall back to memory
+            # APScheduler RedisJobStore accepts a full Redis URL via the `url` param.
+            # Using `host=` would treat the entire URL as a hostname and duplicate
+            # the port, producing an invalid address like host:6379:6379.
             store = RedisJobStore(
                 jobs_key="sindio.jobs",
                 run_times_key="sindio.run_times",
-                host=redis_url,
+                url=redis_url,
             )
             logger.info("Scheduler using Redis job store")
             return {"default": store}
