@@ -14,7 +14,7 @@ This document covers deploying the Sindio stack (backend + frontend) to producti
 
 The mock API (`sindio/backend/app/`) is the default deployed backend. It serves endpoints directly and can proxy to the ML Core.
 
-Railway auto-deploys from `main` whenever you push. No manual deploy needed.
+Railway does **not** auto-deploy from this repo. Create the service manually in the Railway dashboard, set Builder = Dockerfile, and configure environment variables before first deploy.
 
 ### Required Railway Environment Variables
 
@@ -56,10 +56,10 @@ The ML Core (`sindio/backend/core/`) runs real ML inference, physics simulations
 1. In your **existing Railway project** (same one as the mock API), click **New** → **Empty Service**
 2. Connect it to the same GitHub repo
 3. In the service settings, set **Builder** to **Dockerfile**
-4. Set **Dockerfile path** to `sindio/backend/core/Dockerfile`
+4. Set **Dockerfile path** to `sindio/backend/core/Dockerfile.core`
 5. Set **Root directory** to `/` (repo root)
 
-> **Why not a second `railway.toml`?** Railway's config-as-code reads `railway.toml` from the repo root for each service. If two services share one repo, they would conflict. Instead, configure the ML Core service via the Railway dashboard, and keep `railway.toml` for the mock API. Reference: `railway.core.toml` in this repo shows the equivalent settings.
+> **No `railway.toml` or `railway.core.toml` exists in this repo.** Both services must be configured manually in the Railway dashboard (Builder = Dockerfile).
 
 ### Required Railway Environment Variables (ML Core)
 

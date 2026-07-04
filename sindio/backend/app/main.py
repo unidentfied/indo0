@@ -148,16 +148,16 @@ async def trace_id_middleware(request: Request, call_next):
 # ── Optional proxy to ML Core (port 8081) ────────────────────────
 
 _CORE_URL = os.getenv("CORE_URL", "http://localhost:8081")
-_USE_CORE = os.getenv("SINDIO_USE_CORE", "1") == "1"
+_USE_CORE = os.getenv("SINDIO_USE_CORE", "0") == "1"
 
 
 @app.middleware("http")
 async def core_proxy_middleware(request: Request, call_next):
     """Proxy /api/v1/* requests to ML Core when available.
 
-    If the core has the endpoint (returns non-404), we return the core's
-    response directly. If the core returns 404 or is unreachable, we fall
-    through to the mock API router so endpoints the core lacks still work.
+    If Core returns a successful response (< 500), return it directly.
+    Otherwise (5xx or unreachable) fall through to the mock API router
+    so endpoints the core lacks or crashes on still work.
     """
     if not _USE_CORE:
         return await call_next(request)

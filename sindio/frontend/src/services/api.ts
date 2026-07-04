@@ -141,8 +141,12 @@ export const api = {
   },
 
   simulations: {
-    run: (network: string) =>
-      request<SimulationResult>(`/simulations/run?network=${network}`, { method: 'POST' }),
+    run: (network: string) => {
+      // Core uses plural /simulations/run; Mock API alias is /v1/simulate/run
+      const useCore = (import.meta as any).env?.VITE_USE_CORE === '1'
+      const path = useCore ? `/v1/simulations/run?network=${network}` : `/simulations/run?network=${network}`
+      return request<SimulationResult>(path, { method: 'POST' })
+    },
     status: () => request<{ active: number }>('/simulations/status'),
   },
 

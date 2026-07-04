@@ -94,7 +94,7 @@ services:
   core:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.python
+      dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-core
     restart: unless-stopped
     ports:
@@ -129,7 +129,7 @@ services:
   celery_worker:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.python
+      dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-celery-worker
     restart: unless-stopped
     command: ["celery", "-A", "app.worker.celery_app", "worker", "--loglevel=info"]
@@ -154,7 +154,7 @@ services:
   celery_beat:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.python
+      dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-celery-beat
     restart: unless-stopped
     command: ["celery", "-A", "app.worker.celery_app", "beat", "--loglevel=info"]

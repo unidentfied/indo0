@@ -38,6 +38,8 @@ class FeedbackSubmission(BaseModel):
     operator_contact: Optional[str] = None
 
 
+# FIXME: Replace in-memory list with a PostgreSQL table before production.
+# Feedback is critical operational data and is lost on every restart.
 _FEEDBACK_STORE: List[Dict[str, Any]] = []
 
 

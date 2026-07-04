@@ -123,15 +123,15 @@ SQL migrations in `backend/migrations/` auto-mount as PostgreSQL init scripts.
 ## Deployment & infra directories
 
 - `k8s/` — Kubernetes manifests (namespace, configmap, secrets, deployments, services, HPA, Istio VS, ServiceMonitors) with Kustomize + overlays
-- `terraform/` — IaC with `dev.tfvars` and `prod.tfvars`
+- ~~`terraform/`~~ — Removed. Infrastructure is managed via Railway dashboard.
 - `monitoring/` — Grafana dashboards + Prometheus alerting rules:
   - `data-quality-alerts.yml` — mock fallback ratio, model confidence, real data fetch alerts
   - `infrastructure-alerts.yml` — stress index, degraded assets, time-to-breach, simulation failures, API error/latency
 
 ## Production deployment (Railway + Netlify)
 
-**Backend** is deployed to Railway via `railway.toml` (config-as-code) + `sindio/backend/app/Dockerfile`.
-- Railway auto-deploys on every push to `main`
+**Backend** is deployed to Railway manually via dashboard (Builder = Dockerfile).
+- There is no `railway.toml` in this repo — configure services directly in Railway.
 - Required env vars in Railway dashboard: `CORS_ORIGINS`, `SINDIO_SKIP_RASTER=1`, `SINDIO_USE_CORE=0`
 - `CORS_ORIGINS` must include the deployed Netlify frontend URL
 
@@ -213,15 +213,7 @@ docker pull ghcr.io/sindio/sindio-streaming:latest
 docker pull ghcr.io/sindio/sindio-frontend:latest
 ```
 
-## Terraform bootstrap
 
-Before first `terraform apply`, run the S3 backend bootstrap:
-
-```bash
-cd terraform && ./bootstrap.sh [aws-profile]
-```
-
-This creates the `sindio-tfstate` S3 bucket (versioned, encrypted, private) and the `sindio-tfstate-lock` DynamoDB table for state locking.
 
 ## Backup & restore
 
@@ -263,7 +255,7 @@ Runbooks are in `docs/runbooks/`:
 
 - `dev.sh` runs the **ML Core** from `backend/core/app/`, not the mock API. It exports `JWT_SECRET` and `DB_PASSWORD` with dev defaults so the ML Core can start without `.env`.
 - `dev.sh` also exports `CORE_PORT=8080` so the frontend Vite proxy (`:8080` default) aligns. The standalone ML Core uses port 8081.
-- The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=1` — it will proxy to ML Core on :8081 when available.
+- The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=0` — proxy to ML Core must be enabled explicitly in Railway env vars.
 - Only one service on port 8080 at a time (Python mock or Go API).
 - ML Core loads models on startup via `ModelRegistry`. If model files are missing (`models/trained/*.pth`, `models/embeddings/*.npy`), the registry starts empty and the service relies on heuristics.
 - Docker core port mapping is `8081:8081` (matching the container CMD). Frontend nginx proxies `/api/` → `sindio-core:8081`.

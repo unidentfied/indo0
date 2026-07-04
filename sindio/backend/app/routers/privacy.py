@@ -99,13 +99,16 @@ async def download_data_export(
     }
 
 
-@router.delete("/delete-account")
+@router.post("/delete-account")
 async def delete_account(
     request: Request,
     body: DeleteAccountRequest,
     user: Dict = Depends(require_admin),
 ) -> Dict[str, Any]:
-    """Hard-delete or anonymize all personal data for a user (admin only, irreversible)."""
+    """Hard-delete or anonymize all personal data for a user (admin only, irreversible).""
+    NOTE: Changed from DELETE to POST because HTTP DELETE with a request body
+    is non-standard and may be stripped by proxies/CDNs.
+    """
     email = body.email
     email_hash = _hash_email(email)
     request_id = f"DSR-DEL-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{hash(email) % 10000:04d}"

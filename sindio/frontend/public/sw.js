@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sindio-v2'
+const CACHE_VERSION = 'sindio-BUILD_HASH_PLACEHOLDER'
 const CACHE_NAME = `sindio-${CACHE_VERSION}`
 const OFFLINE_QUEUE = 'sindio-offline-queue'
 
@@ -57,7 +57,7 @@ async function processOfflineQueue() {
 
   for (const task of tasks) {
     try {
-      const response = await fetch('/api/v1/simulate/run', {
+      const response = await fetch('/api/v1/simulations/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(task.payload),

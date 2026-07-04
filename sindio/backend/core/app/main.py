@@ -30,14 +30,20 @@ from app.services.model_registry import ModelRegistry
 async def lifespan(app: FastAPI):
     logger.info("Starting Sindio Core", port=config.port)
 
-    # Initialize database schema for ingestion
-    from app.database import init_ingestion_tables
-    init_ingestion_tables()
-
     try:
         await model_registry.load_models()
     except Exception:
         logger.warning("Model registry loading failed — running with heuristics only")
+
+    # Initialize database schema for ingestion in background so HTTP server starts immediately
+    def _init_tables():
+        try:
+            from app.database import init_ingestion_tables
+            init_ingestion_tables()
+        except Exception as exc:
+            logger.warning("Ingestion table init failed (non-critical): %s", exc)
+
+    threading.Thread(target=_init_tables, daemon=True).start()
 
     # Run external data ingestion in background so HTTP server starts immediately
     if os.getenv("SINDIO_AUTO_INGEST", "1") == "1":
@@ -92,6 +98,21 @@ app.add_middleware(
 
 
 @app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "0"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(self), microphone=()"
+    if not request.url.hostname or request.url.hostname in ("localhost", "127.0.0.1"):
+        response.headers["Strict-Transport-Security"] = "max-age=0"
+    else:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
+@app.middleware("http")
 async def request_id_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID", "")
     structlog.contextvars.bind_contextvars(request_id=request_id)
@@ -116,10 +137,13 @@ app.include_router(alerts.router, prefix="/api/v1")
 app.include_router(schedule.router)
 app.include_router(monitor.router)
 app.include_router(training.router, prefix="/api/v1")
-import os
-_frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
-if os.path.isdir(_frontend_dist):
-    app.mount("/static", StaticFiles(directory=_frontend_dist, html=True), name="static")
+# Static files mount — disabled in Docker because frontend/dist is not copied into the image.
+# Serve static files via a reverse proxy (nginx, Netlify, or Railway static serving) instead.
+# To enable locally, set CORE_SERVE_STATIC=1.
+if os.getenv("CORE_SERVE_STATIC") == "1":
+    _frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+    if os.path.isdir(_frontend_dist):
+        app.mount("/static", StaticFiles(directory=_frontend_dist, html=True), name="static")
 
 
 
