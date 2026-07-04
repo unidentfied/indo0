@@ -14,11 +14,11 @@ RUN pip install --no-cache-dir poetry==1.7.1
 # ── Copy dependency files first (layer caching) ────────────────
 COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
-# ── Install Python deps with BuildKit cache mount ──────────────
-# Cache mount speeds up rebuilds by reusing Poetry cache between builds.
+# ── Install Python deps ──────────────────────────────────────────
+# Regenerate lock file if stale, then install production deps only.
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-dev --no-interaction --no-ansi \
-    && pip install --no-cache-dir 'apscheduler>=3.10.0'
+    && poetry lock --no-update \
+    && poetry install --only main --no-interaction --no-ansi
 
 # ── Copy application code ──────────────────────────────────────
 COPY sindio/backend/core/app/ ./app/
