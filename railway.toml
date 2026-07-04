@@ -1,6 +1,0 @@
-[build]
-dockerfilePath = "sindio/backend/app/Dockerfile"
-
-[deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 300
