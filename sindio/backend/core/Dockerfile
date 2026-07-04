@@ -16,8 +16,7 @@ COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
 # ── Install Python deps with BuildKit cache mount ──────────────
 # Cache mount speeds up rebuilds by reusing Poetry cache between builds.
-RUN --mount=type=cache,id=sindio-poetry,target=/root/.cache/pypoetry \
-    poetry config virtualenvs.create false \
+RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi \
     && pip install --no-cache-dir 'apscheduler>=3.10.0'
 
