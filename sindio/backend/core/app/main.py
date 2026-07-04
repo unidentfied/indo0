@@ -172,7 +172,8 @@ async def health_ready():
         logger.warning("Postgres health check failed", error=str(exc))
         deps["postgres"] = "unreachable"
 
-    all_ok = deps.get("postgres") == "ok"
+    # Models are required for real inference; if they fail to load, the service is degraded.
+    all_ok = deps.get("postgres") == "ok" and deps.get("models_loaded") is True
     return Response(
         content=json.dumps({"status": "ready" if all_ok else "degraded", "dependencies": deps}),
         media_type="application/json",

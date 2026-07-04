@@ -223,7 +223,7 @@ Expected response: HTTP 200 with `"db": "ok"` and `"scheduler": "running"`.
 If `"scheduler"` is `"unavailable"`, apscheduler failed to start — check the deploy logs.
 If `"db"` is `"unreachable"`, the database connection is broken — check `DATABASE_URL`.
 
-## 8. Rollback
+## 9. Rollback
 
 - **Backend:** Railway dashboard → Deployments → click previous deploy
 - **Frontend:** Netlify dashboard → Deploys → click previous deploy

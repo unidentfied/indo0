@@ -114,8 +114,8 @@ async def rbac_middleware(request: Request, call_next):
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
-    # API key check for write operations
-    if request.method in ("POST", "PUT", "DELETE", "PATCH") and _API_KEY:
+    # API key check for all operations when SINDIO_API_KEY is configured
+    if _API_KEY:
         header_key = request.headers.get("X-API-Key", "")
         if header_key != _API_KEY:
             return JSONResponse(

@@ -251,6 +251,21 @@ def simulate_run_v1(request: SimulateRequest):
     )
 
 
+@router.post("/v1/simulations/run", response_model=SimulateResponse)
+def simulate_run_core_alias(request: SimulateRequest):
+    """Core-compatible alias (plural 'simulations') so the proxy and frontend can use one path."""
+    result = start_simulation(
+        infrastructure_type=request.infrastructure_type,
+        stress_factor=request.stress_factor,
+        parameters=request.parameters,
+    )
+    return SimulateResponse(
+        task_id=result["task_id"],
+        status="queued",
+        message=f"Simulation {result['task_id']} queued",
+    )
+
+
 @router.get("/v1/simulate/status/{task_id}", response_model=SimulateTaskStatus)
 def simulate_status_v1(task_id: str):
     """v1 alias for GET /api/simulate/status/{task_id}, wrapped for frontend."""

@@ -93,7 +93,7 @@ services:
   # ============================================================
   core:
     build:
-      context: ..
+      context: ../..
       dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-core
     restart: unless-stopped
@@ -112,11 +112,16 @@ services:
       MINIO_HOST: minio
       AWS_ENDPOINT_URL: http://localstack:4566
     depends_on:
-      - postgres
-      - redis
-      - qdrant
-      - minio
-      - elasticsearch
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 15s
@@ -128,7 +133,7 @@ services:
 
   celery_worker:
     build:
-      context: ..
+      context: ../..
       dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-celery-worker
     restart: unless-stopped
@@ -153,7 +158,7 @@ services:
 
   celery_beat:
     build:
-      context: ..
+      context: ../..
       dockerfile: sindio/backend/core/Dockerfile.core
     container_name: sindio-celery-beat
     restart: unless-stopped

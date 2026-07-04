@@ -256,6 +256,7 @@ Runbooks are in `docs/runbooks/`:
 - `dev.sh` runs the **ML Core** from `backend/core/app/`, not the mock API. It exports `JWT_SECRET` and `DB_PASSWORD` with dev defaults so the ML Core can start without `.env`.
 - `dev.sh` also exports `CORE_PORT=8080` so the frontend Vite proxy (`:8080` default) aligns. The standalone ML Core uses port 8081.
 - The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=0` — proxy to ML Core must be enabled explicitly in Railway env vars.
+- **Local dev with proxy:** `dev.sh` runs Core on port 8080. If you set `SINDIO_USE_CORE=1` locally, also set `CORE_URL=http://localhost:8080` so the Mock API proxy points to the correct port (default is 8081).
 - Only one service on port 8080 at a time (Python mock or Go API).
 - ML Core loads models on startup via `ModelRegistry`. If model files are missing (`models/trained/*.pth`, `models/embeddings/*.npy`), the registry starts empty and the service relies on heuristics.
 - Docker core port mapping is `8081:8081` (matching the container CMD). Frontend nginx proxies `/api/` → `sindio-core:8081`.
