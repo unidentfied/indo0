@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
@@ -37,14 +38,17 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.warning("Model registry loading failed — running with heuristics only")
 
-    # Run external data ingestion on startup (async-safe: fire-and-forget)
+    # Run external data ingestion in background so HTTP server starts immediately
     if os.getenv("SINDIO_AUTO_INGEST", "1") == "1":
-        try:
-            from app.ingestion import run_all
-            results = run_all()
-            logger.info("Auto-ingestion complete", results=results)
-        except Exception as exc:
-            logger.warning("Auto-ingestion failed (non-critical): %s", exc)
+        def _background_ingestion():
+            try:
+                from app.ingestion import run_all
+                results = run_all()
+                logger.info("Auto-ingestion complete", results=results)
+            except Exception as exc:
+                logger.warning("Auto-ingestion failed (non-critical): %s", exc)
+
+        threading.Thread(target=_background_ingestion, daemon=True).start()
 
     # Start periodic scheduler for recurring ingestion + monitoring
     if os.getenv("SINDIO_SCHEDULER", "1") == "1":
