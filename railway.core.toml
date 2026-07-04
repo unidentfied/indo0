@@ -1,5 +1,5 @@
 [build]
-dockerfilePath = "sindio/backend/core/Dockerfile"
+dockerfilePath = "sindio/backend/core/Dockerfile.core"
 
 [deploy]
 healthcheckPath = "/health"

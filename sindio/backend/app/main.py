@@ -182,8 +182,8 @@ async def core_proxy_middleware(request: Request, call_next):
                 method, url, headers=headers, content=body, params=params
             )
 
-            # Core has this endpoint — return its response
-            if resp.status_code != 404:
+            # Core has this endpoint and is healthy — return its response
+            if resp.status_code < 500:
                 return Response(
                     content=resp.content,
                     status_code=resp.status_code,
@@ -222,9 +222,9 @@ async def _proxy_optional(request: Request, path: str):
 # ── Mount all routers ──────────────────────────────────────────
 app.include_router(api_router, prefix="/api")
 app.include_router(stream_router, prefix="/api/v1")
-app.include_router(reports_router, prefix="/api/v1")
-app.include_router(feedback_router, prefix="/api/v1")
-app.include_router(privacy_router, prefix="/api/v1")
+app.include_router(reports_router)   # prefix /api/v1/reports already defined in router
+app.include_router(feedback_router)  # prefix /api/v1/feedback already defined in router
+app.include_router(privacy_router)   # prefix /api/v1/privacy already defined in router
 
 
 @app.get("/health")

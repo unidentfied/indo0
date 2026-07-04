@@ -39,6 +39,8 @@ data/vector_store/**
 
 # Environment
 .env
+.env.*
+!.env.example
 *.local
 
 # IDE

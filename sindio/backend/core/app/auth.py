@@ -62,7 +62,7 @@ async def optional_auth(request: Request, credentials: Optional[HTTPAuthorizatio
         return None
     try:
         return decode_access_token(credentials.credentials)
-    except JWTError:
+    except (JWTError, HTTPException):
         return None
 
 

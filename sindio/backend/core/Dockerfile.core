@@ -35,4 +35,4 @@ ENV SINDIO_SKIP_RASTER=1
 EXPOSE 8081
 
 # Use `poetry run` so uvicorn executes inside the project venv
-CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8081}
+CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port 8081
