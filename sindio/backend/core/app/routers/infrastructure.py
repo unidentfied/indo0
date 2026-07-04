@@ -1,13 +1,12 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Path
 
 from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
-from fastapi import Depends, Path
-from ..dependencies.auth import get_current_user
+from app.auth import optional_auth
 
 router = APIRouter()
 
 
-@router.get("", dependencies=[Depends(get_current_user)])
+@router.get("", dependencies=[Depends(optional_auth)])
 def get_all():
     return {
         "systems": [
@@ -28,7 +27,7 @@ def get_all():
     }
 
 
-@router.get("/{system}", dependencies=[Depends(get_current_user)])
+@router.get("/{system}", dependencies=[Depends(optional_auth)])
 def get_infrastructure(system: str = Path(..., regex="^[a-z0-9_-]+$")):
     try:
         config = get_config(system)

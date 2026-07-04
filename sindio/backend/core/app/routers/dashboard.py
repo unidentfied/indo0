@@ -7,8 +7,9 @@ from app.services.monitor import InfrastructureMonitor, get_all_configs, get_con
 router = APIRouter()
 
 
-def _metric(value, delta_str, status="good", source="monitor"):
+def _metric(label, value, delta_str, status="good", source="monitor"):
     return {
+        "label": label,
         "value": value,
         "delta": delta_str,
         "status": status,
@@ -37,10 +38,10 @@ async def dashboard_metrics(system: str = Query("power")):
     source_label = "real" if any(not a.is_mock for a in assets) else "heuristic"
 
     return [
-        _metric("Nominal" if avg_stress < 0.5 else "Degraded", "stable", "good" if avg_stress < 0.5 else "warning", source_label),
-        _metric(f"{round(avg_stress * 100, 1)}%", f"{round(avg_stress * 100 - 50, 1)}% from baseline", "good" if avg_stress < 0.6 else "warning", source_label),
-        _metric(f"{config.default_asset_count:,}", "stationary", "good", source_label),
-        _metric(str(stressed_count), f"+{critical_count} critical", "good" if stressed_count < config.default_asset_count * 0.1 else "warning", source_label),
+        _metric("System Status", "Nominal" if avg_stress < 0.5 else "Degraded", "stable", "good" if avg_stress < 0.5 else "warning", source_label),
+        _metric("Stress Index", f"{round(avg_stress * 100, 1)}%", f"{round(avg_stress * 100 - 50, 1)}% from baseline", "good" if avg_stress < 0.6 else "warning", source_label),
+        _metric("Total Assets", f"{config.default_asset_count:,}", "stationary", "good", source_label),
+        _metric("Stressed Assets", str(stressed_count), f"+{critical_count} critical", "good" if stressed_count < config.default_asset_count * 0.1 else "warning", source_label),
     ]
 
 

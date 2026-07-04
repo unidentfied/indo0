@@ -66,11 +66,12 @@ try:
                 r = _redis_lib.Redis(connection_pool=_pool)
                 r.ping()
                 return r
-            except _redis_lib.ConnectionError:
+            except Exception as exc:
                 _connected = False
                 logger.warning(
-                    "Redis unreachable — falling back to in-memory task store "
-                    "(1-hour expiry only applies with real Redis)."
+                    "Redis unreachable (%s) — falling back to in-memory task store "
+                    "(1-hour expiry only applies with real Redis).",
+                    exc,
                 )
         return _make_fake()
 

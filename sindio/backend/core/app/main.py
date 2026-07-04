@@ -4,6 +4,7 @@ import threading
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.util import get_remote_address
 
@@ -65,7 +66,7 @@ async def lifespan(app: FastAPI):
     logger.info("Sindio Core stopped")
 
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"], storage_uri=config.redis_url)
+limiter = Limiter(key_func=get_remote_address, storage_uri=config.redis_url)
 app = FastAPI(
     title="Sindio Core",
     description="Python ML core for predictive urban planning simulations",
