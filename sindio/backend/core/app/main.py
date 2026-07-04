@@ -111,7 +111,10 @@ app.include_router(alerts.router, prefix="/api/v1")
 app.include_router(schedule.router)
 app.include_router(monitor.router)
 app.include_router(training.router, prefix="/api/v1")
-app.mount("/static", StaticFiles(directory="../../frontend/dist", html=True), name="static")
+import os
+_frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
+if os.path.isdir(_frontend_dist):
+    app.mount("/static", StaticFiles(directory=_frontend_dist, html=True), name="static")
 
 
 
