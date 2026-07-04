@@ -3,23 +3,21 @@ FROM python:3.11-slim
 WORKDIR /workspace
 
 # ── System dependencies ──────────────────────────────────────────
-# Required by torch, rasterio, psycopg2, shapely, pandapower, etc.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev libgeos-dev libgdal-dev postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Install Poetry ───────────────────────────────────────────────
-# Poetry 1.7.1 requires virtualenv < 21.0 (LogCmd removed in 21.x).
-# We pin virtualenv first, then install Poetry, then freeze the pin.
-RUN pip install --no-cache-dir "virtualenv<21.0" poetry==1.7.1
+# Use a modern Poetry version (1.8.5) that handles virtualenv correctly.
+RUN pip install --no-cache-dir poetry==1.8.5
 
 # ── Copy dependency files first (layer caching) ────────────────
 COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
-# ── Install Python deps ──────────────────────────────────────────
-# Regenerate lock file if stale, then install production deps only.
-RUN poetry config virtualenvs.create false \
-    && poetry lock --no-update \
+# ── Install Python deps into a project virtualenv ────────────────
+# Let Poetry create /workspace/.venv (default behaviour).
+# This isolates project deps from Poetry's own runtime deps.
+RUN poetry lock --no-update \
     && poetry install --only main --no-interaction --no-ansi
 
 # ── Copy application code ──────────────────────────────────────
@@ -36,4 +34,5 @@ ENV SINDIO_SKIP_RASTER=1
 
 EXPOSE 8081
 
-CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8081}
+# Use `poetry run` so uvicorn executes inside the project venv
+CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8081}
