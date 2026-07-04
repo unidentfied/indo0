@@ -8,11 +8,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev libgeos-dev libgdal-dev postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Install Poetry into isolated venv ────────────────────────────
-# This prevents Poetry's own deps (virtualenv, etc.) from conflicting
-# with project deps during `poetry install`.
-RUN python -m venv /opt/poetry \
-    && /opt/poetry/bin/pip install --no-cache-dir poetry==1.7.1 \
+# ── Install Poetry via official installer ────────────────────────
+# Isolates Poetry from the system Python and prevents self-modification
+# during `poetry install`.
+RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/opt/poetry POETRY_VERSION=1.7.1 python3 - \
     && ln -s /opt/poetry/bin/poetry /usr/local/bin/poetry
 
 # ── Copy dependency files first (layer caching) ────────────────
