@@ -51,8 +51,8 @@ def get_infrastructure(system: str = Path(..., regex="^[a-z0-9_-]+$")):
         "grid_stability": round(100 * (1 - avg_stress), 1),
         "current_load": f"{round(config.default_capacity * avg_stress, 1)} {config.unit}",
         "active_nodes": result.assets[0].current_value if result.assets else config.default_asset_count,
-        "latency_ms": 12,  # TODO: replace with real latency metric
-        "region": "Central District",  # TODO: move to config per system
+        "latency_ms": config.latency_ms,
+        "region": config.region,
         "capacity_percent": round(100 * (1 - avg_stress), 1),
         "stressed_nodes": stressed_count,
         "critical_nodes": critical_count,

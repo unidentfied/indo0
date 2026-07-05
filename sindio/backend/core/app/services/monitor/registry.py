@@ -99,6 +99,9 @@ class InfraConfig:
     # Asset defaults for simulation
     default_asset_count: int = 100
     default_capacity: float = 100.0
+    # Geographic and performance metadata
+    region: str = "Nairobi"
+    latency_ms: int = 12
 
 
 # ── Unified registry ───────────────────────────────────────────────
@@ -151,6 +154,8 @@ POWER = _register(InfraConfig(
     report_frequency="monthly",
     default_asset_count=14204,
     default_capacity=4200.0,
+    region="Central District",
+    latency_ms=14,
 ))
 
 # ── Water Network ──────────────────────────────────────────────────
@@ -192,6 +197,8 @@ WATER = _register(InfraConfig(
     report_frequency="monthly",
     default_asset_count=8400,
     default_capacity=82400.0,
+    region="Westlands",
+    latency_ms=22,
 ))
 
 # ── Roads ──────────────────────────────────────────────────────────
@@ -233,6 +240,8 @@ ROADS = _register(InfraConfig(
     report_frequency="quarterly",
     default_asset_count=3200,
     default_capacity=12400.0,
+    region="Industrial Area",
+    latency_ms=8,
 ))
 
 # ── Solid Waste ────────────────────────────────────────────────────
@@ -268,6 +277,8 @@ SOLID_WASTE = _register(InfraConfig(
     default_capacity=820.0,
     heuristic_base_stress=0.35,
     heuristic_variance=0.10,
+    region="Eastleigh",
+    latency_ms=18,
 ))
 
 # ── Sidewalks ──────────────────────────────────────────────────────
@@ -303,6 +314,8 @@ SIDEWALKS = _register(InfraConfig(
         scheduler_interval_days=7.0, scheduler_critical_hours=2.0,
         temporal_spacing_days=7.0, classification_window_days=180,
     ),
+    region="CBD",
+    latency_ms=6,
 ))
 
 # ── LRT (Light Rail Transit) ───────────────────────────────────────
@@ -338,6 +351,8 @@ LRT = _register(InfraConfig(
     default_capacity=18.0,
     heuristic_base_stress=0.30,
     heuristic_variance=0.12,
+    region="Upper Hill",
+    latency_ms=10,
 ))
 
 # ── SGR (Standard Gauge Railway) ──────────────────────────────────
@@ -373,6 +388,8 @@ SGR = _register(InfraConfig(
     default_capacity=18.0,
     heuristic_base_stress=0.20,
     heuristic_variance=0.08,
+    region="Embakasi",
+    latency_ms=16,
 ))
 
 # ── Airports ───────────────────────────────────────────────────────
@@ -408,6 +425,8 @@ AIRPORTS = _register(InfraConfig(
         scheduler_interval_days=0.5, scheduler_critical_hours=0.25,
         temporal_spacing_days=0.5, classification_window_days=210,
     ),
+    region="Embakasi",
+    latency_ms=9,
 ))
 
 
