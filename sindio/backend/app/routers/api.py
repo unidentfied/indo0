@@ -272,12 +272,16 @@ def simulate_run_v1(request: SimulateRequest):
 
 
 @router.post("/v1/simulations/run", response_model=SimulateResponse)
-def simulate_run_core_alias(request: SimulateRequest):
-    """Core-compatible alias (plural 'simulations') so the proxy and frontend can use one path."""
+def simulate_run_core_alias(
+    network: str = "power",
+    stress_factor: str = "Population Increase (+15%)",
+):
+    """Core-compatible alias (plural 'simulations') so the proxy and frontend can use one path.
+    Accepts query parameters (not body) to match the original /simulations/run endpoint."""
     result = start_simulation(
-        infrastructure_type=request.infrastructure_type,
-        stress_factor=request.stress_factor,
-        parameters=request.parameters,
+        infrastructure_type=network,
+        stress_factor=stress_factor,
+        parameters=None,
     )
     return SimulateResponse(
         task_id=result["task_id"],
