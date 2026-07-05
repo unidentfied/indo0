@@ -64,10 +64,12 @@ export default function Dashboard() {
   const [infra, setInfra] = useState<InfrastructureStatus | null>(null)
   const [metricsReady, setMetricsReady] = useState(false)
   const [alertsReady, setAlertsReady] = useState(false)
+  const [infraLoading, setInfraLoading] = useState(true)
 
   useEffect(() => {
     setMetricsReady(false)
     setAlertsReady(false)
+    setInfraLoading(true)
     setInfra(null)
 
     api.dashboard.metrics(activeSystem)
@@ -79,8 +81,8 @@ export default function Dashboard() {
       .catch(() => setAlertsReady(true))
 
     api.infrastructure.status(activeSystem)
-      .then(i => setInfra(i))
-      .catch(() => {})
+      .then(i => { setInfra(i); setInfraLoading(false) })
+      .catch(() => setInfraLoading(false))
   }, [activeSystem])
 
   const handleSimulationComplete = (summary: SimulationSummary, result: SimulationResult | null) => {
@@ -117,79 +119,77 @@ export default function Dashboard() {
                 {infraDescriptions[activeSystem] || 'Real-time predictive simulation of load distribution and infrastructure resilience.'}
               </p>
             </div>
-            {infra && (
-              <div className="flex items-center gap-3">
-                <div className="panel px-4 py-2">
-                  <div className="text-[10px] uppercase text-sindio-muted">Stability</div>
-                  <div className="text-lg font-semibold text-emerald-400">{infra.grid_stability}%</div>
-                </div>
-                <div className="panel px-4 py-2">
-                  <div className="text-[10px] uppercase text-sindio-muted">Load</div>
-                  <div className="text-lg font-semibold">{infra.current_load}</div>
-                </div>
-                <div className="panel px-4 py-2">
-                  <div className="text-[10px] uppercase text-sindio-muted">Nodes</div>
-                  <div className="text-lg font-semibold">{infra.active_nodes.toLocaleString()}</div>
+            <div className="flex items-center gap-3">
+              <div className="panel px-4 py-2">
+                <div className="text-[10px] uppercase text-sindio-muted">Stability</div>
+                <div className="text-lg font-semibold text-emerald-400">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? `${infra.grid_stability}%` : '—'}
                 </div>
               </div>
-            )}
+              <div className="panel px-4 py-2">
+                <div className="text-[10px] uppercase text-sindio-muted">Load</div>
+                <div className="text-lg font-semibold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? infra.current_load : '—'}
+                </div>
+              </div>
+              <div className="panel px-4 py-2">
+                <div className="text-[10px] uppercase text-sindio-muted">Nodes</div>
+                <div className="text-lg font-semibold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? infra.active_nodes.toLocaleString() : '—'}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── Mini summary cards ── */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {infra ? (
-              <>
-                <div className="panel p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded bg-sindio-accent/10 flex items-center justify-center text-sindio-accent">
-                    <Server className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold">{infra.active_nodes.toLocaleString()}</div>
-                    <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Assets Monitored</div>
-                  </div>
+            <div className="panel p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded bg-sindio-accent/10 flex items-center justify-center text-sindio-accent">
+                <Server className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? infra.active_nodes.toLocaleString() : '—'}
                 </div>
+                <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Assets Monitored</div>
+              </div>
+            </div>
 
-                <div className="panel p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded flex items-center justify-center ${infra.grid_stability > 85 ? 'bg-emerald-400/10 text-emerald-400' : infra.grid_stability > 70 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400'}`}>
-                    <Activity className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold">{infra.grid_stability}%</div>
-                    <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Grid Stability</div>
-                  </div>
+            <div className="panel p-4 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded flex items-center justify-center ${infra ? (infra.grid_stability > 85 ? 'bg-emerald-400/10 text-emerald-400' : infra.grid_stability > 70 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400') : 'bg-sindio-border/20 text-sindio-muted'}`}>
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? `${infra.grid_stability}%` : '—'}
                 </div>
+                <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Grid Stability</div>
+              </div>
+            </div>
 
-                <div className="panel p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded flex items-center justify-center ${infra.capacity_percent < 70 ? 'bg-emerald-400/10 text-emerald-400' : infra.capacity_percent < 85 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400'}`}>
-                    <BarChart3 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold">{infra.capacity_percent}%</div>
-                    <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Capacity Load</div>
-                  </div>
+            <div className="panel p-4 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded flex items-center justify-center ${infra ? (infra.capacity_percent < 70 ? 'bg-emerald-400/10 text-emerald-400' : infra.capacity_percent < 85 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400') : 'bg-sindio-border/20 text-sindio-muted'}`}>
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? `${infra.capacity_percent}%` : '—'}
                 </div>
+                <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Capacity Load</div>
+              </div>
+            </div>
 
-                <div className="panel p-4 flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded flex items-center justify-center ${infra.latency_ms < 20 ? 'bg-emerald-400/10 text-emerald-400' : infra.latency_ms < 40 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400'}`}>
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold">{infra.latency_ms}ms</div>
-                    <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Response Time</div>
-                  </div>
+            <div className="panel p-4 flex items-center gap-3">
+              <div className={`w-10 h-10 rounded flex items-center justify-center ${infra ? (infra.latency_ms < 20 ? 'bg-emerald-400/10 text-emerald-400' : infra.latency_ms < 40 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-red-400/10 text-red-400') : 'bg-sindio-border/20 text-sindio-muted'}`}>
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-lg font-bold">
+                  {infraLoading ? <span className="animate-pulse">—</span> : infra ? `${infra.latency_ms}ms` : '—'}
                 </div>
-              </>
-            ) : (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="panel p-4 animate-pulse flex items-center gap-3">
-                  <div className="w-10 h-10 rounded bg-sindio-border" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-5 w-16 bg-sindio-border rounded" />
-                    <div className="h-3 w-24 bg-sindio-border rounded" />
-                  </div>
-                </div>
-              ))
-            )}
+                <div className="text-[10px] uppercase text-sindio-muted tracking-wider">Response Time</div>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

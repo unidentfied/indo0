@@ -135,6 +135,26 @@ def get_infrastructure(system: str):
     return InfrastructureStatus(**status)
 
 
+# ── v1 aliases (frontend backward-compatibility for Core proxy fallback) ──
+
+@router.get("/v1/dashboard/metrics", response_model=List[Metric])
+def get_metrics_v1(system: str = "power"):
+    """v1 alias for GET /api/dashboard/metrics."""
+    return get_metrics(system)
+
+
+@router.get("/v1/dashboard/alerts", response_model=List[Alert])
+def get_alerts_v1(limit: int = 5):
+    """v1 alias for GET /api/dashboard/alerts."""
+    return get_alerts(limit)
+
+
+@router.get("/v1/infrastructure/{system}", response_model=InfrastructureStatus)
+def get_infrastructure_v1(system: str):
+    """v1 alias for GET /api/infrastructure/{system}."""
+    return get_infrastructure(system)
+
+
 @router.get("/simulations/status")
 def get_simulation_status():
     status = generate_infrastructure_status(infra_type="power")
