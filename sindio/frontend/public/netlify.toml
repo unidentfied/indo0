@@ -8,6 +8,12 @@
   command = "echo 'Build handled by GitHub Actions'"
 
 [[redirects]]
+  from = "/api/*"
+  to = "http://gallant-alignment.railway.internal:8081"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

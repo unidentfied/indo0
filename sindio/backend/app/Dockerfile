@@ -8,9 +8,8 @@ RUN pip install --no-cache-dir -r /workspace/app/requirements.txt
 COPY sindio/backend/app/ /workspace/app/
 
 ENV SINDIO_SKIP_RASTER=1
-ENV SINDIO_USE_CORE=0
 ENV PYTHONPATH=/workspace:.:..
-# CORS_ORIGINS is injected at runtime by Railway (do not hardcode production URLs).
+# CORS_ORIGINS and SINDIO_USE_CORE are injected at runtime by Railway.
 
 EXPOSE 8080
 

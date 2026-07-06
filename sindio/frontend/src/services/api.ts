@@ -25,14 +25,19 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
+  const headers = new Headers(options?.headers)
+  headers.set('Content-Type', 'application/json')
+  // Auth is handled via HTTP-only cookies or JWT Bearer set by caller; never bake keys into the bundle
+
   const promise = fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers,
     signal: controller.signal,
     ...options,
   })
     .then(async (res) => {
       if (!res.ok) {
         const body = await res.text()
+        console.error(`[Sindio API] ${res.status} on ${path}:`, body)
         throw new Error(`API ${res.status} on ${path}: ${body}`)
       }
       return res.json() as T
@@ -138,12 +143,6 @@ export const api = {
 
   infrastructure: {
     status: (system: string) => request<InfrastructureStatus | null>(`/v1/infrastructure/${system}`),
-  },
-
-  simulations: {
-    run: (network: string) =>
-      request<SimulationResult>(`/v1/simulations/run?network=${network}`, { method: 'POST' }),
-    status: () => request<{ active: number }>('/simulations/status'),
   },
 
   monitor: {

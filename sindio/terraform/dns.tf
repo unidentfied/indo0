@@ -4,7 +4,7 @@
 
 # Route53 Hosted Zone
 resource "aws_route53_zone" "sindio" {
-  name = var.custom_domain != "" ? var.custom_domain : "sindio.urban"
+  name = var.custom_domain != "" ? var.custom_domain : "sindio.net"
 
   tags = {
     Environment = var.environment
@@ -16,8 +16,8 @@ resource "aws_route53_zone" "sindio" {
 resource "aws_acm_certificate" "sindio" {
   provider = aws.us_east_1
 
-  domain_name               = var.custom_domain != "" ? var.custom_domain : "sindio.urban"
-  subject_alternative_names = ["*.${var.custom_domain != "" ? var.custom_domain : "sindio.urban"}"]
+  domain_name               = var.custom_domain != "" ? var.custom_domain : "sindio.net"
+  subject_alternative_names = ["*.${var.custom_domain != "" ? var.custom_domain : "sindio.net"}"]
   validation_method         = "DNS"
 
   tags = {
@@ -136,7 +136,7 @@ resource "aws_lb_listener" "https" {
 # ALB DNS record (points to ALB, NOT the Kubernetes API endpoint)
 resource "aws_route53_record" "api" {
   zone_id = aws_route53_zone.sindio.zone_id
-  name    = var.custom_domain != "" ? var.custom_domain : "sindio.urban"
+  name    = var.custom_domain != "" ? var.custom_domain : "sindio.net"
   type    = "A"
 
   alias {

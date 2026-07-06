@@ -19,6 +19,7 @@ frontend/dist/
 # Go
 backend/api/bin/
 backend/api/vendor/
+backend/api/api
 
 # Rust
 backend/streaming/target/
@@ -53,6 +54,7 @@ data/vector_store/**
 
 # Docker
 docker/volumes/
+docker/docker-compose.override.yml
 
 # Terraform
 **/.terraform/

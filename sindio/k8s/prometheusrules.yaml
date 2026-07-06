@@ -1,0 +1,85 @@
+# ============================================================
+# Sindio — Prometheus Alerting Rules
+# ============================================================
+# Requires Prometheus Operator in the cluster.
+# ============================================================
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: sindio-alerts
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  groups:
+    - name: sindio-api
+      rules:
+        - alert: SindioHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on Sindio API"
+            description: "Error rate is above 5% for more than 5 minutes."
+
+        - alert: SindioHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+            ) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High latency on Sindio API"
+            description: "95th percentile latency is above 2s."
+
+        - alert: SindioPodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Sindio pod is crash-looping"
+            description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted."
+
+    - name: sindio-data-quality
+      rules:
+        - alert: SindioMockDataRatioHigh
+          expr: |
+            sindio_mock_data_ratio > 0.5
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High mock data ratio"
+            description: "More than 50% of responses are using mock data."
+
+    - name: sindio-infrastructure
+      rules:
+        - alert: SindioPostgresDown
+          expr: |
+            pg_up{namespace="sindio"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Postgres is down"
+            description: "PostgreSQL instance in namespace sindio is not responding."
+
+        - alert: SindioRedisDown
+          expr: |
+            redis_up{namespace="sindio"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Redis is down"
+            description: "Redis instance in namespace sindio is not responding."

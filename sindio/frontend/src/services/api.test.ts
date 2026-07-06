@@ -89,7 +89,7 @@ describe('api client', () => {
     expect(fetchSpy).toHaveBeenCalledWith('/api/v1/dashboard/alerts', expect.any(Object))
   })
 
-  it('simulations.run posts to correct URL', async () => {
+  it('v1.simulateRun posts to correct URL', async () => {
     fetchSpy.mockResolvedValueOnce(
       new Response(
         JSON.stringify({
@@ -104,12 +104,12 @@ describe('api client', () => {
       ),
     )
 
-    const result = await api.simulations.run('power')
+    const result = await api.v1.simulateRun({ infrastructure_type: 'power', stress_factor: 'peak' })
     expect(result.task_id).toBe('abc-123')
     expect(result.network_type).toBe('power')
     expect(fetchSpy).toHaveBeenCalledWith(
-      '/api/simulations/run?network=power',
-      expect.objectContaining({ method: 'POST' }),
+      '/api/v1/simulate/run',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ infrastructure_type: 'power', stress_factor: 'peak' }) }),
     )
   })
 })

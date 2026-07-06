@@ -6,15 +6,15 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Dict, Any
 
-import psycopg2
+from sqlalchemy import text
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 
 from app.rbac import require_admin, require_viewer
+from app.core.database import get_engine
 
 logger = logging.getLogger("sindio.gdpr")
 
@@ -33,21 +33,7 @@ class DeleteAccountRequest(BaseModel):
 
 
 def _hash_email(email: str) -> str:
-    return hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
-
-
-def _get_db_connection():
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return psycopg2.connect(database_url, connect_timeout=5)
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        dbname=os.getenv("DB_NAME", "sindio"),
-        user=os.getenv("DB_USER", "sindio_user"),
-        password=os.getenv("DB_PASSWORD", ""),
-        connect_timeout=5,
-    )
+    return hashlib.sha256(email.encode("utf-8")).hexdigest()
 
 
 @router.post("/data-request")
@@ -55,14 +41,7 @@ async def submit_data_request(
     request: DataSubjectRequest,
     user: Dict = Depends(require_viewer),
 ) -> Dict[str, Any]:
-    """Submit a GDPR data subject request.
-
-    Types:
-      - access: receive all data held about the user
-      - deletion: request deletion of all personal data
-      - rectification: correct inaccurate data
-      - portability: receive data in machine-readable format
-    """
+    """Submit a GDPR data subject request."""
     request_id = f"DSR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{hash(request.email) % 10000:04d}"
     email_hash = _hash_email(request.email)
 
@@ -74,7 +53,6 @@ async def submit_data_request(
         user_role=user.get("role"),
     )
 
-    # In production: queue to compliance team, track in DB
     return {
         "request_id": request_id,
         "status": "received",
@@ -91,7 +69,6 @@ async def download_data_export(
     user: Dict = Depends(require_admin),
 ) -> Dict[str, Any]:
     """Download a completed data export (admin only)."""
-    # In production: lookup request, verify completion, return ZIP
     return {
         "request_id": request_id,
         "status": "pending",
@@ -105,88 +82,77 @@ async def delete_account(
     body: DeleteAccountRequest,
     user: Dict = Depends(require_admin),
 ) -> Dict[str, Any]:
-    """Hard-delete or anonymize all personal data for a user (admin only, irreversible).""
-    NOTE: Changed from DELETE to POST because HTTP DELETE with a request body
-    is non-standard and may be stripped by proxies/CDNs.
-    """
+    """Hard-delete or anonymize all personal data for a user (admin only, irreversible)."""
     email = body.email
     email_hash = _hash_email(email)
     request_id = f"DSR-DEL-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{hash(email) % 10000:04d}"
 
-    conn = None
+    engine = get_engine()
     affected_tables: list[str] = []
     try:
-        conn = _get_db_connection()
-        conn.autocommit = False
-        with conn.cursor() as cur:
+        with engine.begin() as conn:
             # 1. Find user ID if users table exists
             user_id = None
             try:
-                cur.execute("SELECT id FROM users WHERE email = %s", (email,))
-                row = cur.fetchone()
+                row = conn.execute(text("SELECT id FROM users WHERE email = :email"), {"email": email}).fetchone()
                 if row:
                     user_id = row[0]
-            except psycopg2.Error:
-                conn.rollback()
+            except Exception:
+                pass
 
             # 2. Delete feedback by email
             try:
-                cur.execute("DELETE FROM feedback WHERE email = %s", (email,))
-                if cur.rowcount > 0:
+                result = conn.execute(text("DELETE FROM feedback WHERE email = :email"), {"email": email})
+                if result.rowcount > 0:
                     affected_tables.append("feedback")
-            except psycopg2.Error:
-                conn.rollback()
+            except Exception:
+                pass
 
             # 3. Delete simulations by user email
             try:
-                cur.execute("DELETE FROM simulations WHERE user_email = %s", (email,))
-                if cur.rowcount > 0:
+                result = conn.execute(text("DELETE FROM simulations WHERE user_email = :email"), {"email": email})
+                if result.rowcount > 0:
                     affected_tables.append("simulations")
-            except psycopg2.Error:
-                conn.rollback()
+            except Exception:
+                pass
 
-            # 4. Anonymize sensor_telemetry (remove user linkage, keep measurements)
+            # 4. Anonymize sensor_telemetry
             try:
-                cur.execute(
-                    "UPDATE sensor_telemetry SET user_id = NULL, user_email = NULL WHERE user_email = %s",
-                    (email,),
+                result = conn.execute(
+                    text("UPDATE sensor_telemetry SET user_id = NULL, user_email = NULL WHERE user_email = :email"),
+                    {"email": email},
                 )
-                if cur.rowcount > 0:
+                if result.rowcount > 0:
                     affected_tables.append("sensor_telemetry")
-            except psycopg2.Error:
-                conn.rollback()
+            except Exception:
+                pass
 
-            # 5. Anonymize infrastructure_assets ownership if applicable
+            # 5. Anonymize infrastructure_assets ownership
             try:
-                cur.execute(
-                    "UPDATE infrastructure_assets SET owner_email = NULL, owner_id = NULL WHERE owner_email = %s",
-                    (email,),
+                result = conn.execute(
+                    text("UPDATE infrastructure_assets SET owner_email = NULL, owner_id = NULL WHERE owner_email = :email"),
+                    {"email": email},
                 )
-                if cur.rowcount > 0:
+                if result.rowcount > 0:
                     affected_tables.append("infrastructure_assets")
-            except psycopg2.Error:
-                conn.rollback()
+            except Exception:
+                pass
 
             # 6. Delete user record
             if user_id is not None:
                 try:
-                    cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+                    conn.execute(text("DELETE FROM users WHERE id = :id"), {"id": user_id})
                     affected_tables.append("users")
-                except psycopg2.Error:
-                    conn.rollback()
+                except Exception:
+                    pass
             else:
-                # Try direct email delete if no ID found
                 try:
-                    cur.execute("DELETE FROM users WHERE email = %s", (email,))
-                    if cur.rowcount > 0:
+                    result = conn.execute(text("DELETE FROM users WHERE email = :email"), {"email": email})
+                    if result.rowcount > 0:
                         affected_tables.append("users")
-                except psycopg2.Error:
-                    conn.rollback()
-
-            conn.commit()
+                except Exception:
+                    pass
     except Exception as exc:
-        if conn:
-            conn.rollback()
         logger.error(
             "Account deletion failed",
             request_id=request_id,
@@ -194,9 +160,6 @@ async def delete_account(
             error=str(exc),
         )
         raise HTTPException(status_code=500, detail=f"Deletion failed: {exc}")
-    finally:
-        if conn:
-            conn.close()
 
     logger.info(
         "Account deletion executed",

@@ -154,6 +154,20 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 10
             failureThreshold: 5
+          readinessProbe:
+            exec:
+              command:
+                - celery
+                - -A
+                - app.services.inference_queue
+                - inspect
+                - ping
+                - -d
+                - celery@$(hostname)
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -324,6 +338,11 @@ spec:
             limits:
               cpu: "100m"
               memory: "128Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
 ---
 # ── sindio-celery-beat (single-replica scheduler) ────────────
 apiVersion: apps/v1
@@ -371,6 +390,11 @@ spec:
             limits:
               cpu: "250m"
               memory: "256Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
 ---
 # ── sindio-postgres (single-replica; Dev only — Prod uses RDS) ──
 apiVersion: apps/v1
@@ -423,11 +447,20 @@ spec:
             limits:
               cpu: "1000m"
               memory: "2Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "sindio_user"]
             initialDelaySeconds: 30
             periodSeconds: 15
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "sindio_user", "-d", "sindio"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: pgdata
           persistentVolumeClaim:
@@ -478,10 +511,19 @@ spec:
             limits:
               cpu: "500m"
               memory: "768Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           livenessProbe:
             exec:
               command: ["redis-cli", "ping"]
             initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
         - name: redisdata
@@ -527,11 +569,20 @@ spec:
             limits:
               cpu: "1000m"
               memory: "2Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           livenessProbe:
             tcpSocket:
               port: 6333
             initialDelaySeconds: 20
             periodSeconds: 15
+          readinessProbe:
+            tcpSocket:
+              port: 6333
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: qdrantdata
           persistentVolumeClaim:
@@ -584,12 +635,22 @@ spec:
             limits:
               cpu: "1000m"
               memory: "2Gi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           livenessProbe:
             httpGet:
               path: /minio/health/live
               port: 9000
             initialDelaySeconds: 20
             periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: miniodata
           persistentVolumeClaim:

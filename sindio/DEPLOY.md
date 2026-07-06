@@ -68,7 +68,7 @@ The ML Core (`sindio/backend/core/`) runs real ML inference, physics simulations
 | `CORS_ORIGINS` | Yes | Same Netlify frontend URL(s) |
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `REDIS_URL` | Yes | Redis connection string |
-| `CORE_PORT` | No | Defaults to `8081`; Railway injects `PORT` which overrides |
+| `CORE_PORT` | No | Defaults to `8081`. The Dockerfile hardcodes `--port 8081`. Do **not** set `PORT` manually in Railway. |
 | `SINDIO_SKIP_RASTER` | Yes | `1` (skip 297MB WorldPop download) |
 | `JWT_SECRET` | Yes | Any random secret string |
 
@@ -84,41 +84,26 @@ Once the ML Core is deployed and healthy:
 
 2. Railway redeploys the mock API automatically.
 
-## 3. Frontend (Netlify via GitHub Actions)
+## 3. Frontend (Netlify — Manual Deploy)
 
-### Step 1: Create Netlify Site
+> **Note:** There are no GitHub Actions workflows in this repo yet. Deploy manually.
 
-1. Go to [netlify.com](https://netlify.com) and create a site from your GitHub repo.
-2. **Do not** configure a build command in Netlify — GitHub Actions handles the build.
-3. Note down your **Site ID** (Settings → General → Site details).
-4. Generate a **Personal Access Token** (User settings → Applications → Personal access tokens).
+### Step 1: Set Production API URL
 
-### Step 2: Add GitHub Secrets
+Ensure `VITE_API_BASE_URL` is set before building:
 
-In your GitHub repo (Settings → Secrets and variables → Actions), add:
+```bash
+cd sindio/frontend
+export VITE_API_BASE_URL=https://your-railway-url.up.railway.app
+npm run build   # runs tsc + vite build + postbuild SW cache bust
+```
 
-| Secret | Value |
-|--------|-------|
-| `NETLIFY_AUTH_TOKEN` | Your Netlify personal access token |
-| `NETLIFY_SITE_ID` | Your Netlify site ID |
+### Step 2: Deploy to Netlify
 
-### Step 3: Add GitHub Variables (optional)
-
-In GitHub Settings → Secrets and variables → Actions → Variables:
-
-| Variable | Value |
-|----------|-------|
-| `VITE_API_BASE_URL` | Your Railway backend URL (e.g. `https://sindio-api.up.railway.app`) |
-
-> If you don't set `VITE_API_BASE_URL` as a GitHub variable, the build falls back to the value in `.env.production`. Update that file with your actual Railway URL before first deploy.
-
-### Step 4: Push to `main`
-
-The `.github/workflows/frontend.yml` workflow will:
-1. Install dependencies
-2. Run TypeScript check + tests
-3. Build the production bundle
-4. Deploy `dist/` to Netlify
+1. Install the Netlify CLI: `npm install -g netlify-cli`
+2. Login: `netlify login`
+3. Link your site: `netlify link`
+4. Deploy: `netlify deploy --prod --dir=dist`
 
 ### Frontend Environment Files
 
@@ -128,19 +113,9 @@ The `.github/workflows/frontend.yml` workflow will:
 | `.env.production` | Committed defaults for prod builds |
 | `VITE_API_BASE_URL` | Full URL to Railway backend (no trailing slash) |
 
-## 4. CI/CD Workflows
+## 4. CI/CD (TODO)
 
-Three GitHub Actions workflows are configured:
-
-### `.github/workflows/frontend.yml`
-- Triggers on pushes to `main` affecting `sindio/frontend/**`
-- Runs lint, tests, build
-- Deploys to Netlify on success
-
-### `.github/workflows/backend.yml`
-- Triggers on pushes to `main` affecting `sindio/backend/**`
-- **Mock API job:** validates Python syntax, lints Dockerfile, builds image, runs smoke test
-- **ML Core job:** validates core Dockerfile syntax, lints with Hadolint (full build excluded from CI due to torch/transformers size)
+No GitHub Actions workflows exist yet. Add them to `.github/workflows/` if you want automated deploys.
 
 ## 5. Connecting Frontend ↔ Backend
 

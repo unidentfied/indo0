@@ -74,15 +74,15 @@ export default function Dashboard() {
 
     api.dashboard.metrics(activeSystem)
       .then(m => { setMetrics(m); setMetricsReady(true) })
-      .catch(() => setMetricsReady(true))
+      .catch(err => { console.error('[Dashboard] metrics error:', err); setMetricsReady(true) })
 
     api.dashboard.alerts()
       .then(a => { setAlerts(a); setAlertsReady(true) })
-      .catch(() => setAlertsReady(true))
+      .catch(err => { console.error('[Dashboard] alerts error:', err); setAlertsReady(true) })
 
     api.infrastructure.status(activeSystem)
       .then(i => { setInfra(i); setInfraLoading(false) })
-      .catch(() => setInfraLoading(false))
+      .catch(err => { console.error('[Dashboard] infrastructure error:', err); setInfraLoading(false) })
   }, [activeSystem])
 
   const handleSimulationComplete = (summary: SimulationSummary, result: SimulationResult | null) => {

@@ -92,7 +92,7 @@ module "eks" {
   version = "19.21"
 
   cluster_name    = "sindio-${var.environment}"
-  cluster_version = "1.29"
+  cluster_version = "1.32"
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
@@ -148,7 +148,20 @@ module "eks" {
   }
 }
 
-# Add EKS cluster autoscaler by enabling it via the module
+# ============================================================
+# EKS Cluster Autoscaler (IRSA + Helm)
+# ============================================================
+
+module "eks_cluster_autoscaler" {
+  source  = "lablabs/eks-cluster-autoscaler/aws"
+  version = "2.0.0"
+
+  cluster_name = module.eks.cluster_name
+  cluster_identity_oidc_issuer     = module.eks.oidc_provider
+  cluster_identity_oidc_issuer_arn = module.eks.oidc_provider_arn
+
+  enabled = true
+}
 
 # ============================================================
 # RDS PostgreSQL (with read replica in prod)
@@ -460,6 +473,21 @@ resource "aws_iam_role" "sindio_backend" {
       }
     ]
   })
+}
+
+# Annotate the K8s ServiceAccount so pods can assume the IAM role
+resource "kubectl_manifest" "sindio_backend_sa" {
+  yaml_body = <<-YAML
+    apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      name: sindio-backend
+      namespace: sindio
+      annotations:
+        eks.amazonaws.com/role-arn: ${aws_iam_role.sindio_backend.arn}
+  YAML
+
+  depends_on = [module.eks]
 }
 
 resource "aws_iam_role_policy_attachment" "backend_rds" {

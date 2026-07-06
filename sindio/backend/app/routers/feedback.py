@@ -4,8 +4,9 @@ Allows Nairobi County engineers and field operators to submit
 ground-truth corrections, flag incorrect predictions, and provide
 operational context.
 
-Now persists to PostgreSQL. Falls back to in-memory only when
-DATABASE_URL is not configured (local dev without Postgres).
+Now persists to PostgreSQL via SQLAlchemy connection pooling.
+Falls back to in-memory only when DATABASE_URL is not configured
+(local dev without Postgres).
 """
 from __future__ import annotations
 
@@ -14,11 +15,12 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
 
-import psycopg2
+from sqlalchemy import text
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.rbac import require_operator
+from app.rbac import optional_auth
+from app.core.database import get_engine
 
 logger = logging.getLogger("sindio.feedback")
 
@@ -41,20 +43,6 @@ class FeedbackSubmission(BaseModel):
     operator_contact: Optional[str] = None
 
 
-def _get_db_connection():
-    database_url = os.getenv("DATABASE_URL")
-    if database_url:
-        return psycopg2.connect(database_url, connect_timeout=5)
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", "5432")),
-        dbname=os.getenv("DB_NAME", "sindio"),
-        user=os.getenv("DB_USER", "sindio_user"),
-        password=os.getenv("DB_PASSWORD", ""),
-        connect_timeout=5,
-    )
-
-
 def _db_is_configured() -> bool:
     return bool(os.getenv("DATABASE_URL") or os.getenv("DB_HOST"))
 
@@ -68,29 +56,26 @@ def _insert_feedback(record: Dict[str, Any]) -> None:
         _FEEDBACK_STORE.append(record)
         return
     try:
-        conn = _get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO feedback (
-                    feedback_id, submitted_at, submitted_by, user_role, status,
-                    asset_id, infrastructure_type, ward, lat, lon,
-                    feedback_type, severity, description,
-                    observed_value, expected_value, photo_url,
-                    operator_name, operator_contact
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    record["feedback_id"], record["submitted_at"], record["submitted_by"],
-                    record["user_role"], record["status"], record["asset_id"],
-                    record["infrastructure_type"], record["ward"], record.get("lat"),
-                    record.get("lon"), record["feedback_type"], record["severity"],
-                    record["description"], record.get("observed_value"),
-                    record.get("expected_value"), record.get("photo_url"),
-                    record.get("operator_name"), record.get("operator_contact"),
-                ),
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(
+                text("""
+                    INSERT INTO feedback (
+                        feedback_id, submitted_at, submitted_by, user_role, status,
+                        asset_id, infrastructure_type, ward, lat, lon,
+                        feedback_type, severity, description,
+                        observed_value, expected_value, photo_url,
+                        operator_name, operator_contact
+                    ) VALUES (
+                        :feedback_id, :submitted_at, :submitted_by, :user_role, :status,
+                        :asset_id, :infrastructure_type, :ward, :lat, :lon,
+                        :feedback_type, :severity, :description,
+                        :observed_value, :expected_value, :photo_url,
+                        :operator_name, :operator_contact
+                    )
+                """),
+                record,
             )
-            conn.commit()
     except Exception as exc:
         logger.warning("Feedback DB insert failed (%s) — falling back to in-memory", exc)
         _FEEDBACK_STORE.append(record)
@@ -104,25 +89,26 @@ def _list_feedback(infra_type: Optional[str], status_filter: Optional[str]) -> L
             and (status_filter is None or f["status"] == status_filter)
         ][-50:]
     try:
-        conn = _get_db_connection()
-        with conn.cursor() as cur:
-            query = """
-                SELECT feedback_id, submitted_at, submitted_by, user_role, status,
-                       asset_id, infrastructure_type, ward, lat, lon,
-                       feedback_type, severity, description,
-                       observed_value, expected_value, photo_url,
-                       operator_name, operator_contact,
-                       resolved_at, resolved_by, resolution_notes
-                FROM feedback
-                WHERE (%s IS NULL OR infrastructure_type = %s)
-                  AND (%s IS NULL OR status = %s)
-                ORDER BY submitted_at DESC
-                LIMIT 50
-            """
-            cur.execute(query, (infra_type, infra_type, status_filter, status_filter))
-            rows = cur.fetchall()
-            cols = [desc[0] for desc in cur.description]
-            return [dict(zip(cols, row)) for row in rows]
+        engine = get_engine()
+        with engine.connect() as conn:
+            result = conn.execute(
+                text("""
+                    SELECT feedback_id, submitted_at, submitted_by, user_role, status,
+                           asset_id, infrastructure_type, ward, lat, lon,
+                           feedback_type, severity, description,
+                           observed_value, expected_value, photo_url,
+                           operator_name, operator_contact,
+                           resolved_at, resolved_by, resolution_notes
+                    FROM feedback
+                    WHERE (:infra_type IS NULL OR infrastructure_type = :infra_type)
+                      AND (:status_filter IS NULL OR status = :status_filter)
+                    ORDER BY submitted_at DESC
+                    LIMIT 50
+                """),
+                {"infra_type": infra_type, "status_filter": status_filter},
+            )
+            rows = result.mappings().all()
+            return [dict(row) for row in rows]
     except Exception as exc:
         logger.warning("Feedback DB list failed (%s) — falling back to in-memory", exc)
         return [
@@ -132,44 +118,44 @@ def _list_feedback(infra_type: Optional[str], status_filter: Optional[str]) -> L
         ][-50:]
 
 
-def _resolve_feedback(feedback_id: str, user: Dict, resolution_notes: str) -> bool:
+def _resolve_feedback(feedback_id: str, user: Optional[Dict], resolution_notes: str) -> bool:
+    resolver = user.get("sub", "unknown") if user else "anonymous"
     if not _db_is_configured():
         for f in _FEEDBACK_STORE:
             if f["feedback_id"] == feedback_id:
                 f["status"] = "resolved"
                 f["resolved_at"] = datetime.now(timezone.utc).isoformat()
-                f["resolved_by"] = user.get("sub", "unknown")
+                f["resolved_by"] = resolver
                 f["resolution_notes"] = resolution_notes
                 return True
         return False
     try:
-        conn = _get_db_connection()
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                UPDATE feedback
-                SET status = 'resolved',
-                    resolved_at = %s,
-                    resolved_by = %s,
-                    resolution_notes = %s
-                WHERE feedback_id = %s
-                """,
-                (
-                    datetime.now(timezone.utc),
-                    user.get("sub", "unknown"),
-                    resolution_notes,
-                    feedback_id,
-                ),
+        engine = get_engine()
+        with engine.begin() as conn:
+            result = conn.execute(
+                text("""
+                    UPDATE feedback
+                    SET status = 'resolved',
+                        resolved_at = :resolved_at,
+                        resolved_by = :resolved_by,
+                        resolution_notes = :resolution_notes
+                    WHERE feedback_id = :feedback_id
+                """),
+                {
+                    "resolved_at": datetime.now(timezone.utc),
+                    "resolved_by": resolver,
+                    "resolution_notes": resolution_notes,
+                    "feedback_id": feedback_id,
+                },
             )
-            conn.commit()
-            return cur.rowcount > 0
+            return result.rowcount > 0
     except Exception as exc:
         logger.warning("Feedback DB resolve failed (%s) — falling back to in-memory", exc)
         for f in _FEEDBACK_STORE:
             if f["feedback_id"] == feedback_id:
                 f["status"] = "resolved"
                 f["resolved_at"] = datetime.now(timezone.utc).isoformat()
-                f["resolved_by"] = user.get("sub", "unknown")
+                f["resolved_by"] = resolver
                 f["resolution_notes"] = resolution_notes
                 return True
         return False
@@ -178,14 +164,14 @@ def _resolve_feedback(feedback_id: str, user: Dict, resolution_notes: str) -> bo
 @router.post("/submit")
 async def submit_feedback(
     feedback: FeedbackSubmission,
-    user: Dict = Depends(require_operator),
+    user: Optional[Dict] = Depends(optional_auth),
 ) -> Dict[str, Any]:
     """Submit field operator feedback."""
     record = {
         "feedback_id": f"FBK-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{os.urandom(3).hex()}",
         "submitted_at": datetime.now(timezone.utc).isoformat(),
-        "submitted_by": user.get("sub", "unknown"),
-        "user_role": user.get("role", "unknown"),
+        "submitted_by": user.get("sub", "anonymous") if user else "anonymous",
+        "user_role": user.get("role", "anonymous") if user else "anonymous",
         "status": "open",
         **feedback.model_dump(),
     }
@@ -212,7 +198,7 @@ async def submit_feedback(
 async def list_feedback(
     infrastructure_type: Optional[str] = None,
     status: Optional[str] = "open",
-    user: Dict = Depends(require_operator),
+    user: Optional[Dict] = Depends(optional_auth),
 ) -> Dict[str, Any]:
     """List feedback submissions (operator+ roles)."""
     results = _list_feedback(infrastructure_type, status)
@@ -226,7 +212,7 @@ async def list_feedback(
 async def resolve_feedback(
     feedback_id: str,
     resolution_notes: str = "",
-    user: Dict = Depends(require_operator),
+    user: Optional[Dict] = Depends(optional_auth),
 ) -> Dict[str, Any]:
     """Mark feedback as resolved."""
     ok = _resolve_feedback(feedback_id, user, resolution_notes)

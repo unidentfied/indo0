@@ -30,7 +30,7 @@ def get_engine() -> Engine:
         _engine = create_engine(
             db_url,
             pool_size=int(os.getenv("DB_POOL_MIN", "5")),
-            max_overflow=int(os.getenv("DB_POOL_MAX", "10")) - int(os.getenv("DB_POOL_MIN", "5")),
+            max_overflow=max(0, int(os.getenv("DB_POOL_MAX", "10")) - int(os.getenv("DB_POOL_MIN", "5"))),
             pool_recycle=1800,
             pool_pre_ping=True,
         )

@@ -9,17 +9,20 @@ real ML inference and metrics — falls back to mock data gracefully.
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, Response, Request
+from fastapi import FastAPI, Response, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import httpx
 
 import structlog
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
+from jose import jwt as _jwt
+
+from app.limiter import limiter
 
 from app.shutdown import install_signal_handlers, register_shutdown_handler
+from app.rbac import require_viewer
 
 structlog.configure(
     processors=[structlog.processors.JSONRenderer()],
@@ -33,10 +36,15 @@ from app.routers.reports import router as reports_router
 from app.routers.feedback import router as feedback_router
 from app.routers.privacy import router as privacy_router
 
+_ENV = os.getenv("ENV", "development").lower()
+
 app = FastAPI(
     title="Sindio",
     description="AI-powered urban planning tool for Nairobi — unified local server",
     version="0.1.0",
+    docs_url="/docs" if _ENV != "production" else None,
+    redoc_url="/redoc" if _ENV != "production" else None,
+    openapi_url="/openapi.json" if _ENV != "production" else None,
 )
 
 # Install graceful shutdown handlers
@@ -53,8 +61,12 @@ async def body_size_limit_middleware(request: Request, call_next):
         )
     return await call_next(request)
 
+_JWT_SECRET = os.getenv("JWT_SECRET", "")
+
 _CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
 if not _CORS_ORIGINS:
+    if os.getenv("ENV", "development").lower() == "production":
+        raise RuntimeError("CORS_ORIGINS environment variable is required in production")
     logger.warning(
         "CORS_ORIGINS is not set. CORS will default to localhost-only. "
         "Set CORS_ORIGINS in your Railway/Render dashboard to your frontend URL(s)."
@@ -69,7 +81,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["120/minute"])
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
@@ -83,6 +94,16 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "0"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(self), microphone=()"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "font-src 'self'; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self';"
+    )
     if not request.url.hostname or request.url.hostname in ("localhost", "127.0.0.1"):
         response.headers["Strict-Transport-Security"] = "max-age=0"
     else:
@@ -105,23 +126,39 @@ _API_KEY = os.getenv("SINDIO_API_KEY", "")
 
 @app.middleware("http")
 async def rbac_middleware(request: Request, call_next):
-    """Enforce RBAC on protected endpoints.
+    """Enforce authentication on protected endpoints.
 
-    Public endpoints (health, metrics, landing) are exempt.
-    All other endpoints require valid JWT with appropriate role.
+    Public endpoints (health, metrics, docs, stream) are exempt.
+    All other endpoints require a valid API key OR a valid JWT Bearer token.
     """
     public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/api/v1/stream"}
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
-    # API key check for all operations when SINDIO_API_KEY is configured
+    authenticated = False
+
+    # 1. API key check
     if _API_KEY:
         header_key = request.headers.get("X-API-Key", "")
-        if header_key != _API_KEY:
-            return JSONResponse(
-                {"detail": "Unauthorized — missing or invalid API key"},
-                status_code=401,
-            )
+        if header_key == _API_KEY:
+            authenticated = True
+
+    # 2. JWT Bearer token check (fallback when no API key or invalid)
+    if not authenticated and _JWT_SECRET:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+            try:
+                _jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
+                authenticated = True
+            except Exception:
+                pass
+
+    if not authenticated:
+        return JSONResponse(
+            {"detail": "Unauthorized — missing or invalid API key or JWT token"},
+            status_code=401,
+        )
 
     return await call_next(request)
 
@@ -131,6 +168,21 @@ async def rbac_middleware(request: Request, call_next):
 async def global_exception_handler(request, exc):
     logger.error("Unhandled exception", exc_info=exc)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
+
+# ── Audit logging middleware ───────────────────────────────
+
+@app.middleware("http")
+async def audit_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        logger.info(
+            "audit",
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            client_host=request.client.host if request.client else None,
+        )
+    return response
 
 # ── Trace ID propagation middleware ────────────────────────
 
@@ -144,6 +196,20 @@ async def trace_id_middleware(request: Request, call_next):
     response.headers["X-Trace-ID"] = trace_id
     structlog.contextvars.unbind_contextvars("trace_id")
     return response
+
+# ── OpenTelemetry tracing middleware ───────────────────────
+
+@app.middleware("http")
+async def tracing_middleware(request: Request, call_next):
+    from opentelemetry import trace
+    tracer = trace.get_tracer("sindio.mock_api")
+    with tracer.start_as_current_span(f"{request.method} {request.url.path}") as span:
+        span.set_attribute("http.method", request.method)
+        span.set_attribute("http.url", str(request.url))
+        span.set_attribute("http.client_ip", request.client.host if request.client else "")
+        response = await call_next(request)
+        span.set_attribute("http.status_code", response.status_code)
+        return response
 
 # ── Optional proxy to ML Core (port 8081) ────────────────────────
 
@@ -220,11 +286,11 @@ async def _proxy_optional(request: Request, path: str):
 
 
 # ── Mount all routers ──────────────────────────────────────────
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="/api", dependencies=[Depends(require_viewer)])
 app.include_router(stream_router, prefix="/api/v1")
-app.include_router(reports_router)   # prefix /api/v1/reports already defined in router
-app.include_router(feedback_router)  # prefix /api/v1/feedback already defined in router
-app.include_router(privacy_router)   # prefix /api/v1/privacy already defined in router
+app.include_router(reports_router, dependencies=[Depends(require_viewer)])
+app.include_router(feedback_router, dependencies=[Depends(require_viewer)])
+app.include_router(privacy_router)   # individual endpoints already enforce role checks
 
 
 @app.get("/health")
@@ -310,6 +376,8 @@ if _FRONTEND_DIST.exists():
 
     @app.get("/{rest_of_path:path}")
     async def serve_frontend(rest_of_path: str):
+        if rest_of_path.startswith(("api", "health", "metrics", "docs", "openapi")):
+            raise HTTPException(status_code=404, detail="Not found")
         file_path = _FRONTEND_DIST / rest_of_path
         if file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))

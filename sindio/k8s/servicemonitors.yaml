@@ -1,0 +1,50 @@
+# ============================================================
+# Sindio — Prometheus ServiceMonitors
+# ============================================================
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-api
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  selector:
+    matchLabels:
+      app: sindio-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-rag
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  selector:
+    matchLabels:
+      app: sindio-rag
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sindio-frontend
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+spec:
+  selector:
+    matchLabels:
+      app: sindio-frontend
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s

@@ -26,6 +26,20 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    result_expires=3600,  # Task results expire after 1 hour (Issue 25)
+    task_reject_on_worker_lost=True,
+    task_acks_late=True,
+    task_default_queue="sindio_tasks",
+    task_queues={
+        "sindio_tasks": {
+            "binding_key": "sindio_tasks",
+            "dead_letter_exchange": "sindio_tasks_dlx",
+            "dead_letter_routing_key": "sindio_tasks_dlq",
+        },
+        "sindio_tasks_dlq": {
+            "binding_key": "sindio_tasks_dlq",
+        },
+    },
     task_routes={
         "sindio.*": {"queue": "sindio_tasks"},
     },
@@ -62,6 +76,11 @@ celery_app.conf.update(
         },
         "index-sim-state-daily-sync": {
             "task": "sindio.search.index_sim_state_sync",
+            "schedule": 86400.0, # Daily
+            "options": {"queue": "sindio_tasks"},
+        },
+        "data-retention-cleanup": {
+            "task": "sindio.data_retention.cleanup_old_data",
             "schedule": 86400.0, # Daily
             "options": {"queue": "sindio_tasks"},
         },

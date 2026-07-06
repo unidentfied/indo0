@@ -1,0 +1,348 @@
+# ============================================================
+# Sindio — Baseline NetworkPolicies (zero-trust within namespace)
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: sindio
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow DNS resolution for all pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: sindio
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# API gateway: accepts external ingress + can egress to external APIs
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-gateway
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-qdrant
+      ports:
+        - protocol: TCP
+          port: 6333
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-minio
+      ports:
+        - protocol: TCP
+          port: 9000
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-rag
+      ports:
+        - protocol: TCP
+          port: 8081
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-simulator
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# Frontend: accepts external ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []
+      ports:
+        - protocol: TCP
+          port: 80
+---
+# RAG service: ingress from API only; egress to DB, Redis, Qdrant, MinIO
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-rag
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-rag
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+      ports:
+        - protocol: TCP
+          port: 8081
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-qdrant
+      ports:
+        - protocol: TCP
+          port: 6333
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-minio
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+# Simulator (Celery worker): ingress from API only; egress to DB, Redis, MinIO
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-simulator
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-simulator
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-minio
+      ports:
+        - protocol: TCP
+          port: 9000
+---
+# Celery beat: egress to DB and Redis only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-celery-beat
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-celery-beat
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: sindio-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# PostgreSQL: ingress from API, simulator, RAG, celery-beat
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+        - podSelector:
+            matchLabels:
+              app: sindio-simulator
+        - podSelector:
+            matchLabels:
+              app: sindio-rag
+        - podSelector:
+            matchLabels:
+              app: sindio-celery-beat
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Redis: ingress from API, simulator, RAG, celery-beat
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+        - podSelector:
+            matchLabels:
+              app: sindio-simulator
+        - podSelector:
+            matchLabels:
+              app: sindio-rag
+        - podSelector:
+            matchLabels:
+              app: sindio-celery-beat
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# Qdrant: ingress from API and RAG
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-qdrant
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-qdrant
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+        - podSelector:
+            matchLabels:
+              app: sindio-rag
+      ports:
+        - protocol: TCP
+          port: 6333
+---
+# MinIO: ingress from API, simulator, RAG
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-minio
+  namespace: sindio
+spec:
+  podSelector:
+    matchLabels:
+      app: sindio-minio
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: sindio-api
+        - podSelector:
+            matchLabels:
+              app: sindio-simulator
+        - podSelector:
+            matchLabels:
+              app: sindio-rag
+      ports:
+        - protocol: TCP
+          port: 9000

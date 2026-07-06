@@ -6,12 +6,30 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
       packages: write
       contents: read
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: sindio_user
+          POSTGRES_PASSWORD: sindio_test
+          POSTGRES_DB: sindio
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,53 +51,74 @@ jobs:
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build core image
-        run: |
-          docker compose -f docker/docker-compose.yml build core
-
+      # ═══════════════════════════════════════════════════════════
+      # Frontend
+      # ═══════════════════════════════════════════════════════════
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
       - name: Install frontend dependencies
         working-directory: frontend
-        run: |
-          npm ci
+        run: npm ci
+
       - name: Lint frontend
         working-directory: frontend
-        run: |
-          npm run lint
+        run: npm run lint
+
       - name: Run frontend tests
         working-directory: frontend
-        run: |
-          npm run test
+        run: npm run test
+
+      - name: npm audit
+        working-directory: frontend
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
       - name: Build UI Docker image
-        run: |
-          docker compose -f docker/docker-compose.yml build frontend
+        run: docker compose -f docker/docker-compose.yml build frontend
+
       - name: Push UI image to GHCR
         env:
-          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/sindio-frontend:latest
+          IMAGE_TAG: ${{ env.IMAGE_PREFIX }}/sindio-frontend:latest
         run: |
           docker tag sindio-frontend:latest $IMAGE_TAG
           docker push $IMAGE_TAG
 
+      # ═══════════════════════════════════════════════════════════
+      # Go API
+      # ═══════════════════════════════════════════════════════════
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+
       - name: Lint Go API
         working-directory: backend/api
-        run: |
-          go vet ./...
+        run: go vet ./...
+
       - name: Test Go API
         working-directory: backend/api
-        run: |
-          go test ./... -v
+        run: go test ./... -v
 
+      - name: Build Go API Docker image
+        run: docker build -f backend/api/Dockerfile -t sindio-go-api:latest .
+
+      - name: Push Go API image to GHCR
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_PREFIX }}/sindio-go-api:latest
+        run: |
+          docker tag sindio-go-api:latest $IMAGE_TAG
+          docker push $IMAGE_TAG
+
+      # ═══════════════════════════════════════════════════════════
+      # Rust Streaming
+      # ═══════════════════════════════════════════════════════════
       - name: Cache Rust crates
         uses: actions/cache@v4
         with:
@@ -88,20 +127,31 @@ jobs:
             ~/.cargo/git
             backend/streaming/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('backend/streaming/Cargo.lock') }}
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
       - name: Check Rust compile
         working-directory: backend/streaming
-        run: |
-          cargo check --all-targets
+        run: cargo check --all-targets
+
       - name: Test Rust
         working-directory: backend/streaming
-        run: |
-          cargo test
-      - name: Build streaming Docker image
-        run: |
-          docker compose -f docker/docker-compose.yml build streaming
+        run: cargo test
 
+      - name: Build streaming Docker image
+        run: docker compose -f docker/docker-compose.yml build streaming
+
+      - name: Push streaming image to GHCR
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_PREFIX }}/sindio-streaming:latest
+        run: |
+          docker tag sindio-streaming:latest $IMAGE_TAG
+          docker push $IMAGE_TAG
+
+      # ═══════════════════════════════════════════════════════════
+      # Python Core
+      # ═══════════════════════════════════════════════════════════
       - name: Cache Poetry packages
         uses: actions/cache@v4
         with:
@@ -112,27 +162,151 @@ jobs:
 
       - name: Lint core package
         working-directory: backend/core
-        run: |
-          ruff .
+        run: ruff .
 
-      - name: Run tests
+      - name: Run core tests
         working-directory: backend/core
-        run: |
-          pytest
+        run: pytest
+
+      - name: Build core image
+        run: docker compose -f docker/docker-compose.yml build core
 
       - name: Push core image to GHCR
         env:
-          IMAGE_TAG: ghcr.io/${{ github.repository_owner }}/sindio-core:latest
+          IMAGE_TAG: ${{ env.IMAGE_PREFIX }}/sindio-core:latest
         run: |
           docker tag sindio-core:latest $IMAGE_TAG
           docker push $IMAGE_TAG
 
+      # ═══════════════════════════════════════════════════════════
+      # Python Mock API
+      # ═══════════════════════════════════════════════════════════
+      - name: Install mock API dependencies
+        working-directory: backend/app
+        run: |
+          pip install -r ../requirements.txt
+
+      - name: Run mock API smoke tests
+        working-directory: backend/app
+        env:
+          DATABASE_URL: postgresql://sindio_user:sindio_test@localhost:5432/sindio
+        run: |
+          PYTHONPATH=".:..:$PYTHONPATH" pytest tests/
+
+      - name: Build mock API Docker image
+        run: docker build -f backend/app/Dockerfile -t sindio-mock-api:latest .
+
+      - name: Push mock API image to GHCR
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_PREFIX }}/sindio-mock-api:latest
+        run: |
+          docker tag sindio-mock-api:latest $IMAGE_TAG
+          docker push $IMAGE_TAG
+
+      # ═══════════════════════════════════════════════════════════
+      # Vulnerability Scanning (all images)
+      # ═══════════════════════════════════════════════════════════
       - name: Run Trivy vulnerability scanner on core image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'ghcr.io/${{ github.repository_owner }}/sindio-core:latest'
+          image-ref: '${{ env.IMAGE_PREFIX }}/sindio-core:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner on frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.IMAGE_PREFIX }}/sindio-frontend:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner on Go API image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.IMAGE_PREFIX }}/sindio-go-api:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Run Trivy vulnerability scanner on streaming image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.IMAGE_PREFIX }}/sindio-streaming:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+  # ═══════════════════════════════════════════════════════════════
+  # Deploy to Staging (on main branch only)
+  # ═══════════════════════════════════════════════════════════════
+  deploy-staging:
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name sindio-dev
+
+      - name: Deploy to staging
+        run: |
+          kubectl apply -k k8s/overlays/staging/
+          kubectl rollout status deployment/staging-sindio-api -n sindio-staging --timeout=300s
+
+      - name: Post-deploy smoke tests
+        run: |
+          STAGING_URL=$(kubectl get ingress -n sindio-staging -o jsonpath='{.items[0].spec.rules[0].host}')
+          curl -sf "http://$STAGING_URL/health" || exit 1
+          curl -sf "http://$STAGING_URL/api/v1/dashboard/metrics?system=power" || exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/staging-sindio-api -n sindio-staging
+          kubectl rollout undo deployment/staging-sindio-frontend -n sindio-staging
+
+  # ═══════════════════════════════════════════════════════════════
+  # Load tests (scheduled nightly)
+  # ═══════════════════════════════════════════════════════════════
+  load-test:
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        working-directory: tests/load
+        run: k6 run k6-load-test.js --env API_URL=https://staging.sindio.net
+        continue-on-error: true

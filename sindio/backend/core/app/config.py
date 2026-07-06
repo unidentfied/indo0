@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     core_port: int = Field(default=8081, validation_alias="CORE_PORT")
     cors_origins: str = Field(
-        default="http://localhost:5173,http://localhost:3000,http://localhost:4000",
+        default="http://localhost:5173,http://localhost:3000,http://localhost:4000,https://sindio.net",
         validation_alias="CORS_ORIGINS",
     )
     alert_sudden_change_threshold: float = Field(default=0.2, validation_alias="ALERT_SUDDEN_CHANGE_THRESHOLD")
@@ -49,8 +49,9 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         if self.database_url_raw:
             return self.database_url_raw
+        from urllib.parse import quote
         return (
-            f"postgresql://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
+            f"postgresql://{self.db_user}:{quote(self.db_password, safe='')}@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
     @property

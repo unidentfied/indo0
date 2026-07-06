@@ -17,7 +17,7 @@ metadata:
     app.kubernetes.io/name: sindio
 spec:
   hosts:
-    - "sindio.urban"
+    - "sindio.net"
   gateways:
     - sindio-gateway
   http:
@@ -115,4 +115,4 @@ spec:
         name: http
         protocol: HTTP
       hosts:
-        - "sindio.urban"
+        - "sindio.net"

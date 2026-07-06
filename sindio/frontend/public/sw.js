@@ -57,10 +57,10 @@ async function processOfflineQueue() {
 
   for (const task of tasks) {
     try {
-      const response = await fetch('/api/v1/simulations/run', {
+      const network = encodeURIComponent(task.payload?.infrastructure_type || 'power')
+      const stressFactor = encodeURIComponent(task.payload?.stress_factor || '')
+      const response = await fetch(`/api/v1/simulations/run?network=${network}&stress_factor=${stressFactor}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(task.payload),
       })
       if (response.ok) {
         await store.delete(task.id)

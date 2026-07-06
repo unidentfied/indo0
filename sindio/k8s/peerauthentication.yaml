@@ -1,0 +1,28 @@
+# ============================================================
+# Sindio — Istio PeerAuthentication (mTLS STRICT)
+# ============================================================
+# Enforces mutual TLS for all traffic inside the sindio namespace.
+# Requires Istio sidecar injection to be enabled on all pods.
+# ============================================================
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: sindio
+spec:
+  mtls:
+    mode: STRICT
+---
+# Allow healthchecks from the ingress gateway (no mTLS from outside)
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: ingress-health
+  namespace: sindio
+spec:
+  selector:
+    matchLabels:
+      app: sindio-api
+  portLevelMtls:
+    8080:
+      mode: PERMISSIVE

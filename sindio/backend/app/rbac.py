@@ -129,6 +129,21 @@ def require_role(*allowed_roles: Role):
     return _check_role
 
 
+async def optional_auth(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> Optional[Dict]:
+    """Return decoded JWT payload if valid, else None (demo mode)."""
+    if credentials is None:
+        return None
+    if not _JWT_SECRET:
+        return None
+    try:
+        return jwt.decode(credentials.credentials, _JWT_SECRET, algorithms=["HS256"])
+    except JWTError:
+        return None
+
+
 # Convenience dependencies
 require_viewer = require_role(Role.VIEWER, Role.OPERATOR, Role.ADMIN, Role.COUNTY)
 require_operator = require_role(Role.OPERATOR, Role.ADMIN)

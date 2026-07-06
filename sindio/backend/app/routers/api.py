@@ -5,8 +5,7 @@ import random
 import time as _time_module
 import os
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
+from app.limiter import limiter
 
 from app.models import (
     Metric, Alert, SimulationResult, InfrastructureStatus, PredictiveParams,
@@ -22,7 +21,6 @@ from app.mock_simulation import (
 )
 
 router = APIRouter()
-limiter = Limiter(key_func=get_remote_address)
 
 _METRIC_LABELS: dict[str, list[str]] = {
     "power":       ["Grid Stability", "Current Load", "Active Nodes", "Latency"],

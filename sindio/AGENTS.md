@@ -73,7 +73,13 @@ npm run test          # vitest run (jsdom, globals, setupFiles: src/test-setup.t
 npm run build         # tsc && vite build
 ```
 
-**Backend smoke tests** exist in `backend/app/tests/test_api_smoke.py` (pytest + httpx ASGI client). CI runs them on every push. The Poetry core also declares `pytest`/`pytest-asyncio` as dev deps.
+**Backend smoke tests** exist in `backend/app/tests/test_api_smoke.py` (pytest + httpx ASGI client). Run them manually from `backend/app/` with:
+
+```bash
+PYTHONPATH=".:..:$PYTHONPATH" pytest tests/test_api_smoke.py
+```
+
+The Poetry core also declares `pytest`/`pytest-asyncio` as dev deps.
 
 ## Environment config
 
@@ -107,9 +113,9 @@ Set `SINDIO_SKIP_RASTER=1` in `.env` to skip the 297 MB WorldPop raster download
 
 | Service | Port |
 |---|---|
-| PostgreSQL 16 + PostGIS + TimescaleDB | `:5432` |
+| PostgreSQL 16 + PostGIS + TimescaleDB | internal only |
 | Qdrant vector DB | `:6333` |
-| Redis 7 | `:6379` |
+| Redis 7 | internal only |
 | MinIO S3-compatible | `:9000` (console `:9001`) |
 | PGAdmin | `:5050` |
 | LocalStack (mock SQS/SNS) | `:4566` |
@@ -117,6 +123,19 @@ Set `SINDIO_SKIP_RASTER=1` in `.env` to skip the 297 MB WorldPop raster download
 | ML Core (Python) | `:8081` |
 | Streaming (Rust) | `:8082` |
 | Frontend (nginx) | `:3000` |
+
+**Local development with host access to DB/Redis:**
+Create `docker/docker-compose.override.yml`:
+```yaml
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+```
+This file is gitignored and auto-merged by Docker Compose for local dev only.
 
 SQL migrations in `backend/migrations/` auto-mount as PostgreSQL init scripts.
 
@@ -135,10 +154,10 @@ SQL migrations in `backend/migrations/` auto-mount as PostgreSQL init scripts.
 - Required env vars in Railway dashboard: `CORS_ORIGINS`, `SINDIO_SKIP_RASTER=1`, `SINDIO_USE_CORE=0`
 - `CORS_ORIGINS` must include the deployed Netlify frontend URL
 
-**Frontend** is deployed to Netlify via GitHub Actions (`.github/workflows/frontend.yml`).
-- GitHub Actions builds `sindio/frontend/` and deploys `dist/` to Netlify
-- Requires GitHub secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`
-- Requires GitHub variable or `.env.production`: `VITE_API_BASE_URL=<railway-backend-url>`
+**Frontend** is deployed to Netlify manually (no CI/CD yet).
+- Run `npm run build` in `sindio/frontend/` — the `postbuild` script injects a timestamp into `sw.js` to bust the Service Worker cache
+- Deploy `dist/` with `netlify deploy --prod --dir=dist`
+- Set `VITE_API_BASE_URL=<railway-backend-url>` before building
 
 **API connection:**
 - Dev: Vite proxy (`/api` → `localhost:8080`)
@@ -202,15 +221,19 @@ The training script generates synthetic-but-realistic data matching known Nairob
 
 ## Container images
 
-`.github/workflows/build-images.yml` builds and pushes all services to GitHub Container Registry:
+No automated image builds exist yet. Build manually:
 
 ```bash
-# Images are built on every push to main
-docker pull ghcr.io/sindio/sindio-api:latest
-docker pull ghcr.io/sindio/sindio-simulator:latest
-docker pull ghcr.io/sindio/sindio-go-api:latest
-docker pull ghcr.io/sindio/sindio-streaming:latest
-docker pull ghcr.io/sindio/sindio-frontend:latest
+# Mock API
+docker build -f backend/app/Dockerfile -t sindio-api:latest .
+# ML Core
+docker build -f backend/core/Dockerfile.core -t sindio-simulator:latest .
+# Go API
+docker build -f backend/api/Dockerfile -t sindio-go-api:latest .
+# Streaming
+docker build -f backend/streaming/Dockerfile -t sindio-streaming:latest .
+# Frontend
+docker build -f docker/build/Dockerfile.frontend -t sindio-frontend:latest .
 ```
 
 
@@ -253,8 +276,7 @@ Runbooks are in `docs/runbooks/`:
 
 ## Key gotchas
 
-- `dev.sh` runs the **ML Core** from `backend/core/app/`, not the mock API. It exports `JWT_SECRET` and `DB_PASSWORD` with dev defaults so the ML Core can start without `.env`.
-- `dev.sh` also exports `CORE_PORT=8080` so the frontend Vite proxy (`:8080` default) aligns. The standalone ML Core uses port 8081.
+- `dev.sh` runs the **Python mock API** from `backend/app/` (not the ML Core). It auto-creates a venv at `/tmp/sindio-venv` and sets `CORE_PORT=${CORE_PORT:-8080}` so the frontend Vite proxy aligns. The standalone ML Core (`backend/core/`) runs on port 8081 via Poetry and is started separately.
 - The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=0` — proxy to ML Core must be enabled explicitly in Railway env vars.
 - **Local dev with proxy:** `dev.sh` runs Core on port 8080. If you set `SINDIO_USE_CORE=1` locally, also set `CORE_URL=http://localhost:8080` so the Mock API proxy points to the correct port (default is 8081).
 - Only one service on port 8080 at a time (Python mock or Go API).

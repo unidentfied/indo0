@@ -23,7 +23,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: git@github.com:unidentfied/indo0.git
+        repoURL: git@github.com:your-org/sindio.git
         targetRevision: main
         path: sindio/k8s/overlays/{{environment}}
       destination:

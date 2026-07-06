@@ -24,7 +24,13 @@ RUN poetry lock --no-update \
 COPY sindio/backend/core/app/ ./app/
 
 # ── Copy trained model weights and embeddings ──────────────────
+# In production builds models/ may be empty (gitignored). Download from S3 if missing.
 COPY sindio/models/ ./models/
+RUN if [ ! -f models/trained/urban_stress_v1.pth ]; then \
+      echo "Models not present in build context; attempting S3 sync..." && \
+      apt-get update && apt-get install -y --no-install-recommends awscli && \
+      aws s3 sync s3://sindio-${ENVIRONMENT:-dev}-models/trained/ models/trained/ || true; \
+    fi
 
 # ── Runtime environment ──────────────────────────────────────────
 ENV PYTHONPATH=/workspace
@@ -35,4 +41,4 @@ ENV SINDIO_SKIP_RASTER=1
 EXPOSE 8081
 
 # Use `poetry run` so uvicorn executes inside the project venv
-CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port 8081
+CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-${CORE_PORT:-8081}}
