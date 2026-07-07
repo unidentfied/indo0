@@ -23,6 +23,12 @@ spec:
       containers:
         - name: fluent-bit
           image: fluent/fluent-bit:3.0
+          env:
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sindio-secrets
+                  key: ELASTIC_PASSWORD
           volumeMounts:
             - name: varlog
               mountPath: /var/log

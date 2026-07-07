@@ -309,19 +309,10 @@ async def health_ready():
     db_host = os.getenv("DB_HOST")
     if database_url or (db_host and db_host != "localhost"):
         try:
-            import psycopg2
-            if database_url:
-                conn = psycopg2.connect(database_url, connect_timeout=3)
-            else:
-                conn = psycopg2.connect(
-                    host=db_host,
-                    port=os.getenv("DB_PORT", "5432"),
-                    dbname=os.getenv("DB_NAME", "sindio"),
-                    user=os.getenv("DB_USER", "sindio_user"),
-                    password=os.getenv("DB_PASSWORD", ""),
-                    connect_timeout=3,
-                )
-            conn.close()
+            from app.core.database import get_engine
+            from sqlalchemy import text
+            with get_engine().connect() as conn:
+                conn.execute(text("SELECT 1"))
             deps["postgres"] = "ok"
         except Exception:
             deps["postgres"] = "unreachable"

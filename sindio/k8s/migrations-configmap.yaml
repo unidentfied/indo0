@@ -1,0 +1,29 @@
+# ============================================================
+# Sindio — Migrations ConfigMap
+# ============================================================
+# Generated from backend/migrations/*.sql
+# Apply this before the migration-job.yaml
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sindio-migrations
+  namespace: sindio
+  labels:
+    app.kubernetes.io/name: sindio
+data:
+  # NOTE: In production, generate this ConfigMap with:
+  #   kubectl create configmap sindio-migrations \
+  #     --from-file=backend/migrations/ \
+  #     --namespace sindio \
+  #     --dry-run=client -o yaml > k8s/migrations-configmap.yaml
+  #
+  # The migration files are too large to embed here manually.
+  # This manifest serves as a placeholder; use Kustomize or kubectl
+  # to generate the real ConfigMap from the SQL files.
+  README: |
+    Run the following to populate this ConfigMap:
+    kubectl create configmap sindio-migrations \
+      --from-file=backend/migrations/ \
+      --namespace sindio \
+      --dry-run=client -o yaml | kubectl apply -f -
