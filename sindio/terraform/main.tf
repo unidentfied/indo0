@@ -75,8 +75,8 @@ module "vpc" {
   cidr = var.vpc_cidr
 
   azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  private_subnets = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i + 1)]
+  public_subnets  = [for i in range(3) : cidrsubnet(var.vpc_cidr, 8, i + 101)]
 
   enable_nat_gateway = var.environment == "prod"
   single_nat_gateway = var.environment == "dev"
@@ -190,7 +190,7 @@ module "rds" {
   deletion_protection = var.environment == "prod"
 
   parameters = [
-    { name = "shared_preload_libraries", value = "pg_stat_statements,pgcrypto,timescaledb" },
+    { name = "shared_preload_libraries", value = "pg_stat_statements,timescaledb" },
     { name = "rds.force_ssl", value = "1" },
   ]
 

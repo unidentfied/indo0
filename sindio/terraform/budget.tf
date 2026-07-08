@@ -40,29 +40,32 @@ resource "aws_budgets_budget" "sindio_monthly" {
   }
 }
 
-# Cost anomaly detection
-resource "aws_ce_anomaly_monitor" "sindio_service" {
-  name              = "sindio-${var.environment}-service-monitor"
-  monitor_type      = "DIMENSIONAL"
-  monitor_dimension = "SERVICE"
-}
+# Cost anomaly detection (requires Cost Explorer to be enabled on the account)
+# If you get "User not enabled for cost explorer access", uncomment after enabling
+# in the AWS Billing console: https://console.aws.amazon.com/billing/home#/preferences
 
-resource "aws_ce_anomaly_subscription" "sindio_alerts" {
-  name      = "sindio-${var.environment}-anomaly-alerts"
-  frequency = "IMMEDIATE"
+# resource "aws_ce_anomaly_monitor" "sindio_service" {
+#   name              = "sindio-${var.environment}-service-monitor"
+#   monitor_type      = "DIMENSIONAL"
+#   monitor_dimension = "SERVICE"
+# }
 
-  monitor_arn_list = [aws_ce_anomaly_monitor.sindio_service.arn]
+# resource "aws_ce_anomaly_subscription" "sindio_alerts" {
+#   name      = "sindio-${var.environment}-anomaly-alerts"
+#   frequency = "IMMEDIATE"
 
-  subscriber {
-    type    = "EMAIL"
-    address = "ops@sindio.net"
-  }
+#   monitor_arn_list = [aws_ce_anomaly_monitor.sindio_service.arn]
 
-  threshold_expression {
-    dimension {
-      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
-      match_options = ["GREATER_THAN_OR_EQUAL"]
-      values        = ["100"]
-    }
-  }
-}
+#   subscriber {
+#     type    = "EMAIL"
+#     address = "ops@sindio.net"
+#   }
+
+#   threshold_expression {
+#     dimension {
+#       key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+#       match_options = ["GREATER_THAN_OR_EQUAL"]
+#       values        = ["100"]
+#     }
+#   }
+# }
