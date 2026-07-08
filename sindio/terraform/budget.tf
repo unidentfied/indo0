@@ -11,8 +11,8 @@ resource "aws_budgets_budget" "sindio_monthly" {
   time_unit         = "MONTHLY"
 
   cost_filter {
-    tag_key    = "Project"
-    tag_values = ["sindio"]
+    name   = "TagKeyValue"
+    values = ["user:Project$sindio"]
   }
 
   notification {
@@ -20,7 +20,7 @@ resource "aws_budgets_budget" "sindio_monthly" {
     threshold                  = 80
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
-    subscriber_email_addresses = ["ops@sindio.urban"]
+    subscriber_email_addresses = ["ops@sindio.net"]
   }
 
   notification {
@@ -28,7 +28,7 @@ resource "aws_budgets_budget" "sindio_monthly" {
     threshold                  = 100
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
-    subscriber_email_addresses = ["ops@sindio.urban", "finance@sindio.urban"]
+    subscriber_email_addresses = ["ops@sindio.net", "finance@sindio.net"]
   }
 
   notification {
@@ -36,7 +36,7 @@ resource "aws_budgets_budget" "sindio_monthly" {
     threshold                  = 120
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
-    subscriber_email_addresses = ["ops@sindio.urban", "finance@sindio.urban", "cto@sindio.urban"]
+    subscriber_email_addresses = ["ops@sindio.net", "finance@sindio.net", "cto@sindio.net"]
   }
 }
 
@@ -49,13 +49,20 @@ resource "aws_ce_anomaly_monitor" "sindio_service" {
 
 resource "aws_ce_anomaly_subscription" "sindio_alerts" {
   name      = "sindio-${var.environment}-anomaly-alerts"
-  threshold = 100  # Alert on $100+ anomalies
   frequency = "IMMEDIATE"
 
   monitor_arn_list = [aws_ce_anomaly_monitor.sindio_service.arn]
 
   subscriber {
     type    = "EMAIL"
-    address = "ops@sindio.urban"
+    address = "ops@sindio.net"
+  }
+
+  threshold_expression {
+    dimension {
+      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+      match_options = ["GREATER_THAN_OR_EQUAL"]
+      values        = ["100"]
+    }
   }
 }
