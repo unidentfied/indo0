@@ -229,7 +229,7 @@ resource "aws_elasticache_cluster" "redis" {
   cluster_id           = "sindio-${var.environment}"
   engine               = "redis"
   node_type            = var.environment == "prod" ? "cache.t3.medium" : "cache.t3.micro"
-  num_cache_nodes      = var.environment == "prod" ? 2 : 1
+  num_cache_nodes      = 1
   parameter_group_name = "default.redis7"
   port                 = 6379
   subnet_group_name    = aws_elasticache_subnet_group.redis.name
