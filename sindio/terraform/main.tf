@@ -185,8 +185,8 @@ module "rds" {
   deletion_protection = var.environment == "prod"
 
   parameters = [
-    { name = "shared_preload_libraries", value = "pg_stat_statements" },
-    { name = "rds.force_ssl", value = "1" },
+    { name = "shared_preload_libraries", value = "pg_stat_statements", apply_method = "pending-reboot" },
+    { name = "rds.force_ssl", value = "1", apply_method = "pending-reboot" },
   ]
 
   tags = {
@@ -257,7 +257,7 @@ resource "aws_opensearch_domain" "sindio" {
   }
 
   vpc_options {
-    subnet_ids         = module.vpc.private_subnets
+    subnet_ids         = [module.vpc.private_subnets[0]]
     security_group_ids = [module.vpc.default_security_group_id]
   }
 
@@ -464,20 +464,6 @@ resource "aws_iam_role" "sindio_backend" {
   })
 }
 
-# Annotate the K8s ServiceAccount so pods can assume the IAM role
-resource "kubectl_manifest" "sindio_backend_sa" {
-  yaml_body = <<-YAML
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: sindio-backend
-      namespace: sindio
-      annotations:
-        eks.amazonaws.com/role-arn: ${aws_iam_role.sindio_backend.arn}
-  YAML
-
-  depends_on = [module.eks]
-}
 
 resource "aws_iam_role_policy_attachment" "backend_rds" {
   role       = aws_iam_role.sindio_backend.name
