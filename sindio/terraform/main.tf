@@ -166,8 +166,8 @@ module "rds" {
   engine_version = "16.3"
   family         = "postgres16"
 
-  instance_class    = var.environment == "prod" ? "db.r6g.large" : "db.t3.micro"
-  allocated_storage = var.environment == "prod" ? 100 : 20
+  instance_class    = "db.t3.micro"
+  allocated_storage = 20
   storage_encrypted = true
 
   db_name     = "sindio"
@@ -201,7 +201,7 @@ resource "aws_db_instance" "replica" {
 
   identifier          = "sindio-${var.environment}-replica"
   replicate_source_db = module.rds.db_instance_identifier
-  instance_class      = "db.r6g.large"
+  instance_class      = "db.t3.micro"
   vpc_security_group_ids = [module.vpc.default_security_group_id]
   publicly_accessible = false
 
