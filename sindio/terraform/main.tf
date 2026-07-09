@@ -110,28 +110,23 @@ module "eks" {
   eks_managed_node_groups = {
     # General-purpose nodes (API, RAG, frontend)
     general = {
-      instance_types = var.environment == "prod" ? ["t3.large"] : ["t3.medium"]
-      min_size       = var.environment == "prod" ? 3 : 1
-      max_size       = 8
-      desired_size   = var.environment == "prod" ? 3 : 1
+      instance_types = ["t3.micro"]
+      min_size       = 1
+      max_size       = 4
+      desired_size   = 1
       labels = {
         role = "general"
       }
     }
-    # Simulation workers (GPU-compatible for ML inference)
+    # Simulation workers
     simulator = {
-      instance_types = var.environment == "prod" ? ["c5.2xlarge"] : ["t3.large"]
-      min_size       = var.environment == "prod" ? 2 : 1
-      max_size       = var.environment == "prod" ? 20 : 4
-      desired_size   = var.environment == "prod" ? 2 : 1
+      instance_types = ["t3.micro"]
+      min_size       = 1
+      max_size       = 4
+      desired_size   = 1
       labels = {
         role = "simulator"
       }
-      taints = var.environment == "prod" ? [{
-        key    = "dedicated"
-        value  = "simulator"
-        effect = "NO_SCHEDULE"
-      }] : []
     }
   }
 
@@ -190,7 +185,7 @@ module "rds" {
   deletion_protection = var.environment == "prod"
 
   parameters = [
-    { name = "shared_preload_libraries", value = "pg_stat_statements,timescaledb" },
+    { name = "shared_preload_libraries", value = "pg_stat_statements" },
     { name = "rds.force_ssl", value = "1" },
   ]
 
