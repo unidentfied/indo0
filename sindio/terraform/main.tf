@@ -205,6 +205,8 @@ module "rds" {
   vpc_security_group_ids = [aws_security_group.rds.id]
   subnet_ids             = module.vpc.private_subnets
 
+  create_db_subnet_group = true
+
   backup_retention_period = 1
   backup_window           = "03:00-04:00"
   maintenance_window      = "sun:05:00-sun:06:00"
@@ -215,22 +217,6 @@ module "rds" {
     { name = "shared_preload_libraries", value = "pg_stat_statements", apply_method = "pending-reboot" },
     { name = "rds.force_ssl", value = "1", apply_method = "pending-reboot" },
   ]
-
-  tags = {
-    Environment = var.environment
-    Project     = "sindio"
-  }
-}
-
-# Read replica (prod only)
-resource "aws_db_instance" "replica" {
-  count = var.environment == "prod" ? 1 : 0
-
-  identifier          = "sindio-${var.environment}-replica"
-  replicate_source_db = module.rds.db_instance_identifier
-  instance_class      = "db.t3.micro"
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible = false
 
   tags = {
     Environment = var.environment
