@@ -152,6 +152,33 @@ module "eks" {
 # via helm or kubectl. See docs/cluster-autoscaler.md
 # ============================================================
 
+# Security group for RDS (in the new VPC)
+resource "aws_security_group" "rds" {
+  name        = "sindio-${var.environment}-rds"
+  description = "Security group for Sindio RDS PostgreSQL"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "PostgreSQL from VPC"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Environment = var.environment
+    Project     = "sindio"
+  }
+}
+
 # ============================================================
 # RDS PostgreSQL (with read replica in prod)
 # ============================================================
@@ -175,7 +202,7 @@ module "rds" {
   port        = 5432
   manage_master_user_password = true
 
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [aws_security_group.rds.id]
   subnet_ids             = module.vpc.private_subnets
 
   backup_retention_period = 1
@@ -202,7 +229,7 @@ resource "aws_db_instance" "replica" {
   identifier          = "sindio-${var.environment}-replica"
   replicate_source_db = module.rds.db_instance_identifier
   instance_class      = "db.t3.micro"
-  vpc_security_group_ids = [module.vpc.default_security_group_id]
+  vpc_security_group_ids = [aws_security_group.rds.id]
   publicly_accessible = false
 
   tags = {
