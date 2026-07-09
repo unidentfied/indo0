@@ -178,11 +178,11 @@ module "rds" {
   vpc_security_group_ids = [module.vpc.default_security_group_id]
   subnet_ids             = module.vpc.private_subnets
 
-  backup_retention_period = var.environment == "prod" ? 30 : 7
+  backup_retention_period = 1
   backup_window           = "03:00-04:00"
   maintenance_window      = "sun:05:00-sun:06:00"
 
-  deletion_protection = var.environment == "prod"
+  deletion_protection = false
 
   parameters = [
     { name = "shared_preload_libraries", value = "pg_stat_statements", apply_method = "pending-reboot" },
