@@ -162,15 +162,18 @@ async def request_id_middleware(request: Request, call_next):
 
 @app.middleware("http")
 async def tracing_middleware(request: Request, call_next):
-    from opentelemetry import trace
-    tracer = trace.get_tracer("sindio.core")
-    with tracer.start_as_current_span(f"{request.method} {request.url.path}") as span:
-        span.set_attribute("http.method", request.method)
-        span.set_attribute("http.url", str(request.url))
-        span.set_attribute("http.client_ip", request.client.host if request.client else "")
-        response = await call_next(request)
-        span.set_attribute("http.status_code", response.status_code)
-        return response
+    try:
+        from opentelemetry import trace
+        tracer = trace.get_tracer("sindio.core")
+        with tracer.start_as_current_span(f"{request.method} {request.url.path}") as span:
+            span.set_attribute("http.method", request.method)
+            span.set_attribute("http.url", str(request.url))
+            span.set_attribute("http.client_ip", request.client.host if request.client else "")
+            response = await call_next(request)
+            span.set_attribute("http.status_code", response.status_code)
+            return response
+    except ImportError:
+        return await call_next(request)
 
 
 model_registry = ModelRegistry()
