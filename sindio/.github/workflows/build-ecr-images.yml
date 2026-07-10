@@ -28,7 +28,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 429429083547.dkr.ecr.us-east-1.amazonaws.com
-  IMAGE_TAG: ${{ github.event.inputs.image_tag || format('v1.0.7-{0}', github.sha) }}
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || 'v1.0.7' }}
 
 jobs:
   build-and-push:
@@ -79,7 +79,7 @@ jobs:
         with:
           context: .
           file: docker/build/Dockerfile.core-slim
-          push: ${{ github.event.inputs.push != 'false' || github.ref == 'refs/heads/main' }}
+          push: ${{ github.event_name == 'workflow_dispatch' }}
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=${{ matrix.image }}-slim
