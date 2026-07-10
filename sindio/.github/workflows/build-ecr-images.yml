@@ -1,0 +1,112 @@
+name: Build & Push Real ML Images to ECR
+
+# ============================================================
+# Builds the actual sindio-rag and sindio-simulator images
+# (with torch, transformers, geopandas, etc.) and pushes them
+# to AWS ECR with immutable versioned tags.
+#
+# Trigger: manually via workflow_dispatch, or on push to main
+# that touches backend/core/, docker/build/, or this workflow.
+# ============================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag suffix (e.g., v1.0.2)'
+        required: true
+        default: 'v1.0.2'
+      push:
+        description: 'Push to ECR? (true/false)'
+        required: true
+        default: 'true'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/core/**'
+      - 'docker/build/Dockerfile.rag'
+      - 'docker/build/Dockerfile.simulator'
+      - '.github/workflows/build-ecr-images.yml'
+      - '.dockerignore'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REGISTRY: 429429083547.dkr.ecr.us-east-1.amazonaws.com
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || 'v1.0.2' }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      id-token: write          # Required for AWS OIDC (if you switch later)
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: rag
+            dockerfile: docker/build/Dockerfile.rag
+            image: sindio-rag
+          - name: simulator
+            dockerfile: docker/build/Dockerfile.simulator
+            image: sindio-simulator
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/pipx
+          sudo rm -rf /opt/hostedtoolcache
+          df -h
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: image=moby/buildkit:latest
+
+      - name: Build and push ${{ matrix.name }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ github.event.inputs.push != 'false' }}
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          platforms: linux/amd64
+          provenance: false
+
+      - name: Verify image in ECR
+        if: github.event.inputs.push != 'false'
+        run: |
+          aws ecr describe-images \
+            --repository-name ${{ matrix.image }} \
+            --image-ids imageTag=${{ env.IMAGE_TAG }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Output image URI
+        run: |
+          echo "Built image: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"

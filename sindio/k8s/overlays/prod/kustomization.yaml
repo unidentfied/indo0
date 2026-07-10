@@ -1,97 +1,178 @@
 # ============================================================
 # Sindio — Kustomize overlay: prod
 # ============================================================
+# Optimized for a 4-node t3.medium EKS cluster.
+# Removes dev-only stateful services (postgres, redis, minio, qdrant)
+# and scales core services to fit within node capacity.
+# ============================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 namespace: sindio
 
-bases:
-  - ../..
+resources:
+  - ../../base
+
+# Redirect images from GHCR → ECR
+# ECR registry: 429429083547.dkr.ecr.us-east-1.amazonaws.com
+images:
+  - name: ghcr.io/sindio/sindio-api
+    newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-api
+    newTag: v1.0.2
+  - name: ghcr.io/sindio/sindio-simulator
+    newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-simulator
+    newTag: v1.0.2
+  - name: ghcr.io/sindio/sindio-rag
+    newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-rag
+    newTag: v1.0.2
+  - name: ghcr.io/sindio/sindio-frontend
+    newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-frontend
+    newTag: v1.0.3
 
 patches:
-  # Inject ECR production tags
-  - patch: |
-      apiVersion: apps/v1
+  # Scale all deployments to fit 4-node cluster
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-api
-      spec:
-        template:
-          spec:
-            containers:
-              - name: api
-                image: ${ECR_REPO}/sindio-api:${BUILD_TAG}
-  - patch: |
-      apiVersion: apps/v1
+      name: sindio-api
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-simulator
-      spec:
-        template:
-          spec:
-            containers:
-              - name: simulator
-                image: ${ECR_REPO}/sindio-simulator:${BUILD_TAG}
-  - patch: |
-      apiVersion: apps/v1
+      name: sindio-frontend
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-rag
-      spec:
-        template:
-          spec:
-            containers:
-              - name: rag
-                image: ${ECR_REPO}/sindio-rag:${BUILD_TAG}
-  - patch: |
-      apiVersion: apps/v1
+      name: sindio-simulator
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-frontend
-      spec:
-        template:
-          spec:
-            containers:
-              - name: frontend
-                image: ${ECR_REPO}/sindio-frontend:${BUILD_TAG}
+      name: sindio-rag
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-celery-beat
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  # Dev-only stateful services: scale to 0 (use RDS/ElastiCache/S3 in prod)
+  - target:
+      kind: Deployment
+      name: sindio-postgres
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: Deployment
+      name: sindio-redis
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: Deployment
+      name: sindio-minio
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - target:
+      kind: Deployment
+      name: sindio-qdrant
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+
+  # Remove HPAs that fight manual replica counts
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: sindio-api
+      namespace: sindio
+    patch: |-
+      - op: remove
+        path: /spec
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: sindio-frontend
+      namespace: sindio
+    patch: |-
+      - op: remove
+        path: /spec
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: sindio-rag
+      namespace: sindio
+    patch: |-
+      - op: remove
+        path: /spec
+
+  # Real images: use base deployment commands (Celery worker/beat) and volume mounts
 
   # Production security hardening
-  - patch: |
-      apiVersion: apps/v1
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-api
-      spec:
-        template:
-          spec:
-            containers:
-              - name: api
-                securityContext:
-                  runAsNonRoot: true
-                  runAsUser: 65534
-                  readOnlyRootFilesystem: true
-  - patch: |
-      apiVersion: apps/v1
+      name: sindio-api
+      namespace: sindio
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext
+        value:
+          runAsNonRoot: true
+          runAsUser: 65534
+          readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+  - target:
       kind: Deployment
-      metadata:
-        name: sindio-simulator
-      spec:
-        template:
-          spec:
-            containers:
-              - name: simulator
-                securityContext:
-                  runAsNonRoot: true
-                  runAsUser: 1000
-                  readOnlyRootFilesystem: true
+      name: sindio-simulator
+      namespace: sindio
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext
+        value:
+          runAsNonRoot: true
+          runAsUser: 1000
+          readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
 
   # Remove LocalStack from production
-  - patch: |
-      apiVersion: v1
+  - target:
       kind: ConfigMap
-      metadata:
-        name: sindio-config
-      data:
-        LOG_LEVEL: "warn"
-        AWS_ENDPOINT_URL: ""
+      name: sindio-config
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /data/LOG_LEVEL
+        value: warn
+      - op: replace
+        path: /data/AWS_ENDPOINT_URL
+        value: ""

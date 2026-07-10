@@ -1,0 +1,95 @@
+# Docker build-context exclusions
+# Keeps image builds fast by avoiding multi-GB uploads
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Python virtual envs & caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend build artifacts
+node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Go & Rust build artifacts
+backend/api/bin/
+backend/api/vendor/
+backend/api/target/
+backend/streaming/target/
+
+# Large ML artifacts (must be mounted via PVC in K8s, not baked into image)
+models/
+models/trained/
+models/embeddings/
+
+# Raw / processed data
+data/
+data/raw/
+data/processed/
+data/fixtures/
+data/vector_store/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Terraform
+terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Docker local volumes
+docker/volumes/
+docker/docker-compose.override.yml
+docker/secrets/
+
+# Logs
+logs/
+*.log
+
+# K8s secrets
+k8s/03-secrets.yaml
+
+# CI/CD config (not needed in image)
+.github/
+
+# Documentation
+docs/
+*.md
+DEPLOY.md
+README.md
+AGENTS.md
+
+# Test files
+tests/
+tests/load/
+scripts/seed_test_data.py
+scripts/generate_seed_gis.py
+scripts/backup_db.sh
+scripts/restore_db.sh
+scripts/disaster_recovery.sh
+
+# Netlify
+netlify.toml
