@@ -1,0 +1,32 @@
+# ============================================================
+# Sindio — Kustomize base
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: sindio
+
+resources:
+  # Core infrastructure
+  - 00-namespace.yaml
+  - 00-serviceaccount.yaml
+  - 01-configmap.yaml
+  - 02-secrets.yaml
+  - 03-pvc.yaml
+  - 04-deployments.yaml
+  - 05-services.yaml
+  # Istio / Ingress
+  - 07-istio-virtualservice.yaml
+  - ingress.yaml
+  - peerauthentication.yaml
+  # Observability
+  - 08-servicemonitors.yaml
+  - prometheusrules.yaml
+  - grafana-dashboards.yaml
+  # Security
+  - network-policies.yaml
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/managed-by: kustomize

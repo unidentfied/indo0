@@ -1,0 +1,34 @@
+# Placeholder Dockerfile for sindio-simulator / sindio-rag
+# ============================================================
+# Minimal placeholder image. Real builds use docker/build/Dockerfile.*
+# ============================================================
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir fastapi uvicorn pydantic httpx
+
+RUN echo 'from fastapi import FastAPI' > app.py && \
+    echo 'import os' >> app.py && \
+    echo '' >> app.py && \
+    echo 'app = FastAPI()' >> app.py && \
+    echo 'def health(): return {"status": "ok", "source": "placeholder"}' >> app.py && \
+    echo 'app.get("/health")(health)' >> app.py && \
+    echo 'app.get("/api/health")(health)' >> app.py && \
+    echo 'def ready(): return {"status": "ready", "source": "placeholder"}' >> app.py && \
+    echo 'app.get("/api/v1/health/ready")(ready)' >> app.py && \
+    echo 'def metrics(): return "# placeholder"' >> app.py && \
+    echo 'app.get("/metrics")(metrics)' >> app.py && \
+    echo 'def root(): return {"status": "placeholder", "service": os.getenv("SERVICE_NAME", "unknown")}' >> app.py && \
+    echo 'app.get("/")(root)' >> app.py
+
+ENV SERVICE_NAME=placeholder
+ENV SINDIO_SKIP_RASTER=1
+ENV PYTHONPATH=/app
+
+EXPOSE 8081
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')"
+
+CMD exec uvicorn app:app --host 0.0.0.0 --port 8081

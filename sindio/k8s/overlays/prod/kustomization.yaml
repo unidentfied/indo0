@@ -21,10 +21,10 @@ images:
     newTag: v1.0.2
   - name: ghcr.io/sindio/sindio-simulator
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-simulator
-    newTag: v1.0.2
+    newTag: v1.0.3-slim
   - name: ghcr.io/sindio/sindio-rag
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-rag
-    newTag: v1.0.2
+    newTag: v1.0.3-slim
   - name: ghcr.io/sindio/sindio-frontend
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-frontend
     newTag: v1.0.3
@@ -105,30 +105,81 @@ patches:
         path: /spec/replicas
         value: 0
 
-  # Remove HPAs that fight manual replica counts
+  # Slim images: override Celery command → uvicorn (no Redis in prod yet)
+  # and remove model PVC mounts (EBS CSI driver not installed)
   - target:
-      kind: HorizontalPodAutoscaler
-      name: sindio-api
+      kind: Deployment
+      name: sindio-simulator
       namespace: sindio
     patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/command
+        value: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8081"]
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe
+        value:
+          httpGet:
+            path: /api/v1/health/ready
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe
+        value:
+          httpGet:
+            path: /api/v1/health/ready
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
       - op: remove
-        path: /spec
-  - target:
-      kind: HorizontalPodAutoscaler
-      name: sindio-frontend
-      namespace: sindio
-    patch: |-
+        path: /spec/template/spec/containers/0/volumeMounts
       - op: remove
-        path: /spec
+        path: /spec/template/spec/volumes
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
   - target:
-      kind: HorizontalPodAutoscaler
+      kind: Deployment
       name: sindio-rag
       namespace: sindio
     patch: |-
       - op: remove
-        path: /spec
-
-  # Real images: use base deployment commands (Celery worker/beat) and volume mounts
+        path: /spec/template/spec/containers/0/volumeMounts
+      - op: remove
+        path: /spec/template/spec/volumes
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/httpGet/path
+        value: "/api/v1/health/ready"
+      - op: replace
+        path: /spec/template/spec/containers/0/readinessProbe/httpGet/path
+        value: "/api/v1/health/ready"
+  - target:
+      kind: Deployment
+      name: sindio-celery-beat
+      namespace: sindio
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/command
+        value: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8081"]
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "128Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "256Mi"
 
   # Production security hardening
   - target:

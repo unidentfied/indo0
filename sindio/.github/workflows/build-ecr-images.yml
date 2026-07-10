@@ -99,14 +99,32 @@ jobs:
           platforms: linux/amd64
           provenance: false
 
-      - name: Verify image in ECR
+      - name: Build and push ${{ matrix.name }}-slim image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/build/Dockerfile.core-slim
+          push: ${{ github.event.inputs.push != 'false' }}
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}-slim
+          cache-from: type=gha,scope=${{ matrix.image }}-slim
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-slim
+          platforms: linux/amd64
+          provenance: false
+
+      - name: Verify images in ECR
         if: github.event.inputs.push != 'false'
         run: |
           aws ecr describe-images \
             --repository-name ${{ matrix.image }} \
             --image-ids imageTag=${{ env.IMAGE_TAG }} \
             --region ${{ env.AWS_REGION }}
+          aws ecr describe-images \
+            --repository-name ${{ matrix.image }} \
+            --image-ids imageTag=${{ env.IMAGE_TAG }}-slim \
+            --region ${{ env.AWS_REGION }}
 
-      - name: Output image URI
+      - name: Output image URIs
         run: |
-          echo "Built image: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
+          echo "Full image:  ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
+          echo "Slim image: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}-slim"
