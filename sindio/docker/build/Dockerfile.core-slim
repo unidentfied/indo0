@@ -1,29 +1,24 @@
 # ============================================================
-# Sindio Core (Slim Real) — actual backend/core/app/ code
-# ============================================================
-# Skips torch/transformers/sentence-transformers/ray/pandapower/
-# faiss-cpu/rasterio/rioxarray — multi-GB packages that don't fit
-# on t3.micro. ML endpoints gracefully degrade to heuristics.
+# Sindio Core — ultra-lean real image (no GIS, no ML, no heavy libs)
+# app.main:app starts and serves endpoints; GIS/ML endpoints
+# gracefully degrade or return 500 until full build is deployed.
 # ============================================================
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc curl libgdal-dev \
+    libpq-dev gcc curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 RUN pip install --no-cache-dir \
     fastapi uvicorn[standard] pydantic pydantic-settings httpx \
-    numpy pandas scipy scikit-learn \
+    numpy pandas \
     sqlalchemy psycopg2-binary redis celery[redis] \
     qdrant-client "elasticsearch[async]" \
     langgraph langchain-core \
-    geopandas shapely xarray \
     prometheus-client structlog slowapi beautifulsoup4 python-jose \
-    python-dotenv python-multipart \
-    opentelemetry-api opentelemetry-sdk \
-    apscheduler pyarrow tqdm
+    python-dotenv python-multipart
 
 COPY backend/core/app/ ./app/
 
