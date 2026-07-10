@@ -15,12 +15,14 @@ resources:
   - 03-pvc.yaml
   - 04-deployments.yaml
   - 05-services.yaml
+  - 06-hpa.yaml
   # Istio / Ingress
   - 07-istio-virtualservice.yaml
   - ingress.yaml
   - peerauthentication.yaml
   # Observability
   - 08-servicemonitors.yaml
+  - fluent-bit.yaml
   - prometheusrules.yaml
   - grafana-dashboards.yaml
   # Security

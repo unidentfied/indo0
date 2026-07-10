@@ -1,24 +1,27 @@
 # ============================================================
-# Sindio Core — ultra-lean real image (no GIS, no ML, no heavy libs)
-# app.main:app starts and serves endpoints; GIS/ML endpoints
-# gracefully degrade or return 500 until full build is deployed.
+# Sindio Core — production image (no torch/transformers)
+# Full GIS + spatial + statistics + telemetry stack.
+# Missing: torch, transformers, sentence-transformers, ray,
+# pandapower, faiss-cpu, rasterio, rioxarray (need larger nodes).
 # ============================================================
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc curl \
+    libpq-dev gcc curl libgdal-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 RUN pip install --no-cache-dir \
     fastapi uvicorn[standard] pydantic pydantic-settings httpx \
-    numpy pandas \
+    numpy pandas scipy scikit-learn \
     sqlalchemy psycopg2-binary redis celery[redis] \
     qdrant-client "elasticsearch[async]" \
     langgraph langchain-core \
+    geopandas shapely xarray pyarrow tqdm \
     prometheus-client structlog slowapi beautifulsoup4 python-jose \
-    python-dotenv python-multipart apscheduler
+    python-dotenv python-multipart apscheduler \
+    opentelemetry-api opentelemetry-sdk
 
 COPY backend/core/app/ ./app/
 
