@@ -1,6 +1,9 @@
 # ============================================================
 # Sindio — Kubernetes Ingress (AWS ALB)
 # ============================================================
+# Certificate ARN is injected per-overlay (not hardcoded).
+# See overlays/prod/kustomization.yaml for prod cert.
+# ============================================================
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -15,12 +18,10 @@ metadata:
     alb.ingress.kubernetes.io/group.name: sindio
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:429429083547:certificate/c06df869-62fa-402e-9b46-43331d82dee8
 spec:
   ingressClassName: alb
   rules:
     - http:
-        paths:
         paths:
           - path: /api
             pathType: Prefix
