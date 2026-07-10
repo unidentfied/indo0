@@ -14,9 +14,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.jobstores.redis import RedisJobStore
-from apscheduler.executors.pool import ThreadPoolExecutor
+try:
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.jobstores.redis import RedisJobStore
+    from apscheduler.executors.pool import ThreadPoolExecutor
+    HAS_APSCHEDULER = True
+except ImportError:
+    HAS_APSCHEDULER = False
 
 logger = logging.getLogger("sindio.scheduler")
 
@@ -53,8 +57,10 @@ def _build_job_defaults():
     return {"coalesce": True, "max_instances": 1, "misfire_grace_time": 3600}
 
 
-def get_scheduler() -> AsyncIOScheduler:
+def get_scheduler() -> Optional[AsyncIOScheduler]:
     """Return the global scheduler instance (singleton)."""
+    if not HAS_APSCHEDULER:
+        return None
     global _scheduler
     if _scheduler is None:
         _scheduler = AsyncIOScheduler(
@@ -68,8 +74,11 @@ def get_scheduler() -> AsyncIOScheduler:
 
 def start_scheduler() -> None:
     """Start the scheduler and register periodic jobs."""
+    if not HAS_APSCHEDULER:
+        logger.warning("apscheduler not installed — scheduler disabled")
+        return
     sched = get_scheduler()
-    if sched.running:
+    if sched is None or sched.running:
         return
 
     ingest_interval_min = int(os.getenv("SINDIO_INGEST_INTERVAL_MIN", "60"))
@@ -95,6 +104,8 @@ def start_scheduler() -> None:
 
 def stop_scheduler() -> None:
     """Gracefully shut down the scheduler."""
+    if not HAS_APSCHEDULER:
+        return
     global _scheduler
     if _scheduler and _scheduler.running:
         _scheduler.shutdown(wait=False)
