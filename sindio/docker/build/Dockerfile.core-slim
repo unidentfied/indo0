@@ -1,34 +1,30 @@
 # ============================================================
-# Sindio Core (Slim Real) — actual app code, lightweight deps
+# Sindio Core (Slim Real) — actual backend/core/app/ code
 # ============================================================
 # Skips torch/transformers/sentence-transformers/ray/pandapower/
-# faiss-cpu/rasterio/rioxarray to fit on t3.micro nodes.
-# ML endpoints gracefully degrade to heuristics.
+# faiss-cpu/rasterio/rioxarray — multi-GB packages that don't fit
+# on t3.micro. ML endpoints gracefully degrade to heuristics.
 # ============================================================
-FROM python:3.11-slim AS base
+FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev gcc curl libgdal-dev \
     && rm -rf /var/lib/apt/lists/*
 
-FROM base AS builder
-
 WORKDIR /app
 
-# Copy a slimmed pyproject.toml that removes multi-GB ML packages
-COPY backend/core/pyproject.toml ./
-RUN sed -i '/^torch = /d; /^transformers = /d; /^sentence-transformers = /d; /^ray = /d; /^pandapower = /d; /^faiss-cpu = /d; /^rasterio = /d; /^rioxarray = /d' pyproject.toml
+RUN pip install --no-cache-dir \
+    fastapi uvicorn[standard] pydantic pydantic-settings httpx \
+    numpy pandas scipy scikit-learn \
+    sqlalchemy psycopg2-binary redis celery[redis] \
+    qdrant-client "elasticsearch[async]" \
+    langgraph langchain-core \
+    geopandas shapely xarray \
+    prometheus-client structlog slowapi beautifulsoup4 python-jose \
+    python-dotenv python-multipart \
+    opentelemetry-api opentelemetry-sdk \
+    apscheduler pyarrow tqdm
 
-RUN pip install --no-cache-dir poetry \
-    && poetry config virtualenvs.create false \
-    && poetry install --only main --no-interaction --no-ansi
-
-FROM base AS runtime
-
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-
-WORKDIR /app
 COPY backend/core/app/ ./app/
 
 EXPOSE 8081

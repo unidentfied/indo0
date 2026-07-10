@@ -1,9 +1,10 @@
 # ============================================================
 # Sindio — Kustomize overlay: prod
 # ============================================================
-# Optimized for a 4-node t3.medium EKS cluster.
-# Removes dev-only stateful services (postgres, redis, minio, qdrant)
-# and scales core services to fit within node capacity.
+# Optimized for 4-node t3.micro EKS cluster:
+#   - 16 pod slots total (4 per node)
+#   - 540Mi allocatable memory per node
+#   - Stateful services use RDS/ElastiCache; only redis runs in-cluster
 # ============================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -14,114 +15,71 @@ resources:
   - ../../base
 
 # Redirect images from GHCR → ECR
-# ECR registry: 429429083547.dkr.ecr.us-east-1.amazonaws.com
 images:
   - name: ghcr.io/sindio/sindio-api
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-api
     newTag: v1.0.2
   - name: ghcr.io/sindio/sindio-simulator
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-simulator
-    newTag: v1.0.3-slim
+    newTag: v1.0.4-slim
   - name: ghcr.io/sindio/sindio-rag
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-rag
-    newTag: v1.0.3-slim
+    newTag: v1.0.4-slim
   - name: ghcr.io/sindio/sindio-frontend
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-frontend
     newTag: v1.0.3
 
 patches:
-  # Scale all deployments to fit 4-node cluster
+  # ═══════════════════════════════════════════════════════════════
+  # Replicas
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
       name: sindio-api
-      namespace: sindio
-    patch: |-
+    patch: &scale-to-1
       - op: replace
         path: /spec/replicas
         value: 1
-  - target:
-      kind: Deployment
-      name: sindio-frontend
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-  - target:
-      kind: Deployment
-      name: sindio-simulator
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-  - target:
-      kind: Deployment
-      name: sindio-rag
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
+  - target: { kind: Deployment, name: sindio-frontend }
+    patch: *scale-to-1
+  - target: { kind: Deployment, name: sindio-simulator }
+    patch: *scale-to-1
+  - target: { kind: Deployment, name: sindio-rag }
+    patch: *scale-to-1
+  - target: { kind: Deployment, name: sindio-redis }
+    patch: *scale-to-1
+
   - target:
       kind: Deployment
       name: sindio-celery-beat
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-  # Dev-only stateful services: scale to 0 (use RDS/ElastiCache/S3 in prod)
-  - target:
-      kind: Deployment
-      name: sindio-postgres
-      namespace: sindio
-    patch: |-
+    patch: &scale-to-0
       - op: replace
         path: /spec/replicas
         value: 0
-  - target:
-      kind: Deployment
-      name: sindio-redis
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
-  - target:
-      kind: Deployment
-      name: sindio-minio
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
-  - target:
-      kind: Deployment
-      name: sindio-qdrant
-      namespace: sindio
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 0
+  - target: { kind: Deployment, name: sindio-postgres }
+    patch: *scale-to-0
+  - target: { kind: Deployment, name: sindio-minio }
+    patch: *scale-to-0
+  - target: { kind: Deployment, name: sindio-qdrant }
+    patch: *scale-to-0
 
-  # Slim images: override Celery command → uvicorn (no Redis in prod yet)
-  # and remove model PVC mounts (EBS CSI driver not installed)
+  # ═══════════════════════════════════════════════════════════════
+  # Simulator: real slim image → uvicorn app.main:app
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
       name: sindio-simulator
-      namespace: sindio
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/command
-        value: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8081"]
+        value: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]
       - op: replace
         path: /spec/template/spec/containers/0/livenessProbe
         value:
           httpGet:
-            path: /api/v1/health/ready
+            path: /health/ready
             port: 8081
-          initialDelaySeconds: 10
+          initialDelaySeconds: 15
           periodSeconds: 15
           timeoutSeconds: 5
           failureThreshold: 3
@@ -129,9 +87,9 @@ patches:
         path: /spec/template/spec/containers/0/readinessProbe
         value:
           httpGet:
-            path: /api/v1/health/ready
+            path: /health/ready
             port: 8081
-          initialDelaySeconds: 5
+          initialDelaySeconds: 10
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
@@ -145,10 +103,13 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/memory
         value: "512Mi"
+
+  # ═══════════════════════════════════════════════════════════════
+  # RAG: real slim image → Dockerfile CMD (app.main:app)
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
       name: sindio-rag
-      namespace: sindio
     patch: |-
       - op: remove
         path: /spec/template/spec/containers/0/volumeMounts
@@ -162,18 +123,26 @@ patches:
         value: "512Mi"
       - op: replace
         path: /spec/template/spec/containers/0/livenessProbe/httpGet/path
-        value: "/api/v1/health/ready"
+        value: "/health/ready"
       - op: replace
         path: /spec/template/spec/containers/0/readinessProbe/httpGet/path
-        value: "/api/v1/health/ready"
+        value: "/health/ready"
+      - op: replace
+        path: /spec/template/spec/containers/0/livenessProbe/initialDelaySeconds
+        value: 15
+
+  # ═══════════════════════════════════════════════════════════════
+  # Redis: emptyDir instead of PVC, reduced memory for t3.micro
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
-      name: sindio-celery-beat
-      namespace: sindio
+      name: sindio-redis
     patch: |-
       - op: replace
-        path: /spec/template/spec/containers/0/command
-        value: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8081"]
+        path: /spec/template/spec/volumes/0
+        value:
+          name: redisdata
+          emptyDir: {}
       - op: replace
         path: /spec/template/spec/containers/0/resources/requests/memory
         value: "128Mi"
@@ -181,11 +150,12 @@ patches:
         path: /spec/template/spec/containers/0/resources/limits/memory
         value: "256Mi"
 
-  # Production security hardening
+  # ═══════════════════════════════════════════════════════════════
+  # Security hardening
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
       name: sindio-api
-      namespace: sindio
     patch: |-
       - op: add
         path: /spec/template/spec/containers/0/securityContext
@@ -201,7 +171,6 @@ patches:
   - target:
       kind: Deployment
       name: sindio-simulator
-      namespace: sindio
     patch: |-
       - op: add
         path: /spec/template/spec/containers/0/securityContext
@@ -215,11 +184,12 @@ patches:
           capabilities:
             drop: ["ALL"]
 
-  # Remove LocalStack from production
+  # ═══════════════════════════════════════════════════════════════
+  # Config
+  # ═══════════════════════════════════════════════════════════════
   - target:
       kind: ConfigMap
       name: sindio-config
-      namespace: sindio
     patch: |-
       - op: replace
         path: /data/LOG_LEVEL

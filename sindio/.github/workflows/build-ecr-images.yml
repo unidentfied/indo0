@@ -1,55 +1,48 @@
 name: Build & Push Real ML Images to ECR
 
 # ============================================================
-# Builds the actual sindio-rag and sindio-simulator images
-# (with torch, transformers, geopandas, etc.) and pushes them
-# to AWS ECR with immutable versioned tags.
+# Builds the real sindio-rag and sindio-simulator images
+# (backend/core/app/ code, no torch/transformers — ML inference
+#  degrades to heuristics). Pushes to ECR with immutable tags.
 #
-# Trigger: manually via workflow_dispatch, or on push to main
-# that touches backend/core/, docker/build/, or this workflow.
+# Trigger: manual workflow_dispatch, or on push to main
+# that touches backend/core/, docker/build/Dockerfile.core-slim,
+# or this workflow.
 # ============================================================
 
 on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: 'Image tag suffix (e.g., v1.0.2)'
+        description: 'Image tag (e.g., v1.0.4)'
         required: true
-        default: 'v1.0.2'
-      push:
-        description: 'Push to ECR? (true/false)'
-        required: true
-        default: 'true'
+        default: 'v1.0.4'
   push:
     branches: [main]
     paths:
       - 'backend/core/**'
-      - 'docker/build/Dockerfile.rag'
-      - 'docker/build/Dockerfile.simulator'
+      - 'docker/build/Dockerfile.core-slim'
       - '.github/workflows/build-ecr-images.yml'
       - '.dockerignore'
 
 env:
   AWS_REGION: us-east-1
   ECR_REGISTRY: 429429083547.dkr.ecr.us-east-1.amazonaws.com
-  IMAGE_TAG: ${{ github.event.inputs.image_tag || 'v1.0.2' }}
+  IMAGE_TAG: ${{ github.event.inputs.image_tag || 'v1.0.4' }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
     permissions:
-      id-token: write          # Required for AWS OIDC (if you switch later)
       contents: read
     strategy:
       fail-fast: false
       matrix:
         include:
           - name: rag
-            dockerfile: docker/build/Dockerfile.rag
             image: sindio-rag
           - name: simulator
-            dockerfile: docker/build/Dockerfile.simulator
             image: sindio-simulator
 
     steps:
@@ -58,11 +51,7 @@ jobs:
 
       - name: Free up disk space
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/pipx
-          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/pipx /opt/hostedtoolcache
           df -h
 
       - name: Configure AWS credentials
@@ -73,7 +62,6 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR
-        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
           mask-password: 'true'
@@ -86,45 +74,26 @@ jobs:
         with:
           driver-opts: image=moby/buildkit:latest
 
-      - name: Build and push ${{ matrix.name }} image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          push: ${{ github.event.inputs.push != 'false' }}
-          tags: |
-            ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha,scope=${{ matrix.image }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
-          platforms: linux/amd64
-          provenance: false
-
-      - name: Build and push ${{ matrix.name }}-slim image
+      - name: Build and push ${{ matrix.name }}
         uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/build/Dockerfile.core-slim
-          push: ${{ github.event.inputs.push != 'false' }}
+          push: ${{ github.event.inputs.push != 'false' || github.ref == 'refs/heads/main' }}
           tags: |
-            ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}-slim
+            ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=${{ matrix.image }}-slim
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}-slim
           platforms: linux/amd64
           provenance: false
 
-      - name: Verify images in ECR
-        if: github.event.inputs.push != 'false'
+      - name: Verify image in ECR
+        if: success()
         run: |
           aws ecr describe-images \
             --repository-name ${{ matrix.image }} \
             --image-ids imageTag=${{ env.IMAGE_TAG }} \
             --region ${{ env.AWS_REGION }}
-          aws ecr describe-images \
-            --repository-name ${{ matrix.image }} \
-            --image-ids imageTag=${{ env.IMAGE_TAG }}-slim \
-            --region ${{ env.AWS_REGION }}
 
-      - name: Output image URIs
-        run: |
-          echo "Full image:  ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
-          echo "Slim image: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}-slim"
+      - name: Output image URI
+        run: echo "Built: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
