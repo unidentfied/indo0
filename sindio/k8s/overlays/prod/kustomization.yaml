@@ -1,10 +1,9 @@
 # ============================================================
 # Sindio — Kustomize overlay: prod
 # ============================================================
-# Optimized for 4-node t3.micro EKS cluster:
-#   - 16 pod slots total (4 per node)
-#   - 540Mi allocatable memory per node
-#   - Stateful services use RDS/ElastiCache; only redis runs in-cluster
+# Optimized for 4-node t3.micro EKS cluster (16 pod slots, 540Mi/node).
+# Postgres + Redis + Minio in-cluster with emptyDir (ephemeral).
+# Uses RDS for prod DB; in-cluster postgres for dev/testing.
 # ============================================================
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -14,17 +13,16 @@ namespace: sindio
 resources:
   - ../../base
 
-# Redirect images from GHCR → ECR
 images:
   - name: ghcr.io/sindio/sindio-api
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-api
     newTag: v1.0.2
   - name: ghcr.io/sindio/sindio-simulator
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-simulator
-    newTag: v1.0.4-slim
+    newTag: v1.0.4
   - name: ghcr.io/sindio/sindio-rag
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-rag
-    newTag: v1.0.4-slim
+    newTag: v1.0.4
   - name: ghcr.io/sindio/sindio-frontend
     newName: 429429083547.dkr.ecr.us-east-1.amazonaws.com/sindio-frontend
     newTag: v1.0.3
@@ -36,35 +34,70 @@ patches:
   - target:
       kind: Deployment
       name: sindio-api
-    patch: &scale-to-1
+    patch: |-
       - op: replace
         path: /spec/replicas
         value: 1
-  - target: { kind: Deployment, name: sindio-frontend }
-    patch: *scale-to-1
-  - target: { kind: Deployment, name: sindio-simulator }
-    patch: *scale-to-1
-  - target: { kind: Deployment, name: sindio-rag }
-    patch: *scale-to-1
-  - target: { kind: Deployment, name: sindio-redis }
-    patch: *scale-to-1
+  - target:
+      kind: Deployment
+      name: sindio-frontend
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-simulator
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-rag
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-redis
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-postgres
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target:
+      kind: Deployment
+      name: sindio-minio
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
 
   - target:
       kind: Deployment
       name: sindio-celery-beat
-    patch: &scale-to-0
+    patch: |-
       - op: replace
         path: /spec/replicas
         value: 0
-  - target: { kind: Deployment, name: sindio-postgres }
-    patch: *scale-to-0
-  - target: { kind: Deployment, name: sindio-minio }
-    patch: *scale-to-0
-  - target: { kind: Deployment, name: sindio-qdrant }
-    patch: *scale-to-0
+  - target:
+      kind: Deployment
+      name: sindio-qdrant
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
 
   # ═══════════════════════════════════════════════════════════════
-  # Simulator: real slim image → uvicorn app.main:app
+  # Simulator: real image → uvicorn app.main:app
   # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
@@ -105,7 +138,7 @@ patches:
         value: "512Mi"
 
   # ═══════════════════════════════════════════════════════════════
-  # RAG: real slim image → Dockerfile CMD (app.main:app)
+  # RAG: real image → Dockerfile CMD (app.main:app)
   # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
@@ -132,7 +165,7 @@ patches:
         value: 15
 
   # ═══════════════════════════════════════════════════════════════
-  # Redis: emptyDir instead of PVC, reduced memory for t3.micro
+  # Redis: emptyDir instead of PVC
   # ═══════════════════════════════════════════════════════════════
   - target:
       kind: Deployment
@@ -151,6 +184,54 @@ patches:
         value: "256Mi"
 
   # ═══════════════════════════════════════════════════════════════
+  # Postgres: emptyDir + POSTGRES_PASSWORD from secret
+  # ═══════════════════════════════════════════════════════════════
+  - target:
+      kind: Deployment
+      name: sindio-postgres
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/volumes/0
+        value:
+          name: pgdata
+          emptyDir: {}
+      - op: remove
+        path: /spec/template/spec/containers/0/securityContext
+      - op: add
+        path: /spec/template/spec/containers/0/env/-
+        value:
+          name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: sindio-secrets
+              key: DB_PASSWORD
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+
+  # ═══════════════════════════════════════════════════════════════
+  # Minio: emptyDir instead of PVC
+  # ═══════════════════════════════════════════════════════════════
+  - target:
+      kind: Deployment
+      name: sindio-minio
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/volumes/0
+        value:
+          name: miniodata
+          emptyDir: {}
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "256Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "512Mi"
+
+  # ═══════════════════════════════════════════════════════════════
   # Security hardening
   # ═══════════════════════════════════════════════════════════════
   - target:
@@ -162,21 +243,6 @@ patches:
         value:
           runAsNonRoot: true
           runAsUser: 65534
-          readOnlyRootFilesystem: true
-          seccompProfile:
-            type: RuntimeDefault
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop: ["ALL"]
-  - target:
-      kind: Deployment
-      name: sindio-simulator
-    patch: |-
-      - op: add
-        path: /spec/template/spec/containers/0/securityContext
-        value:
-          runAsNonRoot: true
-          runAsUser: 1000
           readOnlyRootFilesystem: true
           seccompProfile:
             type: RuntimeDefault
