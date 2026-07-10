@@ -109,21 +109,22 @@ module "eks" {
 
   eks_managed_node_groups = {
     # General-purpose nodes (API, RAG, frontend)
+    # Upgraded from t3.micro (1 GiB, ~4 pods) to t3.medium (4 GiB, ~17 pods)
+    # to accommodate Sindio's ~6-8 GiB RAM requirement for core services.
     general = {
       instance_types = ["t3.micro"]
-      min_size       = 1
-      max_size       = 4
-      desired_size   = 1
+      min_size       = 2
+      max_size       = 6
+      desired_size   = 4
       labels = {
         role = "general"
       }
     }
-    # Simulation workers
     simulator = {
       instance_types = ["t3.micro"]
       min_size       = 1
       max_size       = 4
-      desired_size   = 1
+      desired_size   = 2
       labels = {
         role = "simulator"
       }

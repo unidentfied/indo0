@@ -6,8 +6,8 @@ kind: Kustomization
 
 namespace: sindio
 
-bases:
-  - ../..
+resources:
+  - ../../base
 
 patches:
   # Reduce replica counts for dev
@@ -16,6 +16,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-api
+        namespace: sindio
       spec:
         replicas: 1
   - patch: |
@@ -23,6 +24,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-simulator
+        namespace: sindio
       spec:
         replicas: 1
   - patch: |
@@ -30,6 +32,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-rag
+        namespace: sindio
       spec:
         replicas: 1
   - patch: |
@@ -37,6 +40,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-frontend
+        namespace: sindio
       spec:
         replicas: 1
 
@@ -46,6 +50,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-api
+        namespace: sindio
       spec:
         template:
           spec:
@@ -64,6 +69,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-simulator
+        namespace: sindio
       spec:
         template:
           spec:
@@ -82,6 +88,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-rag
+        namespace: sindio
       spec:
         template:
           spec:
@@ -100,6 +107,7 @@ patches:
       kind: Deployment
       metadata:
         name: sindio-frontend
+        namespace: sindio
       spec:
         template:
           spec:
@@ -113,6 +121,7 @@ patches:
       kind: VirtualService
       metadata:
         name: sindio
+        namespace: sindio
       spec:
         http:
           - match:
@@ -132,6 +141,7 @@ patches:
       kind: ConfigMap
       metadata:
         name: sindio-config
+        namespace: sindio
       data:
         AWS_ENDPOINT_URL: "http://localstack:4566"
         LOG_LEVEL: "debug"

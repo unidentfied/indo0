@@ -1,5 +1,7 @@
 # Sindio — Prometheus + Grafana Monitoring Stack
-# Added to docker-compose for local development observability
+# Added to docker-compose for local development observability.
+# Must be merged with docker-compose.yml (which defines sindio_net):
+#   docker compose -f docker/docker-compose.yml -f docker/docker-compose.monitoring.yml up -d
 
 services:
   # ── Prometheus ───────────────────────────────────────────

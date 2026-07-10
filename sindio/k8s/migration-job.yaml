@@ -10,7 +10,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: sindio-migrate
-  namespace: sindio
   labels:
     app.kubernetes.io/name: sindio
     app.kubernetes.io/component: migration
@@ -22,17 +21,14 @@ spec:
       initContainers:
         - name: wait-for-db
           image: busybox:1.36
-          command: ['sh', '-c', 'until nc -z sindio-postgres.sindio.svc.cluster.local 5432; do echo waiting for db...; sleep 2; done;']
+          command: ['sh', '-c', 'until nc -z sindio-prod.cglsa06827tn.us-east-1.rds.amazonaws.com 5432; do echo waiting for db...; sleep 2; done;']
       containers:
         - name: migrate
           image: migrate/migrate:v4.17
           command:
-            - "migrate"
-            - "-path"
-            - "/migrations"
-            - "-database"
-            - "$(DATABASE_URL)"
-            - "up"
+            - "/bin/sh"
+            - "-c"
+            - 'migrate -path /migrations -database "$DATABASE_URL" up'
           envFrom:
             - configMapRef:
                 name: sindio-config

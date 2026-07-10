@@ -1,3 +1,10 @@
+# ============================================================
+# Sindio — ArgoCD ApplicationSet (GitOps)
+# ============================================================
+# IMPORTANT: Replace `your-org/sindio.git` below with your actual
+# GitHub org/repo before applying. Also ensure ArgoCD has an SSH
+# key secret configured for that repo.
+# ============================================================
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:

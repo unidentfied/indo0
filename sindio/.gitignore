@@ -20,6 +20,8 @@ frontend/dist/
 backend/api/bin/
 backend/api/vendor/
 backend/api/api
+backend/api/sindio-api-*
+backend/api/*.exe
 
 # Rust
 backend/streaming/target/
@@ -70,6 +72,9 @@ logs/
 
 # Vendored dependencies (should use proper pip installs)
 backend/app/.deps/
+
+# Kubernetes plain secrets (must use ExternalSecrets Operator / Vault)
+k8s/03-secrets.yaml
 
 # OS
 Thumbs.db

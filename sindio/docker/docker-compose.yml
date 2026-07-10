@@ -35,7 +35,7 @@ services:
   # Qdrant — Vector Database (RAG embeddings)
   # ============================================================
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.12.0
     env_file:
       - ../.env
     container_name: sindio-qdrant
@@ -197,7 +197,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
       MINIO_DEFAULT_BUCKETS: sindio-satellite-imagery,sindio-gis-rasters
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9000/minio/health/live > /dev/null || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
@@ -208,7 +208,7 @@ services:
   # Auto-create default buckets on startup
   minio-init:
     restart: unless-stopped
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2024-11-07T00-52-20Z
     env_file:
       - ../.env
     depends_on:
@@ -332,7 +332,7 @@ services:
   # Auto-create SQS queues on startup
   localstack-init:
     restart: unless-stopped
-    image: amazon/aws-cli:latest
+    image: amazon/aws-cli:2.22.0
     container_name: sindio-localstack-init
     depends_on:
       localstack:

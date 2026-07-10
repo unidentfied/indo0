@@ -4,9 +4,7 @@ kind: Kustomization
 namespace: sindio-staging
 
 resources:
-  - ../../
-
-namePrefix: staging-
+  - ../../base
 
 replicas:
   - name: sindio-api
@@ -18,17 +16,11 @@ replicas:
   - name: sindio-rag
     count: 1
 
-configMapGenerator:
-  - name: sindio-config
-    behavior: merge
-    literals:
-      - LOG_LEVEL=debug
-      - CORS_ORIGINS=http://localhost:3000,https://staging.sindio.net
-
 patches:
   - target:
       kind: Deployment
       name: sindio-api
+      namespace: sindio
     patch: |-
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/memory
@@ -36,3 +28,13 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/resources/limits/cpu
         value: "250m"
+
+  - patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sindio-config
+        namespace: sindio
+      data:
+        LOG_LEVEL: "debug"
+        CORS_ORIGINS: "http://localhost:3000,https://staging.sindio.net"

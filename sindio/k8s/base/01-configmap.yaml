@@ -9,32 +9,30 @@ metadata:
   labels:
     app.kubernetes.io/name: sindio
 data:
-  # --- Database ---
-  DB_HOST: "sindio-postgres.sindio.svc.cluster.local"
+  # --- Database (RDS) ---
+  DB_HOST: "sindio-prod.cglsa06827tn.us-east-1.rds.amazonaws.com"
   DB_PORT: "5432"
   DB_NAME: "sindio"
   DB_USER: "sindio_user"
   DB_POOL_MIN: "2"
   DB_POOL_MAX: "10"
-  # DATABASE_URL is constructed at application startup from the individual DB_* vars and DB_PASSWORD secret.
-  # See backend/core/app/database.py for the canonical implementation.
 
-  # --- Redis ---
-  REDIS_HOST: "sindio-redis.sindio.svc.cluster.local"
+  # --- Redis (ElastiCache) ---
+  REDIS_HOST: "sindio-prod.elyxlj.0001.use1.cache.amazonaws.com"
   REDIS_PORT: "6379"
   REDIS_DB: "0"
-  CELERY_BROKER_URL: "redis://sindio-redis.sindio.svc.cluster.local:6379/0"
-  CELERY_RESULT_BACKEND: "redis://sindio-redis.sindio.svc.cluster.local:6379/1"
+  CELERY_BROKER_URL: "redis://sindio-prod.elyxlj.0001.use1.cache.amazonaws.com:6379/0"
+  CELERY_RESULT_BACKEND: "redis://sindio-prod.elyxlj.0001.use1.cache.amazonaws.com:6379/1"
 
-  # --- Qdrant (Vector Store) ---
-  QDRANT_HOST: "http://sindio-qdrant.sindio.svc.cluster.local"
+  # --- Qdrant (not deployed in prod Free Tier) ---
+  QDRANT_HOST: ""
   QDRANT_PORT: "6333"
   QDRANT_COLLECTION: "sindio_embeddings"
   QDRANT_COLLECTION_CACHE: "sindio_inference_cache"
   QDRANT_COLLECTION_DOCS: "nairobi_planning_docs"
 
-  # --- MinIO ---
-  MINIO_HOST: "sindio-minio.sindio.svc.cluster.local"
+  # --- MinIO (not deployed in prod — use S3 instead) ---
+  MINIO_HOST: ""
   MINIO_PORT: "9000"
   MINIO_CONSOLE_PORT: "9001"
   MINIO_IMAGERY_BUCKET: "sindio-satellite-imagery"
@@ -47,7 +45,7 @@ data:
   FRONTEND_PORT: "3000"
 
   # --- CORS ---
-  CORS_ORIGINS: "http://localhost:3000,https://sindio.net"
+  CORS_ORIGINS: "https://sindio.net,http://localhost:3000"
 
   # --- Model paths ---
   MODEL_PATH: "/app/models/trained"
@@ -67,15 +65,15 @@ data:
   RUST_LOG: "sindio_streaming=info,tower_http=debug"
 
   # --- Celery worker ---
-  CELERY_CONCURRENCY: "4"
+  CELERY_CONCURRENCY: "2"
   CELERY_TASK_ACKS_LATE: "true"
   CELERY_WORKER_PREFETCH_MULTIPLIER: "1"
 
-  # --- Elasticsearch / OpenSearch ---
-  ELASTICSEARCH_HOST: "http://sindio-opensearch.sindio.svc.cluster.local:9200"
+  # --- Elasticsearch / OpenSearch (managed) ---
+  ELASTICSEARCH_HOST: "https://vpc-sindio-prod-7mlbtdzuaf3y6gkxdot5wq43ym.us-east-1.es.amazonaws.com:443"
   ELASTICSEARCH_INDEX_ALERTS: "sindio_alerts"
-  ES_CLIENT_TYPE: "elasticsearch"
-  OPENSEARCH_ENDPOINT: "http://sindio-opensearch.sindio.svc.cluster.local:9200"
+  ES_CLIENT_TYPE: "opensearch"
+  OPENSEARCH_ENDPOINT: "https://vpc-sindio-prod-7mlbtdzuaf3y6gkxdot5wq43ym.us-east-1.es.amazonaws.com:443"
 
   # --- RAG / Ingestion ---
   RAG_INGESTION_POLL_INTERVAL: "30"
@@ -85,12 +83,10 @@ data:
   RAG_RERANK_MODEL: "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
   # --- Simulation ---
-  SIMULATION_MAX_CONCURRENT: "10"
+  SIMULATION_MAX_CONCURRENT: "2"
   SIMULATION_TIMEOUT_SECONDS: "300"
 
-  # --- LocalStack (dev only) ---
-  AWS_ENDPOINT_URL: ""
+  # --- AWS ---
   AWS_DEFAULT_REGION: "us-east-1"
-  LOCALSTACK_SQS_MOBILITY_QUEUE: "sindio-mobility-stream"
-  LOCALSTACK_SQS_TELEMETRY_QUEUE: "sindio-utility-telemetry"
-  LOCALSTACK_SNS_ALERTS_TOPIC: "sindio-system-alerts"
+  S3_MODELS_BUCKET: "sindio-prod-models"
+  S3_SIMULATIONS_BUCKET: "sindio-prod-simulations"

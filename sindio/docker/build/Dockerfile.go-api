@@ -1,7 +1,7 @@
 # ============================================================
 # Sindio API (Go) — multi-stage → scratch
 # ============================================================
-FROM golang:1.21-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
 
@@ -21,6 +21,6 @@ COPY --from=builder /sindio-api /sindio-api
 EXPOSE 8080
 USER 65534:65534
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 \
-    CMD ["/sindio-api", "-healthcheck"] || true
+    CMD ["/sindio-api", "-healthcheck"]
 
 ENTRYPOINT ["/sindio-api"]

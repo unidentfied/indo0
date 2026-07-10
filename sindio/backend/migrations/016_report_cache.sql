@@ -1,4 +1,4 @@
--- Sindio Migration 013: Report Cache Table
+-- Sindio Migration 016: Report Cache Table
 -- Stores official report metrics for alignment checking by the unified monitor.
 
 CREATE TABLE IF NOT EXISTS report_cache (

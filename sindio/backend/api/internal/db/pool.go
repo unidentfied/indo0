@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -24,12 +25,19 @@ func InitPool(ctx context.Context) (*pgxpool.Pool, error) {
 	poolMin := envOrDefault("DB_POOL_MIN", "2")
 	poolMax := envOrDefault("DB_POOL_MAX", "10")
 
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable&pool_min_conns=%s&pool_max_conns=%s",
-		user, pass, host, port, name, poolMin, poolMax,
-	)
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(user, pass),
+		Host:   fmt.Sprintf("%s:%s", host, port),
+		Path:   name,
+	}
+	q := u.Query()
+	q.Set("sslmode", "require")
+	q.Set("pool_min_conns", poolMin)
+	q.Set("pool_max_conns", poolMax)
+	u.RawQuery = q.Encode()
 
-	cfg, err := pgxpool.ParseConfig(dsn)
+	cfg, err := pgxpool.ParseConfig(u.String())
 	if err != nil {
 		return nil, fmt.Errorf("pgxpool parse: %w", err)
 	}

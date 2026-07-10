@@ -23,7 +23,7 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  # storageClassName: premium-rwo  # Uncomment for cloud SSD
+  storageClassName: gp2
 ---
 # --- Qdrant vector store (200 Gi) ---
 apiVersion: v1
@@ -40,7 +40,7 @@ spec:
   resources:
     requests:
       storage: 200Gi
-  # storageClassName: premium-rwo
+  storageClassName: gp2
 ---
 # --- MinIO satellite imagery + GIS rasters (500 Gi) ---
 apiVersion: v1
@@ -57,7 +57,7 @@ spec:
   resources:
     requests:
       storage: 500Gi
-  # storageClassName: standard-rwo
+  storageClassName: gp2
 ---
 # --- Redis (20 Gi, for Celery broker durability via AOF) ---
 apiVersion: v1
@@ -74,7 +74,7 @@ spec:
   resources:
     requests:
       storage: 20Gi
-  # storageClassName: standard-rwo
+  storageClassName: gp2
 ---
 # --- Model storage (50 Gi, shared across RAG / worker pods) ---
 apiVersion: v1
@@ -91,4 +91,4 @@ spec:
   resources:
     requests:
       storage: 50Gi
-  # storageClassName: premium-rwx  # RWX required for shared model access
+  storageClassName: gp2
