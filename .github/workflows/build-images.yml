@@ -17,7 +17,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: unidentfied
+  IMAGE_PREFIX: ${{ github.repository_owner }}
 
 jobs:
   # ── Mock API ─────────────────────────────────────────────────
@@ -74,8 +74,9 @@ jobs:
       - name: Build & Push ML Core
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: sindio/backend/core/Dockerfile
+          context: sindio
+          context: sindio
+          file: docker/build/Dockerfile.core-slim
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-simulator:latest

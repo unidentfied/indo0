@@ -77,7 +77,7 @@ jobs:
       - name: Build and push ${{ matrix.name }}
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: sindio
           file: docker/build/Dockerfile.core-slim
           push: ${{ github.event_name == 'workflow_dispatch' }}
           tags: |
