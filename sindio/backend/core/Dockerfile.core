@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir poetry==1.8.5
 
 # ── Copy dependency files first (layer caching) ────────────────
-COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
+COPY backend/core/pyproject.toml backend/core/poetry.lock ./
 
 # ── Install Python deps into a project virtualenv ────────────────
 # Let Poetry create /workspace/.venv (default behaviour).
@@ -21,11 +21,11 @@ RUN poetry lock --no-update \
     && poetry install --only main --no-interaction --no-ansi
 
 # ── Copy application code ──────────────────────────────────────
-COPY sindio/backend/core/app/ ./app/
+COPY backend/core/app/ ./app/
 
 # ── Copy trained model weights and embeddings ──────────────────
 # In production builds models/ may be empty (gitignored). Download from S3 if missing.
-COPY sindio/models/ ./models/
+COPY models/ ./models/
 RUN if [ ! -f models/trained/urban_stress_v1.pth ]; then \
       echo "Models not present in build context; attempting S3 sync..." && \
       apt-get update && apt-get install -y --no-install-recommends awscli && \

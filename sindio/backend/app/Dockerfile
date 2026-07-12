@@ -2,10 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /workspace
 
-COPY sindio/backend/requirements.txt /workspace/app/requirements.txt
+COPY backend/requirements.txt /workspace/app/requirements.txt
 RUN pip install --no-cache-dir -r /workspace/app/requirements.txt
 
-COPY sindio/backend/app/ /workspace/app/
+COPY backend/app/ /workspace/app/
 
 ENV SINDIO_SKIP_RASTER=1
 ENV PYTHONPATH=/workspace:.:..
