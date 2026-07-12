@@ -16,8 +16,8 @@ RUN rustup update stable && rustup default stable
 RUN cargo --version
 
 # Copy Cargo manifests first (layer caching)
-COPY sindio/backend/streaming/Cargo.toml sindio/backend/streaming/Cargo.lock ./
-COPY sindio/backend/streaming/src ./src
+COPY streaming/Cargo.toml streaming/Cargo.lock ./
+COPY streaming/src ./src
 
 # Build release binary
 RUN cargo build --release --bin sindio-streaming
@@ -37,4 +37,4 @@ ENV PORT=8082
 
 EXPOSE 8082
 
-CMD exec /app/sindio-streaming --port ${PORT:-8082}
+CMD ["/app/sindio-streaming", "--port", "8082"]
