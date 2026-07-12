@@ -92,7 +92,7 @@ print('All migrations applied successfully.')
       - name: Validate ML Core Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: sindio/backend/core/Dockerfile.core.core
+          dockerfile: sindio/backend/core/Dockerfile.core
 
       - name: Validate Core config.py syntax
         run: |
