@@ -75,7 +75,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: sindio
-          file: docker/build/Dockerfile.core-slim
+          file: sindio/docker/build/Dockerfile.core-slim
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/sindio-simulator:latest

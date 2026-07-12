@@ -78,7 +78,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: sindio
-          file: docker/build/Dockerfile.core-slim
+          file: sindio/docker/build/Dockerfile.core-slim
           push: ${{ github.event_name == 'workflow_dispatch' }}
           tags: |
             ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}
@@ -96,4 +96,5 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
       - name: Output image URI
-        run: echo "Built: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
+        run: |
+          echo "Built: ${{ env.ECR_REGISTRY }}/${{ matrix.image }}:${{ env.IMAGE_TAG }}"
