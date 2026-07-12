@@ -11,8 +11,8 @@ RUN npm ci
 # Copy source files
 COPY . ./
 
-# Build the application
-RUN npm run build
+# Build the application (tsc typecheck is done in frontend.yml CI)
+RUN npx vite build
 
 # ---------- Runtime ----------
 FROM nginx:alpine AS runtime
