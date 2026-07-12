@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.82-slim AS builder
+FROM rust:stable-slim AS builder
 
 WORKDIR /workspace
 
@@ -7,6 +7,13 @@ WORKDIR /workspace
 RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config libssl-dev cmake \
     && rm -rf /var/lib/apt/lists/*
+
+# Ensure we have a recent Rust/Cargo toolchain that understands newer Cargo.lock formats
+# (This updates the stable toolchain inside the image.)
+RUN rustup update stable && rustup default stable
+
+# Show cargo version for debugging (will appear in build logs)
+RUN cargo --version
 
 # Copy Cargo manifests first (layer caching)
 COPY sindio/backend/streaming/Cargo.toml sindio/backend/streaming/Cargo.lock ./
