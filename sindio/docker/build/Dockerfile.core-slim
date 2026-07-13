@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir \
     python-dotenv python-multipart apscheduler \
     opentelemetry-api opentelemetry-sdk
 
-COPY backend/core/app/ ./app/
+COPY sindio/backend/core/app/ ./app/
 
 EXPOSE 8081
 

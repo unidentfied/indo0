@@ -92,7 +92,7 @@ services:
   core:
     build:
       context: ../..
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/core/Dockerfile.core
     container_name: core
     restart: unless-stopped
     ports:

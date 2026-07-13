@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Cargo manifests first (layer caching)
-COPY backend/streaming/Cargo.toml backend/streaming/Cargo.lock ./
-COPY backend/streaming/src ./src
+COPY sindio/backend/streaming/Cargo.toml sindio/backend/streaming/Cargo.lock ./
+COPY sindio/backend/streaming/src ./src
 
 # Build release binary
 RUN cargo build --release --bin sindio-streaming
