@@ -28,9 +28,9 @@ backend/api/target/
 backend/streaming/target/
 
 # Large ML artifacts (must be mounted via PVC in K8s, not baked into image)
-models/
-models/trained/
-models/embeddings/
+# models/
+# models/trained/
+# models/embeddings/
 
 # Raw / processed data
 data/

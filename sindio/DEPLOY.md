@@ -24,7 +24,7 @@ Set these in your Railway **mock API service** dashboard:
 |----------|----------|---------|
 | `CORS_ORIGINS` | **Yes** | `https://sindio.netlify.app,http://localhost:4000` |
 | `SINDIO_SKIP_RASTER` | Yes | `1` |
-| `SINDIO_USE_CORE` | Yes | `0` (set to `1` when ML Core is live) |
+| `SINDIO_USE_CORE` | Yes | `1` (set to `1` when ML Core is live) |
 | `PORT` | Auto | Railway injects this automatically |
 
 **Optional but recommended:**

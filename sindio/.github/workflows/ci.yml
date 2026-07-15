@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [ main ]
 
+# -------------------------------------------------
+# Permission block – required for issue creation
+permissions:
+  # Give the default GITHUB_TOKEN write access to the Issues API
+  issues: write
+  # Keep other scopes you already need
+  contents: read
+# -------------------------------------------------
+
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
@@ -61,7 +70,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -311,6 +320,23 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --name sindio-prod
 
+      # -------------------------------------------------
+      # 1️⃣ Setup Node.js 24 environment
+      # -------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # -------------------------------------------------
+      # 2️⃣ Start services
+      # -------------------------------------------------
+      - name: Start services
+        run: docker compose up -d
+
+      # -------------------------------------------------
+      # 3️⃣ Deploy to prod
+      # -------------------------------------------------
       - name: Deploy to prod
         run: |
           kubectl apply -k k8s/overlays/prod/

@@ -4,7 +4,7 @@ groups:
     rules:
       # ── Alert: mock fallback ratio exceeds 10% for more than 1 hour ──
       - alert: SindioMockFallbackHigh
-        expr: data_quality_mock_fallback_ratio > 0.10
+        expr: (1 - data_quality_mock_fallback_ratio) < 0.90
         for: 1h
         labels:
           severity: warning

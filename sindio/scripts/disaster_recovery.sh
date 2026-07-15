@@ -74,7 +74,7 @@
 
 ## Step 2: If models are corrupted, fall back to heuristics
 # The API still works without ML models (uses baseline heuristics).
-# Set SINDIO_USE_CORE=0 in the mock API to route traffic away from the broken core.
+# Set SINDIO_USE_CORE=1 in the Mock API.    
 
 ## Step 3: Restart the ML Core pod/service
 #   docker compose restart core

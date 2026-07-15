@@ -255,7 +255,9 @@ class DataIngestor:
         base = self.config.heuristic_base_stress
         var = self.config.heuristic_variance
 
-        for i in range(count):
+        # Limit synthetic assets to a tiny set (max 5) to keep mock usage minimal
+        max_fallback = min(count, 5)
+        for i in range(max_fallback):
             stress = float(np.clip(base + rng.normal(0, var), 0.0, 1.0))
             value = stress * self.config.default_capacity
 

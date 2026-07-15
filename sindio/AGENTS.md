@@ -151,7 +151,7 @@ SQL migrations in `backend/migrations/` auto-mount as PostgreSQL init scripts.
 
 **Backend** is deployed to Railway manually via dashboard (Builder = Dockerfile).
 - There is no `railway.toml` in this repo — configure services directly in Railway.
-- Required env vars in Railway dashboard: `CORS_ORIGINS`, `SINDIO_SKIP_RASTER=1`, `SINDIO_USE_CORE=0`
+- Required env vars in Railway dashboard: `CORS_ORIGINS`, `SINDIO_SKIP_RASTER=1`, `SINDIO_USE_CORE=1`
 - `CORS_ORIGINS` must include the deployed Netlify frontend URL
 
 **Frontend** is deployed to Netlify manually (no CI/CD yet).
@@ -277,7 +277,7 @@ Runbooks are in `docs/runbooks/`:
 ## Key gotchas
 
 - `dev.sh` runs the **Python mock API** from `backend/app/` (not the ML Core). It auto-creates a venv at `/tmp/sindio-venv` and sets `CORE_PORT=${CORE_PORT:-8080}` so the frontend Vite proxy aligns. The standalone ML Core (`backend/core/`) runs on port 8081 via Poetry and is started separately.
-- The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=0` — proxy to ML Core must be enabled explicitly in Railway env vars.
+- The mock API (`backend/app/`) defaults to `SINDIO_USE_CORE=1` — proxy to ML Core must be enabled explicitly in Railway env vars.
 - **Local dev with proxy:** `dev.sh` runs Core on port 8080. If you set `SINDIO_USE_CORE=1` locally, also set `CORE_URL=http://localhost:8080` so the Mock API proxy points to the correct port (default is 8081).
 - Only one service on port 8080 at a time (Python mock or Go API).
 - ML Core loads models on startup via `ModelRegistry`. If model files are missing (`models/trained/*.pth`, `models/embeddings/*.npy`), the registry starts empty and the service relies on heuristics.

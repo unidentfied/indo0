@@ -9,7 +9,6 @@ COPY sindio/backend/app/ /workspace/app/
 
 ENV SINDIO_SKIP_RASTER=1
 ENV PYTHONPATH=/workspace:.:..
-# CORS_ORIGINS and SINDIO_USE_CORE are injected at runtime by Railway.
 
 EXPOSE 8080
 

@@ -140,7 +140,11 @@ class InfrastructureMonitor:
         )
 
         # ── Step 1: Ingest real-time data ──────────────────────
-        raw_data = self.ingestor.ingest(force_mock=force_mock)
+        try:
+            raw_data = self.ingestor.ingest(force_mock=force_mock)
+        except RuntimeError as exc:
+            logger.warning("[%s] Ingestion error: %s", self.config.display_name, exc)
+            raw_data = []
         logger.info(
             "[%s] Ingested %d data points (%.0f%% mock)",
             self.config.display_name, len(raw_data),

@@ -71,7 +71,7 @@ if not _CORS_ORIGINS:
         "CORS_ORIGINS is not set. CORS will default to localhost-only. "
         "Set CORS_ORIGINS in your Railway/Render dashboard to your frontend URL(s)."
     )
-    _CORS_ORIGINS = "http://localhost:3000"
+    _CORS_ORIGINS = "https://sindio.net"
 
 app.add_middleware(
     CORSMiddleware,
@@ -213,8 +213,8 @@ async def tracing_middleware(request: Request, call_next):
 
 # ── Optional proxy to ML Core (port 8081) ────────────────────────
 
-_CORE_URL = os.getenv("CORE_URL", "http://localhost:8081")
-_USE_CORE = os.getenv("SINDIO_USE_CORE", "0") == "1"
+_CORE_URL = os.getenv("CORE_URL", "http://gallant-alignment.railway.internal:8081")
+_USE_CORE = os.getenv("SINDIO_USE_CORE", "1") == "1"
 
 
 @app.middleware("http")
