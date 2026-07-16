@@ -211,11 +211,20 @@ def metrics_endpoint():
     )
 
 
+@app.get("/health/live")
+@limiter.exempt
+async def health_live():
+    return {"status": "ok"}
+
+
 @app.get("/health/ready")
 @limiter.exempt
 async def health_ready():
     deps = {}
-    deps["models_loaded"] = len(model_registry.models) > 0
+    deps["models_loaded"] = model_registry.loaded_count
+    deps["models_total"] = model_registry.trained_total
+    deps["embeddings_ready"] = model_registry.embeddings_ready
+    deps["models"] = model_registry.summary
 
     try:
         from app.database import get_engine
@@ -227,14 +236,25 @@ async def health_ready():
         logger.warning("Postgres health check failed", error=str(exc))
         deps["postgres"] = "unreachable"
 
-    # Service is always "ready" to accept requests — it falls back to heuristics / mock data
-    # when models or DB are unavailable. Never return 503 here so external healthchecks
-    # (e.g., Railway) do not restart the container.
-    all_ok = deps.get("postgres") == "ok" and deps.get("models_loaded") is True
+    try:
+        import redis as _redis
+        _r = _redis.Redis.from_url(config.redis_url, socket_connect_timeout=2)
+        _r.ping()
+        _r.close()
+        deps["redis"] = "ok"
+    except Exception as exc:
+        logger.warning("Redis health check failed", error=str(exc))
+        deps["redis"] = "unreachable"
+
+    has_models = model_registry.loaded_count > 0
+    has_postgres = deps.get("postgres") == "ok"
+    has_redis = deps.get("redis") == "ok"
+    all_ok = has_models and has_postgres and has_redis
+
     return Response(
         content=json.dumps({"status": "ready" if all_ok else "degraded", "dependencies": deps}),
         media_type="application/json",
-        status_code=200,
+        status_code=200 if all_ok else 503,
     )
 
 if __name__ == "__main__":

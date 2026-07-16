@@ -47,13 +47,16 @@ sindio/backend/app/data/raw/*.tif
 **/*.shx
 **/*.parquet
 
-# Model training artifacts (not deployed weights)
-**/*.safetensors
+# Model training artifacts only (deployed embedding weights in
+# models/embeddings/ are allowed — they use .safetensors format)
+**/models/trained/**/*.safetensors
 **/*.onnx
 **/*.h5
 
 # NOTE: trained model weights (.pth, .pt) and embeddings dirs ARE
 # included in the build context — the ML Core Dockerfile copies them.
+# .safetensors files inside models/embeddings/ are excluded from the
+# blanket pattern above so sentence-transformers weights pass through.
 
 # Infrastructure / deployment config (not needed in image)
 **/k8s/

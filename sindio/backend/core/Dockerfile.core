@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11.9-slim
 
 WORKDIR /workspace
 
@@ -7,39 +7,49 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev libgeos-dev libgdal-dev postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Install Poetry ───────────────────────────────────────────────
-# Use a modern Poetry version (1.8.5) that handles virtualenv correctly.
-RUN pip install --no-cache-dir poetry==1.8.5
+# ── Install Poetry + AWS CLI ─────────────────────────────────────
+RUN pip install --no-cache-dir poetry==1.8.5 awscli
 
 # ── Copy dependency files first (layer caching) ────────────────
-COPY backend/core/pyproject.toml backend/core/poetry.lock ./
-
+COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
 # ── Install Python deps into a project virtualenv ────────────────
-# Let Poetry create /workspace/.venv (default behaviour).
-# This isolates project deps from Poetry's own runtime deps.
-RUN poetry lock --no-update \
-    && poetry install --only main --no-interaction --no-ansi
+ENV POETRY_VIRTUALENVS_IN_PROJECT=true
+RUN poetry install --only main --no-root --no-interaction --no-ansi \
+    && rm -rf /root/.cache/pypoetry /root/.cache/pip
+
+# ── Purge build-time dependencies (headers, compilers) ─────────
+RUN apt-get purge -y gcc g++ libpq-dev libgeos-dev libgdal-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Copy application code ──────────────────────────────────────
-COPY backend/core/app/ ./app/
+COPY sindio/backend/core/app/ ./app/
 
-# ── Copy trained model weights and embeddings ──────────────────
-# In production builds models/ may be empty (gitignored). Download from S3 if missing.
-COPY models/ ./models/
-RUN if [ ! -f models/trained/urban_stress_v1.pth ]; then \
-      echo "Models not present in build context; attempting S3 sync..." && \
-      apt-get update && apt-get install -y --no-install-recommends awscli && \
-      aws s3 sync s3://sindio-${ENVIRONMENT:-dev}-models/trained/ models/trained/ || true; \
-    fi
+# ── Copy model configs (embeddings JSON, tokenizer, READMEs) ───
+# Actual weights (.pth, .safetensors) are gitignored — the entrypoint
+# downloads them from S3 at container startup or fails loudly.
+COPY sindio/models/ ./models/
+
+# ── Entrypoint script ─────────────────────────────────────────
+COPY sindio/backend/core/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # ── Runtime environment ──────────────────────────────────────────
 ENV PYTHONPATH=/workspace
 ENV SINDIO_SKIP_RASTER=1
-# CORS_ORIGINS, DATABASE_URL / DB_*, REDIS_URL / REDIS_* are
-# injected at runtime by Railway / Render / etc.
+ENV MODEL_PATH=/workspace/models/trained
+ENV EMBEDDINGS_PATH=/workspace/models/embeddings
+ENV ENVIRONMENT=dev
+
+# ── Security ─────────────────────────────────────────────────────
+RUN useradd --create-home --shell /bin/bash sindio \
+    && chown -R sindio:sindio /workspace /entrypoint.sh
+USER sindio
 
 EXPOSE 8081
 
-# Use `poetry run` so uvicorn executes inside the project venv
-CMD exec poetry run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-${CORE_PORT:-8081}}
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=300s \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-${CORE_PORT:-8081}}/health/live')" || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]

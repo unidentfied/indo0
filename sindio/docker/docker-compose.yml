@@ -129,8 +129,8 @@ services:
 
   celery_worker:
     build:
-      context: ../..
-      dockerfile: backend/Dockerfile
+      context: ..
+      dockerfile: backend/core/Dockerfile.core
     container_name: celery-worker
     restart: unless-stopped
     command: [ "celery", "-A", "app.worker.celery_app", "worker", "--loglevel=info" ]
@@ -154,7 +154,7 @@ services:
 
   celery_beat:
     build:
-      context: ../..
+      context: ..
       dockerfile: backend/core/Dockerfile.core
     container_name: sindio-celery-beat
     restart: unless-stopped
@@ -206,7 +206,7 @@ services:
   # Auto-create default buckets on startup
   minio-init:
     restart: unless-stopped
-    image: minio/mc:RELEASE.2024-11-07T00-52-20Z
+    image: minio/mc:latest
     env_file:
       - ../.env
     depends_on:
@@ -379,7 +379,6 @@ services:
       KAFKA_CFG_PROCESS_ROLES: "broker,controller"
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CFG_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
       KAFKA_CFG_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092"
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT"
