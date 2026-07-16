@@ -15,7 +15,8 @@ COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
 # ── Install Python deps into a project virtualenv ────────────────
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
-RUN poetry install --only main --no-root --no-interaction --no-ansi \
+RUN poetry lock --no-update \
+    && poetry install --only main --no-root --no-interaction --no-ansi \
     && rm -rf /root/.cache/pypoetry /root/.cache/pip
 
 # ── Purge build-time dependencies (headers, compilers) ─────────
