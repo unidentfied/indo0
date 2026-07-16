@@ -57,13 +57,12 @@ if models_missing; then
     fi
 
     if models_missing; then
-        echo "[entrypoint] FATAL: Model weights are missing and S3 download failed or is unavailable."
-        echo "[entrypoint] Ensure MODEL_PATH points to a directory with .pth checkpoints"
-        echo "[entrypoint] or configure AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY to pull from $S3_BUCKET."
-        exit 1
+        echo "[entrypoint] WARNING: Model weights are still missing after S3 download attempt."
+        echo "[entrypoint] The service will start in degraded mode using heuristic fallbacks."
+        echo "[entrypoint] Ensure valid AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY are set to pull from $S3_BUCKET."
+    else
+        echo "[entrypoint] Trained model download complete — all ${#REQUIRED_MODELS[@]} checkpoints present."
     fi
-
-    echo "[entrypoint] Trained model download complete — all ${#REQUIRED_MODELS[@]} checkpoints present."
 fi
 
 if embeddings_missing; then
