@@ -84,3 +84,4 @@ sindio/docker/
 
 # Railway / CI config
 railway.toml
+railway.json
