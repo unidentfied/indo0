@@ -299,6 +299,11 @@ async def health(request: Request):
     return await _proxy_optional(request, "/health")
 
 
+@app.get("/health/live")
+async def health_live():
+    return {"status": "ok"}
+
+
 @app.get("/health/ready")
 async def health_ready():
     """Kubernetes readiness probe — checks configured dependencies only."""
