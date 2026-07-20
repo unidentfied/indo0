@@ -19,10 +19,10 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from jose import jwt as _jwt
 
-from .limiter import limiter
+from app.limiter import limiter
 
-from .shutdown import install_signal_handlers, register_shutdown_handler
-from .rbac import require_viewer
+from app.shutdown import install_signal_handlers, register_shutdown_handler
+from app.rbac import require_viewer
 
 structlog.configure(
     processors=[structlog.processors.JSONRenderer()],
@@ -30,11 +30,11 @@ structlog.configure(
 )
 logger = structlog.get_logger("sindio.mock_api")
 
-from .routers.api import router as api_router
-from .routers.streaming import router as stream_router
-from .routers.reports import router as reports_router
-from .routers.feedback import router as feedback_router
-from .routers.privacy import router as privacy_router
+from app.routers.api import router as api_router
+from app.routers.streaming import router as stream_router
+from app.routers.reports import router as reports_router
+from app.routers.feedback import router as feedback_router
+from app.routers.privacy import router as privacy_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -326,7 +326,7 @@ async def health_ready():
     db_host = os.getenv("DB_HOST")
     if database_url or (db_host and db_host != "localhost"):
         try:
-            from .core.database import get_engine
+            from app.core.database import get_engine
             from sqlalchemy import text
             with get_engine().connect() as conn:
                 conn.execute(text("SELECT 1"))

@@ -16,8 +16,8 @@ from typing import AsyncGenerator
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
-from ..models import Alert
-from ..mock_simulation import generate_alerts
+from app.models import Alert
+from app.mock_simulation import generate_alerts
 
 logger = logging.getLogger("sindio.streaming")
 
@@ -67,7 +67,7 @@ async def _stress_stream() -> AsyncGenerator[str, None]:
     """Generate SSE-formatted stress summary every 60 seconds."""
     while True:
         try:
-            from ..routers.api import _INFRA_TYPES
+            from app.routers.api import _INFRA_TYPES
             import random
             summary = []
             for t in _INFRA_TYPES:
