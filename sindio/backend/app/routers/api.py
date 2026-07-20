@@ -5,17 +5,18 @@ import random
 import time as _time_module
 import os
 
-from app.limiter import limiter
+from ..limiter import limiter
 
-from app.models import (
+from ..models import (
     Metric, Alert, SimulationResult, InfrastructureStatus, PredictiveParams,
     SimulateRequest, SimulateResponse, SimulationTaskResult, SimulateTaskStatus,
     AlertV1, AlertsV1Response, NextUpdate, NextUpdatesResponse,
     ScenarioGenerateRequest, ScenarioGenerateResponse, SimilarScenario,
     TaskResponse, TaskStateResponse,
 )
-from app.mock_simulation import (
-    start_simulation, get_simulation_state, get_simulation_result,
+from ..mock_simulation import (
+    start_simulation, get_simulation_state,
+    get_simulation_result,
     generate_alerts, generate_stress_heatmap, generate_stress_points,
     generate_infrastructure_status,
 )
@@ -658,7 +659,7 @@ def monitor_stress():
 @router.get("/v1/monitor/classification")
 def monitor_classification():
     """Return per-type stress classification summaries."""
-    from datetime import timedelta
+    from ..core.database import get_enginedelta
     rng = random.Random(42)
 
     min_windows = {

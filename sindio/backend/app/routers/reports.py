@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.rbac import require_county
+from ..rbac import require_county
 
 logger = logging.getLogger("sindio.reports")
 
@@ -54,7 +54,7 @@ async def export_data(
     """
     # In production: query database with filters
     # For now, generate from mock data
-    from app.routers.api import _INFRA_TYPES, _WARDS
+    from ..routers.api import _INFRA_TYPES, _WARDS
     import random
 
     data: List[Dict[str, Any]] = []

@@ -1,12 +1,12 @@
 const API_BASE = (() => {
   try {
     const base = (import.meta as any).env?.VITE_API_BASE_URL
-    if (base && typeof base === 'string') return `${base}/api`
+    if (base && typeof base === 'string') return base
   } catch { /* vitest/jsdom may lack import.meta.env */ }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
     console.error('[Sindio] VITE_API_BASE_URL is not set. All API calls will fail with 404.')
   }
-  return '/api'
+  return ''
 })()
 
 const REQUEST_TIMEOUT = 8000
@@ -137,18 +137,18 @@ export const api = {
 
   dashboard: {
     metrics: (system?: string) =>
-      request<Metric[]>(`/v1/dashboard/metrics${system ? `?system=${system}` : ''}`),
-    alerts: () => request<TypesAlert[]>('/v1/dashboard/alerts'),
+      request<Metric[]>('/dashboard/metrics' + (system ? `?system=${system}` : '')),
+    alerts: () => request<TypesAlert[]>('/dashboard/alerts'),
   },
 
   infrastructure: {
-    status: (system: string) => request<InfrastructureStatus | null>(`/v1/infrastructure/${system}`),
+    status: (system: string) => request<InfrastructureStatus | null>(`/infrastructure/${system}`),
   },
 
   monitor: {
-    stress: () => request<MonitorStressResponse>('/v1/monitor/stress'),
-    types: () => request<string[]>('/v1/monitor/types'),
-    classification: () => request<ClassificationResponse>('/v1/monitor/classification'),
+    stress: () => request<MonitorStressResponse>('/monitor/stress'),
+    types: () => request<string[]>('/monitor/types'),
+    classification: () => request<ClassificationResponse>('/monitor/classification'),
     classificationExamples: (infraType: string, classType: string, limit = 5) =>
       request<{ examples: { asset_id: string; class_type: string; confidence: number; ward: string; stress_ml: number; failure_mode: string; recommendation: string; spearman_rho: number | null; recurrence_pct: number | null; density_pct: number | null; dominant_period_hours: number | null; updated_at: string }[] }>(
         `/v1/monitor/classification/examples?infra_type=${infraType}&classification_type=${classType}&limit=${limit}`,

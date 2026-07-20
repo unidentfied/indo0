@@ -19,8 +19,8 @@ from sqlalchemy import text
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.rbac import optional_auth
-from app.core.database import get_engine
+from ..rbac import optional_auth
+from ..core.database import get_engine
 
 logger = logging.getLogger("sindio.feedback")
 

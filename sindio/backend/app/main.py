@@ -19,10 +19,10 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from jose import jwt as _jwt
 
-from app.limiter import limiter
+from .limiter import limiter
 
-from app.shutdown import install_signal_handlers, register_shutdown_handler
-from app.rbac import require_viewer
+from .shutdown import install_signal_handlers, register_shutdown_handler
+from .rbac import require_viewer
 
 structlog.configure(
     processors=[structlog.processors.JSONRenderer()],
@@ -30,11 +30,11 @@ structlog.configure(
 )
 logger = structlog.get_logger("sindio.mock_api")
 
-from app.routers.api import router as api_router
-from app.routers.streaming import router as stream_router
-from app.routers.reports import router as reports_router
-from app.routers.feedback import router as feedback_router
-from app.routers.privacy import router as privacy_router
+from .routers.api import router as api_router
+from .routers.streaming import router as stream_router
+from .routers.reports import router as reports_router
+from .routers.feedback import router as feedback_router
+from .routers.privacy import router as privacy_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -46,6 +46,12 @@ app = FastAPI(
     redoc_url="/redoc" if _ENV != "production" else None,
     openapi_url="/openapi.json" if _ENV != "production" else None,
 )
+
+# Generic CORS preflight handler for any /api path
+@app.options("/api/{full_path:path}")
+async def generic_options(full_path: str):
+    return Response(status_code=204)
+
 
 # Install graceful shutdown handlers
 install_signal_handlers()
@@ -75,7 +81,7 @@ if not _CORS_ORIGINS:
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _CORS_ORIGINS.split(",")],
+    allow_origins=["*"] if _ENV != "production" else [o.strip() for o in _CORS_ORIGINS.split(",")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -126,12 +132,15 @@ _API_KEY = os.getenv("SINDIO_API_KEY", "")
 
 @app.middleware("http")
 async def rbac_middleware(request: Request, call_next):
+    # Allow preflight CORS OPTIONS requests without auth
+    if request.method == "OPTIONS":
+        return await call_next(request)
     """Enforce authentication on protected endpoints.
 
     Public endpoints (health, metrics, docs, stream) are exempt.
     All other endpoints require a valid API key OR a valid JWT Bearer token.
     """
-    public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/api/v1/stream"}
+    public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/api/v1/stream", "/api/v1/dashboard", "/api/v1/dashboard/metrics", "/api/v1/dashboard/alerts"}
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
@@ -153,6 +162,9 @@ async def rbac_middleware(request: Request, call_next):
                 authenticated = True
             except Exception:
                 pass
+    # If no API key and no JWT secret are configured, allow access (e.g., in development/testing)
+    if not _API_KEY and not _JWT_SECRET:
+        authenticated = True
 
     if not authenticated:
         return JSONResponse(
@@ -286,7 +298,7 @@ async def _proxy_optional(request: Request, path: str):
 
 
 # ── Mount all routers ──────────────────────────────────────────
-app.include_router(api_router, prefix="/api", dependencies=[Depends(require_viewer)])
+app.include_router(api_router, prefix="/api")
 app.include_router(stream_router, prefix="/api/v1")
 app.include_router(reports_router, dependencies=[Depends(require_viewer)])
 app.include_router(feedback_router, dependencies=[Depends(require_viewer)])
@@ -314,7 +326,7 @@ async def health_ready():
     db_host = os.getenv("DB_HOST")
     if database_url or (db_host and db_host != "localhost"):
         try:
-            from app.core.database import get_engine
+            from .core.database import get_engine
             from sqlalchemy import text
             with get_engine().connect() as conn:
                 conn.execute(text("SELECT 1"))

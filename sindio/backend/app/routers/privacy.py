@@ -13,8 +13,8 @@ from sqlalchemy import text
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 
-from app.rbac import require_admin, require_viewer
-from app.core.database import get_engine
+from ..rbac import require_admin, require_viewer
+from ..core.database import get_engine
 
 logger = logging.getLogger("sindio.gdpr")
 
