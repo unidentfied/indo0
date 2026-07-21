@@ -133,50 +133,50 @@ export interface GeoJsonFeature {
 }
 
 export const api = {
-  health: () => request<{ status: string }>('/health'),
+  health: () => request<{ status: string }>('/api/health'),
 
   dashboard: {
     metrics: (system?: string) =>
-      request<Metric[]>('/dashboard/metrics' + (system ? `?system=${system}` : '')),
-    alerts: () => request<TypesAlert[]>('/dashboard/alerts'),
+      request<Metric[]>('/api/dashboard/metrics' + (system ? `?system=${system}` : '')),
+    alerts: () => request<TypesAlert[]>('/api/dashboard/alerts'),
   },
 
   infrastructure: {
-    status: (system: string) => request<InfrastructureStatus | null>(`/infrastructure/${system}`),
+    status: (system: string) => request<InfrastructureStatus | null>(`/api/infrastructure/${system}`),
   },
 
   monitor: {
-    stress: () => request<MonitorStressResponse>('/monitor/stress'),
-    types: () => request<string[]>('/monitor/types'),
-    classification: () => request<ClassificationResponse>('/monitor/classification'),
+    stress: () => request<MonitorStressResponse>('/api/v1/monitor/stress'),
+    types: () => request<string[]>('/api/v1/monitor/types'),
+    classification: () => request<ClassificationResponse>('/api/v1/monitor/classification'),
     classificationExamples: (infraType: string, classType: string, limit = 5) =>
       request<{ examples: { asset_id: string; class_type: string; confidence: number; ward: string; stress_ml: number; failure_mode: string; recommendation: string; spearman_rho: number | null; recurrence_pct: number | null; density_pct: number | null; dominant_period_hours: number | null; updated_at: string }[] }>(
-        `/v1/monitor/classification/examples?infra_type=${infraType}&classification_type=${classType}&limit=${limit}`,
+        `/api/v1/monitor/classification/examples?infra_type=${infraType}&classification_type=${classType}&limit=${limit}`,
       ),
   },
 
   spatial: {
     stressPoints: (infraType: string, limit = 60) =>
       request<GeoJsonFeatureCollection>(
-        `/v1/spatial/stress-points?infrastructure_type=${infraType}&limit=${limit}`,
+        `/api/v1/spatial/stress-points?infrastructure_type=${infraType}&limit=${limit}`,
       ),
     stressHeatmap: (infraType: string, bbox: string) =>
       request<GeoJsonFeatureCollection>(
-        `/v1/spatial/stress-heatmap?bbox=${bbox}&infrastructure_type=${infraType}`,
+        `/api/v1/spatial/stress-heatmap?bbox=${bbox}&infrastructure_type=${infraType}`,
       ),
   },
 
   v1: {
-    alerts: () => request<AlertsV1Response>('/v1/alerts'),
-    nextUpdates: () => request<NextUpdatesResponse>('/v1/next_updates'),
+    alerts: () => request<AlertsV1Response>('/api/v1/alerts'),
+    nextUpdates: () => request<NextUpdatesResponse>('/api/v1/next_updates'),
     simulateRun: (payload: Record<string, unknown>) =>
-      request<SimulationResult>('/v1/simulate/run', {
+      request<SimulationResult>('/api/v1/simulate/run', {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
-    simulateStatus: (taskId: string) => request<SimulateTaskStatus>(`/v1/simulate/status/${taskId}`),
+    simulateStatus: (taskId: string) => request<SimulateTaskStatus>(`/api/v1/simulate/status/${taskId}`),
     scenarioGenerate: (prompt: string, infraTypes?: string[]) =>
-      request<Record<string, unknown>>('/v1/scenario/generate', {
+      request<Record<string, unknown>>('/api/v1/scenario/generate', {
         method: 'POST',
         body: JSON.stringify({ prompt, infrastructure_types: infraTypes }),
       }),
