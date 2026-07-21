@@ -313,16 +313,20 @@ app.include_router(privacy_router)   # individual endpoints already enforce role
 
 @app.get("/health")
 @app.post("/health")
+@app.get("/api/health")
+@app.post("/api/health")
 async def health(request: Request):
     return await _proxy_optional(request, "/health")
 
 
 @app.get("/health/live")
+@app.get("/api/health/live")
 async def health_live():
     return {"status": "ok"}
 
 
 @app.get("/health/ready")
+@app.get("/api/health/ready")
 async def health_ready():
     """Kubernetes readiness probe — checks configured dependencies only."""
     deps = {}
