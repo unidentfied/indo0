@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+starlette
+numpy
+scipy
+prometheus-client
+redis
+psycopg2-binary
+beautifulsoup4
+python-dotenv
+slowapi

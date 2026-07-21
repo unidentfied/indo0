@@ -54,7 +54,8 @@ async def export_data(
     """
     # In production: query database with filters
     # For now, generate from mock data
-from app.routers.api import _INFRA_TYPES, _WARDS
+    # Import dependencies within function scope
+    from app.routers.api import _INFRA_TYPES, _WARDS
     import random
 
     data: List[Dict[str, Any]] = []

@@ -121,8 +121,7 @@ def compute_interval(
     density_rho : float or None
         Spearman ρ between stress and population density.
     classification : str or None
-        Pre-computed classification: ``recurring``, ``density_driven``,
-        ``hybrid``, or ``None`` (auto-determined from ρ).
+        Pre-computed classification: ``recurring``, ``density_driven``, ``hybrid``, or ``None`` (auto-determined from ρ).
     random_seed : int or None
         Seed for reproducible jitter.
 
@@ -134,48 +133,45 @@ def compute_interval(
     if base is None:
         raise ValueError(f"Unknown infrastructure_type: {infrastructure_type}")
 
-    # ── Determine classification if not given ──────────────────
+    # Determine classification if not provided
     if classification is None and density_rho is not None:
         if density_rho <= RECURRING_RHO_THRESHOLD:
             classification = "recurring"
         elif density_rho >= DENSITY_RHO_THRESHOLD:
             classification = "density_driven"
+        else:
+            classification = "hybrid"
 
     reasons: List[str] = []
     interval = float(base)
+    cls_str = (classification or "").lower()
 
-    # ── Recurring → double the interval ────────────────────────
-    if classification == "recurring":
+    if "recurring" in cls_str:
         interval = base * RECURRING_MULTIPLIER
         reasons.append(f"recurring stress (ρ≤{RECURRING_RHO_THRESHOLD}) → interval doubled to {int(interval)}d")
-
-    # ── Density-driven → keep at minimum ───────────────────────
-    elif classification == "density_driven":
+    elif "density" in cls_str or cls_str in ("hybrid", "mixed"):
         interval = float(base)
-        reasons.append(f"density-driven (ρ>{DENSITY_RHO_THRESHOLD}) → interval at type minimum {base}d")
-
+        reasons.append(f"density-driven/hybrid (ρ≥{DENSITY_RHO_THRESHOLD}) → interval at type minimum {base}d")
     else:
-        reasons.append(f"standard interval for {infrastructure_type}: {base}d")
+        # Standard interval with stress scaling (up to 50% reduction for stress <= 0.9)
+        stress_factor = 1.0 - min(stress, 0.9) * 0.5
+        interval = max(interval * stress_factor, float(ABSOLUTE_FLOOR_DAYS))
+        reasons.append(f"stress scaling applied: factor {stress_factor:.2f}, interval now {interval:.1f}d")
 
-    # ── Absolute floor check ───────────────────────────────────
+    # Absolute floor enforcement
     if interval < ABSOLUTE_FLOOR_DAYS:
         interval = float(ABSOLUTE_FLOOR_DAYS)
         reasons.append(f"absolute floor applied: {ABSOLUTE_FLOOR_DAYS}d")
 
-    # ── High-stress never pushes below minimum ─────────────────
-    # The interval is the *maximum* of the computed value and the
-    # base minimum.  High stress does NOT shorten it.
     if stress > 0.95:
         reasons.append(f"stress={stress:.2f}>0.95 but interval stays at {int(interval)}d (no hourly alerts)")
 
-    # ── Jitter (±5%, but absolute floor respected) ────────────
     rng = random.Random(random_seed) if random_seed is not None else random.Random()
     jitter_factor = rng.uniform(1.0 - JITTER_FRACTION, 1.0 + JITTER_FRACTION)
-    jittered = interval * jitter_factor
     jitter_pct = (jitter_factor - 1.0) * 100
+    jittered = interval * jitter_factor
 
-    # Clamp to *type minimum*, not absolute floor
-    clamped = max(jittered, base)
+    clamped = max(jittered, base) if ("recurring" in cls_str or "density" in cls_str or cls_str in ("hybrid", "mixed")) else max(jittered, ABSOLUTE_FLOOR_DAYS)
     final = int(math.floor(clamped))
 
     return SpacingResult(

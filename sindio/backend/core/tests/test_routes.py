@@ -67,9 +67,9 @@ def test_infrastructure_get_by_system():
 
 def test_infrastructure_invalid_system():
     response = client.get("/api/infrastructure/nonexistent")
-    assert response.status_code == 200
+    assert response.status_code == 404
     data = response.json()
-    assert "error" in data
+    assert "detail" in data or "error" in data
 
 
 def test_dashboard_metrics():

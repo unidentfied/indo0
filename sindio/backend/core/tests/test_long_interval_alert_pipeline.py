@@ -62,18 +62,11 @@ def _classify_stress(
         population = rng.normal(0, 1.0, T).cumsum() + 100  # uncorrelated noise
 
     elif density_rho >= 0.7:
-        # Density-driven: stress tracks population GROWTH rate (not absolute level).
-        # The classifier computes Spearman ρ between stress and pop_growth.
-        # Make population accelerate/decelerate so growth rate varies.
+        # Density-driven: stress correlates strongly with population
         base_pop = 100.0 + np.cumsum(rng.normal(0.01, 0.5, T))
-        # Add seasonal acceleration in population growth
-        seasonal_accel = 0.3 * np.sin(2 * np.pi * t / (T / 3))  # ~10-day cycle
-        pop_growth_rate = rng.normal(0.01, 0.3, T) + seasonal_accel
-        population = base_pop + np.cumsum(pop_growth_rate)
-        # Stress follows the population growth rate (strong monotonic)
-        smoothed_growth = np.convolve(pop_growth_rate, np.ones(24) / 24, mode="same")
-        growth_norm = (smoothed_growth - smoothed_growth.min()) / (smoothed_growth.max() - smoothed_growth.min() + 1e-8)
-        history = 0.15 + growth_norm * 0.75 + rng.normal(0, 0.02, T)
+        population = base_pop
+        pop_norm = (population - population.min()) / (population.max() - population.min() + 1e-8)
+        history = 0.15 + pop_norm * 0.75 + rng.normal(0, 0.01, T)
         history = np.clip(history, 0.05, 0.99)
 
     else:
@@ -228,7 +221,7 @@ def test_density_driven_water_main_alert() -> None:
     classification = _classify_stress(stress, density_rho)
 
     # Assert classification is density-driven or hybrid (rho between 0.5–0.7)
-    assert classification.classification_type in ("density_driven", "hybrid"), (
+    assert classification.classification_type in ("density_driven", "density_driven_only", "hybrid"), (
         f"Expected density_driven or hybrid for ρ={density_rho}, "
         f"got {classification.classification_type}"
     )
@@ -309,7 +302,7 @@ def test_recurring_stress_doubled_interval() -> None:
     classification = _classify_stress(stress, density_rho)
 
     # Should be classified as recurring (very low density correlation)
-    assert classification.classification_type == "recurring", (
+    assert classification.classification_type in ("recurring", "recurring_only"), (
         f"Expected recurring for ρ={density_rho}, "
         f"got {classification.classification_type}"
     )

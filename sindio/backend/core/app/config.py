@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-
+from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     jwt_secret: str = Field(default="", validation_alias="JWT_SECRET")
 
     # Database: prefer DATABASE_URL (Railway / Render standard), fall back to components
-    database_url_raw: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    database_url_raw: Optional[str] = Field(default=None, validation_alias="DATABASE_URL")
     db_password: str = Field(default="dev-password-change-me", validation_alias="DB_PASSWORD")
     db_host: str = Field(default="localhost", validation_alias="DB_HOST")
     db_port: str = Field(default="5432", validation_alias="DB_PORT")
@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     db_user: str = Field(default="sindio_user", validation_alias="DB_USER")
 
     # Redis: prefer REDIS_URL (Railway / Render standard), fall back to components
-    redis_url_raw: str | None = Field(default=None, validation_alias="REDIS_URL")
-    redis_password: str | None = Field(default=None, validation_alias="REDIS_PASSWORD")
+    redis_url_raw: Optional[str] = Field(default=None, validation_alias="REDIS_URL")
+    redis_password: Optional[str] = Field(default=None, validation_alias="REDIS_PASSWORD")
     redis_host: str = Field(default="localhost", validation_alias="REDIS_HOST")
     redis_port: str = Field(default="6379", validation_alias="REDIS_PORT")
 

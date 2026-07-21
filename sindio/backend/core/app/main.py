@@ -77,7 +77,11 @@ async def lifespan(app: FastAPI):
     logger.info("Sindio Core stopped")
 
 
-limiter = Limiter(key_func=get_remote_address, storage_uri=config.redis_url)
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=config.redis_url,
+    enabled=os.getenv("ENV", "development").lower() != "test",
+)
 app = FastAPI(
     title="Sindio Core",
     description="Python ML core for predictive urban planning simulations",
@@ -180,14 +184,21 @@ model_registry = ModelRegistry()
 
 app.include_router(health.router, prefix="/health")
 app.include_router(auth_router, prefix="/auth")
+
 app.include_router(simulations.router, prefix="/api/v1/simulations")
+app.include_router(simulations.router, prefix="/api/simulations")
+
 app.include_router(simulation_compat.router, prefix="/api/v1/simulate")
+app.include_router(simulation_compat.router, prefix="/api/simulate")
 
 app.include_router(infrastructure.router, prefix="/api/v1/infrastructure")
+app.include_router(infrastructure.router, prefix="/api/infrastructure")
 
 app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api")
 
 app.include_router(alerts.router, prefix="/api/v1")
+app.include_router(alerts.router, prefix="/api")
 
 app.include_router(schedule.router)
 app.include_router(monitor.router)

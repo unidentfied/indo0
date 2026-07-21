@@ -102,24 +102,24 @@ def alert_stress_fallback(
     exclude_recurring: bool = True,
 ) -> float:
     """
-    Return a synthetic stress value (0–100) for a frequent non-recurring
+    Return a synthetic stress value (0.0–1.0) for a frequent non-recurring
     alert type, based on the 7-day weekday average for the given
     infrastructure type.
-
-    If *exclude_recurring* is True (default), the caller is asserting that
-    this fallback is only being used for alerts that are NOT classified as
-    "recurring_stress" or "density_driven_recurring".
     """
     import random
 
     wd = _today_weekday(timestamp)
     type_key = infrastructure_type.lower()
+    if type_key in ("roads", "road"):
+        type_key = "road"
+    elif type_key in ("solid_waste", "waste"):
+        type_key = "waste"
     table = _WEEKDAY_STRESS_AVG.get(type_key, _WEEKDAY_STRESS_AVG["power"])
     base = table.get(wd, table.get(2, 50.0))
     jittered = base + random.uniform(-4.0, 4.0)
-    value = round(max(0.0, min(100.0, jittered)), 1)
+    value = round(max(0.0, min(1.0, jittered / 100.0)), 4)
     logger.info(
-        "Alert stress fallback — type=%s weekday=%d stress=%.1f exclude_recurring=%s",
+        "Alert stress fallback — type=%s weekday=%d stress=%.4f exclude_recurring=%s",
         infrastructure_type, wd, value, exclude_recurring,
     )
     return value
@@ -134,7 +134,7 @@ def synthetic_alert_payload(
 ) -> dict[str, Any]:
     """
     Return a complete synthetic alert dict (AlertV1-compatible) using
-    7-day weekday averages.  Intended for use when PostGIS is unreachable
+    7-day weekday averages. Intended for use when PostGIS is unreachable
     and the caller needs to return data to keep the dashboard alive.
     """
     import uuid
@@ -143,21 +143,24 @@ def synthetic_alert_payload(
     ts = timestamp or datetime.now(timezone.utc)
 
     severity = "advisory"
-    if stress >= 80:
+    if stress >= 0.8:
         severity = "critical"
-    elif stress >= 60:
+    elif stress >= 0.6:
         severity = "warning"
 
+    alert_id = f"ALT-FLB-{str(uuid.uuid4())[:8]}"
     return {
-        "id": f"ALT-FLB-{str(uuid.uuid4())[:8]}",
+        "id": alert_id,
+        "asset_id": alert_id,
         "timestamp": ts.isoformat(),
         "level": severity,
+        "severity": severity,
         "category": infrastructure_type,
         "infrastructure_type": infrastructure_type,
-        "ward": ward or "Unknown",
+        "ward": ward,
         "title": (
             f"{infrastructure_type.title()} Stress (fallback) "
-            f"({stress:.0f}/100)"
+            f"({stress * 100:.0f}/100)"
         ),
         "description": (
             f"Synthetic fallback alert for {infrastructure_type} at "
@@ -167,7 +170,7 @@ def synthetic_alert_payload(
         "location": ward or f"{lat:.4f},{lng:.4f}",
         "lat": round(lat, 6),
         "lng": round(lng, 6),
-        "severity_score": round(stress / 100, 4),
+        "severity_score": stress,
         "classification": "hybrid",
         "confidence": 0.72,
         "data_sources_used": [

@@ -157,39 +157,57 @@ def _key(infra_type: str, suffix: str) -> str:
 
 
 def get_mode(infra_type: str) -> str:
-    r = _get_redis()
-    return r.get(_key(infra_type, "mode")) or "standard"
+    try:
+        r = _get_redis()
+        return r.get(_key(infra_type, "mode")) or "standard"
+    except Exception:
+        return "standard"
 
 
 def set_mode(infra_type: str, mode: str):
-    r = _get_redis()
-    r.set(_key(infra_type, "mode"), mode)
+    try:
+        r = _get_redis()
+        r.set(_key(infra_type, "mode"), mode)
+    except Exception:
+        pass
 
 
 def get_last_run(infra_type: str) -> Optional[datetime]:
-    r = _get_redis()
-    val = r.get(_key(infra_type, "last_run"))
-    if val:
-        return datetime.fromisoformat(val)
+    try:
+        r = _get_redis()
+        val = r.get(_key(infra_type, "last_run"))
+        if val:
+            return datetime.fromisoformat(val)
+    except Exception:
+        pass
     return None
 
 
 def set_last_run(infra_type: str, ts: datetime):
-    r = _get_redis()
-    r.set(_key(infra_type, "last_run"), ts.isoformat())
+    try:
+        r = _get_redis()
+        r.set(_key(infra_type, "last_run"), ts.isoformat())
+    except Exception:
+        pass
 
 
 def get_next_run(infra_type: str) -> Optional[datetime]:
-    r = _get_redis()
-    val = r.get(_key(infra_type, "next_run"))
-    if val:
-        return datetime.fromisoformat(val)
+    try:
+        r = _get_redis()
+        val = r.get(_key(infra_type, "next_run"))
+        if val:
+            return datetime.fromisoformat(val)
+    except Exception:
+        pass
     return None
 
 
 def set_next_run(infra_type: str, ts: datetime):
-    r = _get_redis()
-    r.set(_key(infra_type, "next_run"), ts.isoformat())
+    try:
+        r = _get_redis()
+        r.set(_key(infra_type, "next_run"), ts.isoformat())
+    except Exception:
+        pass
 
 
 def compute_jittered_interval(infra_type: str) -> timedelta:
@@ -204,21 +222,27 @@ def compute_jittered_interval(infra_type: str) -> timedelta:
 
 def get_all_next_runs() -> Dict[str, Optional[str]]:
     """Return dict of infra_type → ISO-8601 next_run timestamp."""
-    r = _get_redis()
-    keys = [_key(t, "next_run") for t in INFRA_TYPES]
-    vals = r.mget(keys)
-    return {
-        t: v for t, v in zip(INFRA_TYPES, vals)
-    }
+    try:
+        r = _get_redis()
+        keys = [_key(t, "next_run") for t in INFRA_TYPES]
+        vals = r.mget(keys)
+        return {
+            t: v for t, v in zip(INFRA_TYPES, vals)
+        }
+    except Exception:
+        return {t: None for t in INFRA_TYPES}
 
 
 def get_all_modes() -> Dict[str, str]:
-    r = _get_redis()
-    keys = [_key(t, "mode") for t in INFRA_TYPES]
-    vals = r.mget(keys)
-    return {
-        t: (v or "standard") for t, v in zip(INFRA_TYPES, vals)
-    }
+    try:
+        r = _get_redis()
+        keys = [_key(t, "mode") for t in INFRA_TYPES]
+        vals = r.mget(keys)
+        return {
+            t: (v or "standard") for t, v in zip(INFRA_TYPES, vals)
+        }
+    except Exception:
+        return {t: "standard" for t in INFRA_TYPES}
 
 
 # ──────────────────────────────────────────────────────────────

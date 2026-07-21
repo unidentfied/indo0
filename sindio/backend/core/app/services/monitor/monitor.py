@@ -92,6 +92,10 @@ class MonitorResult:
     report_alignment_pct: float
     assets: List[AssetState] = field(default_factory=list)
 
+    @property
+    def timestamp(self) -> str:
+        return self.run_timestamp
+
 
 class InfrastructureMonitor:
     """Unified monitor for one infrastructure type.
@@ -118,7 +122,7 @@ class InfrastructureMonitor:
         self,
         ward: Optional[str] = None,
         force_mock: bool = False,
-        include_healthy: bool = False,
+        include_healthy: bool = True,
     ) -> MonitorResult:
         """Execute full monitoring pipeline.
 
@@ -230,7 +234,8 @@ class InfrastructureMonitor:
             capacity = point.get("capacity", self.config.default_capacity)
 
             # Calculate stress via the unified calculator
-            stress = self.calculator.compute_stress(point, current_value, capacity)
+            # compute_stress returns 0-100; normalize to 0-1 for internal storage
+            stress = float(self.calculator.compute_stress(point, current_value, capacity)) / 100.0
 
             # Data freshness
             ts = point.get("timestamp")
@@ -385,7 +390,7 @@ def get_all_stressed_assets(
     # Sort by stress descending
     all_assets.sort(key=lambda a: a.stress, reverse=True)
 
-    return {
+    result = {
         "timestamp": now.isoformat(),
         "ward_filter": ward,
         "total_infrastructure_types": type_count,
@@ -420,3 +425,15 @@ def get_all_stressed_assets(
             for a in all_assets
         ],
     }
+    # Add top-level summary key expected by tests
+    result["summary"] = {
+        "timestamp": result["timestamp"],
+        "ward_filter": result["ward_filter"],
+        "total_infrastructure_types": result["total_infrastructure_types"],
+        "total_assets_monitored": result["total_assets_monitored"],
+        "total_stressed_assets": result["total_stressed_assets"],
+        "total_critical_assets": result["total_critical_assets"],
+        "total_warning_assets": result["total_warning_assets"],
+        "overall_mock_ratio": result["overall_mock_ratio"],
+    }
+    return result

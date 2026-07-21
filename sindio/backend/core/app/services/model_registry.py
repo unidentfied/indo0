@@ -14,7 +14,10 @@ class ModelRegistry:
     async def load_models(self):
         """Load PyTorch checkpoints and verify embedding configs on startup."""
         import asyncio
-        import torch
+        try:
+            import torch
+        except ImportError:
+            torch = None
 
         model_files = {
             "urban_stress": "urban_stress_v1.pth",
@@ -26,7 +29,7 @@ class ModelRegistry:
 
         for name, filename in model_files.items():
             path = Path(self.model_path) / filename
-            if path.exists():
+            if path.exists() and torch is not None:
                 try:
                     checkpoint = await loop.run_in_executor(
                         None, lambda p=str(path): torch.load(p, map_location="cpu", weights_only=True)

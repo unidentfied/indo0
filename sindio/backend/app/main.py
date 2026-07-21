@@ -206,6 +206,7 @@ async def trace_id_middleware(request: Request, call_next):
     structlog.contextvars.bind_contextvars(trace_id=trace_id)
     response = await call_next(request)
     response.headers["X-Trace-ID"] = trace_id
+    response.headers["X-Request-ID"] = trace_id  # Echo for compatibility with tests
     structlog.contextvars.unbind_contextvars("trace_id")
     return response
 
@@ -241,7 +242,7 @@ async def core_proxy_middleware(request: Request, call_next):
         return await call_next(request)
 
     path = request.url.path
-    if not path.startswith("/api/v1/"):
+    if not path.startswith("/api/"):
         return await call_next(request)
 
     try:
@@ -261,7 +262,7 @@ async def core_proxy_middleware(request: Request, call_next):
             )
 
             # Core has this endpoint and is healthy — return its response
-            if resp.status_code < 500:
+            if resp.status_code != 404 and resp.status_code < 500:
                 return Response(
                     content=resp.content,
                     status_code=resp.status_code,

@@ -6,7 +6,7 @@ import time as _time_module
 import os
 
 from app.limiter import limiter
-from app.rbac import optional_auther, require_admin, require_viewer
+from app.rbac import optional_auth, require_admin, require_viewer
 
 from app.models import (
     Metric, Alert, SimulationResult, InfrastructureStatus, PredictiveParams,
@@ -127,15 +127,23 @@ def get_alerts(limit: int = 5):
     ]
 
 
-@router.get("/infrastructure/{system}", response_model=InfrastructureStatus)
+@router.get("/infrastructure/{system}")
 def get_infrastructure(system: str):
     if system not in _METRIC_LABELS:
-        raise HTTPException(404, f"Infrastructure type '{system}' not found")
+        valid = list(_METRIC_LABELS.keys())
+        raise HTTPException(
+            status_code=404,
+            detail={"error": f"Infrastructure type '{system}' not found", "valid_systems": valid}
+        )
     status = generate_infrastructure_status(infra_type=system)
     return InfrastructureStatus(**status)
 
 
-# ── v1 aliases (frontend backward-compatibility for Core proxy fallback) ──
+@router.get("/infrastructure")
+def get_all_infrastructure():
+    """Return a list of all supported infrastructure system names."""
+    return list(_METRIC_LABELS.keys())
+
 
 @router.get("/v1/dashboard/metrics", response_model=List[Metric])
 def get_metrics_v1(system: str = "power"):
@@ -149,7 +157,7 @@ def get_alerts_v1(limit: int = 5):
     return get_alerts(limit)
 
 
-@router.get("/v1/infrastructure/{system}", response_model=InfrastructureStatus)
+@router.get("/v1/infrastructure/{system}")
 def get_infrastructure_v1(system: str):
     """v1 alias for GET /api/infrastructure/{system}."""
     return get_infrastructure(system)
@@ -169,9 +177,19 @@ def get_simulation_status():
     }
 
 
+from pydantic import BaseModel
+
+class RunSimulationBody(BaseModel):
+    network: str = "power"
+    stress_factor: str = "Population Increase (+15%)"
+
 @router.post("/simulations/run", response_model=SimulationResult)
 @limiter.limit("10/minute")
-def run_simulation(request: Request, network: str = "power", stress_factor: str = "Population Increase (+15%)"):
+def run_simulation(request: Request, body: RunSimulationBody):
+    network = body.network
+    stress_factor = body.stress_factor
+    if network not in _METRIC_LABELS:
+        raise HTTPException(400, f"Invalid network '{network}'")
     status = generate_infrastructure_status(infra_type=network)
     seed = hash(f"{network}:{stress_factor}:{_time_module.time()}") % 4294967295
     rng = random.Random(seed)
@@ -797,13 +815,6 @@ def monitor_classification_examples(
 def monitor_types():
     """List all registered infrastructure types with their configs."""
     thresholds = {
-        "power": {"warning": 0.6, "critical": 0.8, "breach": 0.95},
-        "water": {"warning": 0.55, "critical": 0.75, "breach": 0.9},
-        "roads": {"warning": 0.5, "critical": 0.7, "breach": 0.85},
-        "solid_waste": {"warning": 0.65, "critical": 0.8, "breach": 0.95},
-        "sidewalks": {"warning": 0.5, "critical": 0.7, "breach": 0.85},
-        "lrt": {"warning": 0.4, "critical": 0.65, "breach": 0.8},
-        "sgr": {"warning": 0.35, "critical": 0.6, "breach": 0.75},
         "airports": {"warning": 0.45, "critical": 0.7, "breach": 0.85},
     }
     return {

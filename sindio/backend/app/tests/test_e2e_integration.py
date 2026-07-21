@@ -107,7 +107,7 @@ async def test_e2e_rate_limiting_respected(mock_client):
     # Hit simulation endpoint 15 times rapidly
     responses = []
     for _ in range(15):
-        resp = await mock_client.post("/api/simulations/run?network=power")
+        resp = await mock_client.post("/api/simulations/run", json={"network": "power", "stress_factor": "Test"})
         responses.append(resp.status_code)
 
     # Most should succeed, but if rate limited some may be 429

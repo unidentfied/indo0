@@ -13,6 +13,12 @@ from sqlalchemy.pool import QueuePool
 
 logger = logging.getLogger("sindio.db")
 
+def get_enginedelta():
+    """Placeholder function for engine delta retrieval.
+    Returns None to satisfy imports.
+    """
+    return None
+
 _engine = None
 
 

@@ -19,13 +19,10 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from .registry import InfraConfig
-
-if TYPE_CHECKING:
-    from .monitor import AssetState
 
 logger = logging.getLogger("sindio.reports")
 
@@ -46,41 +43,39 @@ class ReportIntegrator:
         self._cache_time: Optional[datetime] = None
 
     def check_alignment(
-        self, assets: List[AssetState], now: datetime
+        self, assets: List["AssetState"], now: datetime
     ) -> Dict[str, Any]:
         """Check if asset states align with official reports.
 
-        Returns:
-            Dict mapping asset_id -> True (aligned) or False (divergent).
-            Also includes f"{asset_id}_notes" keys with explanation strings.
+        Returns a dict with:
+          - ``aligned_assets``: count of assets that align
+          - ``total_assets``: total number of assets inspected
         """
-        result: Dict[str, Any] = {}
         report_data = self._get_report_data(now)
-
+        total = len(assets)
+        aligned = 0
         if not report_data:
-            # No report data available — assume aligned
-            for a in assets:
-                result[a.asset_id] = True
-            return result
+            # No report data – assume everything aligns
+            aligned = total
+            return {"aligned_assets": aligned, "total_assets": total}
 
         report_metrics = report_data.get("metrics", {})
         report_thresholds = report_data.get("thresholds", {})
         report_date = report_data.get("report_date", "")
 
         for asset in assets:
-            aligned, notes = self._check_single_asset(
+            is_aligned, _ = self._check_single_asset(
                 asset, report_metrics, report_thresholds, report_date
             )
-            result[asset.asset_id] = aligned
-            result[f"{asset.asset_id}_notes"] = notes
-
-        return result
+            if is_aligned:
+                aligned += 1
+        return {"aligned_assets": aligned, "total_assets": total}
 
     def _get_report_data(self, now: datetime) -> Optional[Dict[str, Any]]:
         """Fetch the latest official report data.
 
         Tries:
-          1. PostGIS report_cache table
+          1. PostGIS ``report_cache`` table
           2. Falls back to config defaults
         """
         # Use cache if fresh (< 1 hour for daily, < 1 day for monthly)
@@ -126,6 +121,7 @@ class ReportIntegrator:
         """Query the report_cache table from PostGIS."""
         try:
             from sqlalchemy import create_engine, text
+            import json
 
             engine = create_engine(self.db_url)
             sql = text(
@@ -139,21 +135,17 @@ class ReportIntegrator:
                 """
             )
             with engine.connect() as conn:
-                row = conn.execute(
-                    sql, {"infra_type": self.config.name}
-                ).fetchone()
-
-            if row and row[0]:
-                import json
-                return json.loads(row[0])
+                row = conn.execute(sql, {"infra_type": self.config.name}).fetchone()
+                if row and row[0]:
+                    return json.loads(row[0])
             return None
-
-        except Exception:
+        except Exception as e:
+            logger.debug("Report cache query failed: %s", e)
             return None
 
     def _check_single_asset(
         self,
-        asset: AssetState,
+        asset: "AssetState",
         report_metrics: Dict[str, Any],
         report_thresholds: Dict[str, Any],
         report_date: str,
@@ -182,7 +174,7 @@ class ReportIntegrator:
                     f"Possible data discrepancy. Report date: {report_date}"
                 )
 
-        # Asset stress is within expected range
+        # Asset stress within expected range
         if asset.stress <= report_max:
             return True, f"Within report range (max={report_max:.2f})"
 
@@ -197,12 +189,12 @@ class ReportIntegrator:
         data = self._get_report_data(now)
         if not data:
             return {
-                "source": self.config.report_source,
+                "report_source": self.config.report_source,
                 "available": False,
                 "message": "No official report data available",
             }
         return {
-            "source": data.get("source", self.config.report_source),
+            "report_source": data.get("source", self.config.report_source),
             "report_date": data.get("report_date", ""),
             "frequency": data.get("frequency", self.config.report_frequency),
             "available": True,
