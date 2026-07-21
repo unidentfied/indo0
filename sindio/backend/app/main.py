@@ -11,6 +11,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Response, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import httpx
 
@@ -56,6 +57,13 @@ async def generic_options(full_path: str):
 # Install graceful shutdown handlers
 install_signal_handlers()
 
+# ── Trusted Host Middleware (Host Header Attack Protection) ──
+_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=[h.strip() for h in _ALLOWED_HOSTS if h.strip()],
+)
+
 # Body size limit middleware
 @app.middleware("http")
 async def body_size_limit_middleware(request: Request, call_next):
@@ -69,21 +77,18 @@ async def body_size_limit_middleware(request: Request, call_next):
 
 _JWT_SECRET = os.getenv("JWT_SECRET", "")
 
-_CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
-if not _CORS_ORIGINS:
-    if os.getenv("ENV", "development").lower() == "production":
-        raise RuntimeError("CORS_ORIGINS environment variable is required in production")
-    logger.warning(
-        "CORS_ORIGINS is not set. CORS will default to localhost-only. "
-        "Set CORS_ORIGINS in your Railway/Render dashboard to your frontend URL(s)."
-    )
-    _CORS_ORIGINS = "https://sindio.net"
+_DEFAULT_ORIGINS = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,https://sindio.net"
+_CORS_ORIGINS = os.getenv("CORS_ORIGINS", "") or _DEFAULT_ORIGINS
+if _ENV == "production" and not os.getenv("CORS_ORIGINS"):
+    logger.warning("CORS_ORIGINS is not set explicitly in production. Defaulting to production domain.")
+
+_parsed_origins = [o.strip() for o in _CORS_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if _ENV != "production" else [o.strip() for o in _CORS_ORIGINS.split(",")],
+    allow_origins=_parsed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 
