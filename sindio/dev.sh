@@ -18,7 +18,7 @@ BACKEND_DIR="$SCRIPT_DIR/backend/app"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 VENV_PYTHON="/tmp/sindio-venv/bin/python3"
 VENV_HASH_FILE="/tmp/sindio-venv/.reqhash"
-REQUIRED_PACKAGES="fastapi uvicorn httpx pydantic python-multipart starlette numpy prometheus-client redis psycopg2-binary beautifulsoup4 python-dotenv"
+REQUIRED_PACKAGES="fastapi uvicorn httpx pydantic python-multipart starlette numpy prometheus-client redis psycopg2-binary beautifulsoup4 python-dotenv structlog python-jose slowapi sqlalchemy opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-fastapi email-validator"
 CURRENT_HASH=$(echo "$REQUIRED_PACKAGES" | { command -v sha256sum >/dev/null 2>&1 && sha256sum || shasum -a 256; } | cut -d' ' -f1)
 
 if [ ! -f "$VENV_PYTHON" ] || [ ! -f "$VENV_HASH_FILE" ] || [ "$(cat "$VENV_HASH_FILE")" != "$CURRENT_HASH" ]; then
@@ -40,7 +40,7 @@ fi
 export PYTHONPATH=".:..:${PYTHONPATH:-}"
 export CORE_PORT="${CORE_PORT:-8080}"
 export VITE_API_URL="http://localhost:${CORE_PORT}"
-export SINDIO_SKIP_RASTER="${SINDIO_SKIP_RASTER:-1}"
+export SINDIO_SKIP_RASTER="${SINDIO_SKIP_RASTER:-0}"
 
 cleanup() {
   echo ""
