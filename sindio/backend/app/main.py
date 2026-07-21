@@ -237,23 +237,29 @@ _USE_CORE = os.getenv("SINDIO_USE_CORE", "1") == "1"
 
 @app.middleware("http")
 async def core_proxy_middleware(request: Request, call_next):
-    """Proxy /api/v1/* requests to ML Core when available.
-
-    If Core returns a successful response (< 500), return it directly.
-    Otherwise (5xx or unreachable) fall through to the mock API router
-    so endpoints the core lacks or crashes on still work.
-    """
+    """Proxy API requests to ML Core, dynamically resolving prefixless routes."""
     if not _USE_CORE:
         return await call_next(request)
 
     path = request.url.path
-    if not path.startswith("/api/"):
+    
+    # Match any valid frontend API path prefixes
+    api_prefixes = ("/api/", "/v1/", "/dashboard/", "/infrastructure/", "/monitor/", "/spatial/", "/simulate/")
+    if not any(path.startswith(prefix) for prefix in api_prefixes):
         return await call_next(request)
+
+    # Dynamically resolve backend path compatibility (e.g. /monitor/stress -> /api/v1/monitor/stress)
+    if path.startswith("/monitor/"):
+        core_path = f"/api/v1{path}"
+    elif path.startswith("/api/"):
+        core_path = path
+    else:
+        core_path = f"/api{path}"
 
     try:
         async with httpx.AsyncClient(timeout=8.0) as client:
             method = request.method
-            url = f"{_CORE_URL}{path}"
+            url = f"{_CORE_URL}{core_path}"
             headers = {
                 k: v
                 for k, v in request.headers.items()
@@ -303,9 +309,11 @@ async def _proxy_optional(request: Request, path: str):
         return JSONResponse({"status": "ok", "source": "mock", "core_unreachable": True})
 
 
-# ── Mount all routers ──────────────────────────────────────────
+# ── Mount all routers (with and without /api prefixes for full frontend compatibility) ──
 app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 app.include_router(stream_router, prefix="/api/v1")
+app.include_router(stream_router, prefix="/v1")
 app.include_router(reports_router, dependencies=[Depends(require_viewer)])
 app.include_router(feedback_router, dependencies=[Depends(require_viewer)])
 app.include_router(privacy_router)   # individual endpoints already enforce role checks
