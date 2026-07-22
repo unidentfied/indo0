@@ -237,7 +237,11 @@ class NairobiWaterFetcher(BaseFetcher):
                 logger.error("Water DB insert failed: %s", exc)
 
         status = "success" if not errors else ("partial" if inserted > 0 else "failed")
-        result = FetcherResult(status=status, records=len(records), inserted=inserted, errors=errors, elapsed=elapsed)
+        result = FetcherResult(self.source_name)
+        result.status = status
+        result.records = records
+        result.errors = errors
+        result.finished_at = datetime.now(timezone.utc)
         try:
             self._log_run(result)
         except Exception:

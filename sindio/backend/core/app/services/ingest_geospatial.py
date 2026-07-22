@@ -37,7 +37,7 @@ load_dotenv()
 # Constants
 # ──────────────────────────────────────────────────────────────
 TARGET_CRS = "EPSG:32737"  # UTM zone 37S (Nairobi)
-LOG_DIR = Path("/var/log/sindio")
+LOG_DIR = Path("./logs")
 LOG_PATH = LOG_DIR / "ingestion.log"
 DEFAULT_CACHE_DIR = Path(os.getenv("DATA_RAW_DIR", "data/raw"))
 HASH_STORE = DEFAULT_CACHE_DIR / ".ingestion_hashes.json"
@@ -62,13 +62,7 @@ NAIROBI_WARDS_URL = (
 )
 
 # DB connection string (postgresql://user:pass@host:port/db)
-DB_URL = os.getenv(
-    "DATABASE_URL",
-    f"postgresql://{os.getenv('DB_USER', 'sindio_user')}:"
-    f"{os.getenv('DB_PASSWORD', '')}@"
-    f"{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/"
-    f"{os.getenv('DB_NAME', 'sindio')}",
-)
+DB_URL = os.getenv("DATABASE_URL")
 
 # ──────────────────────────────────────────────────────────────
 # Logging
@@ -243,14 +237,29 @@ def load_gdf(asset_type: str, path: Path, force: bool = False) -> Optional[gpd.G
     }
     default_unit, default_value = capacity_map.get(asset_type, ("unknown", 0.0))
 
-    gdf["capacity_value"] = (
-        pd.to_numeric(gdf.get("capacity_value", gdf.get("capacity", gdf.get("CAPACITY", None))), errors="coerce")
-        .fillna(default_value)
-    )
-    gdf["capacity_unit"] = gdf.get("capacity_unit", gdf.get("UNIT", default_unit)).fillna(default_unit)
+    # Safely handle capacity columns that may be missing
+    cap_series = gdf.get("capacity_value") if "capacity_value" in gdf else gdf.get("capacity") if "capacity" in gdf else gdf.get("CAPACITY")
+    if cap_series is not None:
+        gdf["capacity_value"] = (
+            pd.to_numeric(cap_series, errors="coerce").fillna(default_value)
+        )
+    else:
+        gdf["capacity_value"] = default_value
+
+    # Capacity unit – fallback to default if column missing
+    unit_series = gdf.get("capacity_unit") if "capacity_unit" in gdf else gdf.get("UNIT")
+    if unit_series is not None:
+        gdf["capacity_unit"] = unit_series.fillna(default_unit)
+    else:
+        gdf["capacity_unit"] = default_unit
+
     gdf["year_constructed"] = (
         pd.to_numeric(
-            gdf.get("year_constructed", gdf.get("YR_BLT", gdf.get("YEAR_CONST", None))),
+            gdf["year_constructed"] if "year_constructed" in gdf.columns else (
+                gdf["YR_BLT"] if "YR_BLT" in gdf.columns else (
+                    gdf["YEAR_CONST"] if "YEAR_CONST" in gdf.columns else pd.Series([2005]*len(gdf))
+                )
+            ),
             errors="coerce",
         )
         .fillna(2005)
@@ -264,10 +273,18 @@ def load_gdf(asset_type: str, path: Path, force: bool = False) -> Optional[gpd.G
     gdf["last_maintenance"] = gdf["last_maintenance"].fillna(
         pd.Timestamp.today().normalize() - pd.Timedelta(days=365)
     )
-    gdf["source_name"] = gdf.get(
-        "source_name",
-        gdf.get("SOURCE", gdf.get("FULL_NAME", gdf.get("NAME", None))),
-    ).fillna(f"{asset_type}_segment")
+    # Source name – fallback to asset_type if no column present
+    source_series = (
+        gdf.get("source_name")
+        or gdf.get("SOURCE")
+        or gdf.get("FULL_NAME")
+        or gdf.get("NAME")
+    )
+    if source_series is not None:
+        gdf["source_name"] = source_series.fillna(f"{asset_type}_segment")
+    else:
+        gdf["source_name"] = f"{asset_type}_segment"
+
 
     logger.info("[%s] %d valid rows ready for upsert.", asset_type, len(gdf))
     return gdf
@@ -292,42 +309,90 @@ def _upsert_gdf(gdf: gpd.GeoDataFrame, asset_type: str) -> int:
 
     engine = _get_db_engine()
 
-    rows = []
-    for _, row in gdf.iterrows():
-        rows.append({
-            "asset_type": asset_type,
-            "source_name": str(row.get("source_name", "")),
-            "geometry_wkt": row.geometry.wkt,
-            "capacity_value": row.get("capacity_value"),
-            "capacity_unit": row.get("capacity_unit"),
-            "year_constructed": int(row.get("year_constructed", 2005)),
-            "last_maintenance": (
-                row["last_maintenance"].date()
-                if isinstance(row.get("last_maintenance"), (pd.Timestamp, datetime))
-                else date.today()
-            ),
-        })
+    # Convert geometries to WKT in a vectorized manner
+    gdf["geometry_wkt"] = gdf.geometry.to_wkt()
 
+    # Find rows where WKT string is too long (> 4096 characters)
+    long_mask = gdf["geometry_wkt"].str.len() > 4096
+    if long_mask.any():
+        logger.info("[%s] Simplifying %d geometries with WKT length > 4096", asset_type, long_mask.sum())
+        gdf.loc[long_mask, "geometry"] = gdf.loc[long_mask, "geometry"].simplify(2.0, preserve_topology=True)
+        gdf.loc[long_mask, "geometry_wkt"] = gdf.loc[long_mask, "geometry"].to_wkt()
+
+        # Check again
+        still_long_mask = long_mask & (gdf["geometry_wkt"].str.len() > 4096)
+        if still_long_mask.any():
+            gdf.loc[still_long_mask, "geometry"] = gdf.loc[still_long_mask, "geometry"].simplify(10.0, preserve_topology=True)
+            gdf.loc[still_long_mask, "geometry_wkt"] = gdf.loc[still_long_mask, "geometry"].to_wkt()
+
+            # Final check - drop if still too long
+            final_long_mask = still_long_mask & (gdf["geometry_wkt"].str.len() > 4096)
+            if final_long_mask.any():
+                logger.warning("[%s] Skipping %d rows whose geometry WKT is still too long (> 4096 chars)", asset_type, final_long_mask.sum())
+                gdf = gdf[~final_long_mask].copy()
+
+    # Vectorized datetime format/defaulting
+    gdf["last_maintenance_date"] = pd.to_datetime(gdf["last_maintenance"]).dt.date
+    # Fill NAs for capacity and year_constructed
+    gdf["capacity_value"] = gdf["capacity_value"].fillna(0.0)
+    gdf["capacity_unit"] = gdf["capacity_unit"].fillna("unknown")
+    gdf["year_constructed"] = gdf["year_constructed"].fillna(2005).astype(int)
+
+    # Convert to dict records instantaneously
+    rows = gdf[[
+        "source_name", "geometry_wkt", "capacity_value", "capacity_unit",
+        "year_constructed", "last_maintenance_date"
+    ]].to_dict("records")
+
+    # Rename last_maintenance_date and add asset_type key
+    for r in rows:
+        r["asset_type"] = asset_type
+        r["last_maintenance"] = r.pop("last_maintenance_date")
+        r["source_name"] = str(r["source_name"])
+
+    source_hash = _sha256_of_bytes(
+        json.dumps([r["source_name"] for r in rows]).encode()
+    )
+    params_list = [{**r, "source_hash": source_hash} for r in rows]
+    batch_size = 2000
     count = 0
-    upsert_sql = text("""
-        INSERT INTO infrastructure_assets
-            (asset_type, source_name, geometry, capacity_value, capacity_unit,
-             year_constructed, last_maintenance, source_hash)
-        VALUES
-            (:asset_type, :source_name, ST_GeomFromText(:geometry_wkt, 32737),
-             :capacity_value, :capacity_unit, :year_constructed,
-             :last_maintenance, :source_hash)
-        ON CONFLICT (asset_type, source_name) DO NOTHING
-    """)
 
-    with engine.begin() as conn:
-        source_hash = _sha256_of_bytes(
-            json.dumps([r["source_name"] for r in rows]).encode()
-        )
-        for r in rows:
-            params = {**r, "source_hash": source_hash}
-            result = conn.execute(upsert_sql, params)
-            count += result.rowcount if result.rowcount else 0
+    for idx in range(0, len(params_list), batch_size):
+        batch = params_list[idx : idx + batch_size]
+        
+        # Dynamically build a single parameterized multi-row insert query
+        values_clauses = []
+        params = {}
+        for i, r in enumerate(batch):
+            values_clauses.append(f"""
+                (:asset_type_{i}, :source_name_{i}, :geometry_wkt_{i},
+                 :capacity_value_{i}, :capacity_unit_{i}, :year_constructed_{i},
+                 :last_maintenance_{i}, :source_hash_{i})
+            """)
+            params.update({
+                f"asset_type_{i}": r["asset_type"],
+                f"source_name_{i}": r["source_name"],
+                f"geometry_wkt_{i}": r["geometry_wkt"],
+                f"capacity_value_{i}": r["capacity_value"],
+                f"capacity_unit_{i}": r["capacity_unit"],
+                f"year_constructed_{i}": r["year_constructed"],
+                f"last_maintenance_{i}": r["last_maintenance"],
+                f"source_hash_{i}": r["source_hash"],
+            })
+            
+        upsert_sql = text(f"""
+            INSERT INTO infrastructure_assets
+                (asset_type, source_name, geometry_wkt, capacity_value, capacity_unit,
+                 year_constructed, last_maintenance, source_hash)
+            VALUES {','.join(values_clauses)}
+            ON CONFLICT (asset_type, source_name) DO NOTHING
+        """)
+
+        with engine.begin() as conn:
+            conn.execute(upsert_sql, params)
+        count += len(batch)
+        if idx % 10000 == 0 or idx == len(params_list) - len(batch):
+            logger.info("[%s] Ingested %d / %d rows...", asset_type, count, len(rows))
 
     logger.info("[%s] Upserted %d / %d rows.", asset_type, count, len(rows))
     return count

@@ -264,7 +264,7 @@ class KPLCFetcher(BaseFetcher):
                 "lon": float(item.get("lon", 0.0)),
                 "value": float(item.get("affected_customers", 0)),
                 "capacity": 1.0,
-                "unit": "customers_affected",
+                "unit": "customers",
                 "timestamp": datetime.now(timezone.utc),
                 "source": "kplc_outage_feed",
                 "is_mock": False,
@@ -289,7 +289,7 @@ class KPLCFetcher(BaseFetcher):
                 "lon": sub["lon"] + random.uniform(-0.01, 0.01),
                 "value": random.randint(50, 500),
                 "capacity": 500.0,
-                "unit": "customers_affected",
+                "unit": "customers",
                 "timestamp": datetime.now(timezone.utc),
                 "source": "kplc_outage_synthetic",
                 "is_mock": True,
@@ -345,7 +345,11 @@ class KPLCFetcher(BaseFetcher):
                 logger.error("KPLC DB insert failed: %s", exc)
 
         status = "success" if not errors else ("partial" if inserted > 0 else "failed")
-        result = FetcherResult(status=status, records=len(records), inserted=inserted, errors=errors, elapsed=elapsed)
+        result = FetcherResult(self.source_name)
+        result.status = status
+        result.records = records
+        result.errors = errors
+        result.finished_at = datetime.now(timezone.utc)
         try:
             self._log_run(result)
         except Exception:

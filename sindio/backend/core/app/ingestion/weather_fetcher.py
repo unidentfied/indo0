@@ -74,7 +74,10 @@ class WeatherFetcher(BaseFetcher):
             "forecast_days": 1,
         }
         try:
-            data = self._http_get(self._meteo_url, params=params, timeout=15.0)
+            import urllib.parse
+            query_str = urllib.parse.urlencode(params)
+            resp = self._http_get(f"{self._meteo_url}?{query_str}", timeout=15.0)
+            data = resp.json()
             current = data.get("current", {})
             if not current:
                 return None
@@ -94,7 +97,7 @@ class WeatherFetcher(BaseFetcher):
                 "lon": station["lon"],
                 "value": thermal_stress,
                 "capacity": 50.0,
-                "unit": "thermal_stress_index",
+                "unit": "stress_idx",
                 "timestamp": datetime.now(timezone.utc),
                 "source": "open_meteo",
                 "is_mock": False,
@@ -125,7 +128,10 @@ class WeatherFetcher(BaseFetcher):
             "units": "metric",
         }
         try:
-            data = self._http_get(_OPENWEATHER_URL, params=params, timeout=10.0)
+            import urllib.parse
+            query_str = urllib.parse.urlencode(params)
+            resp = self._http_get(f"{_OPENWEATHER_URL}?{query_str}", timeout=10.0)
+            data = resp.json()
             main = data.get("main", {})
             temp = main.get("temp", 0)
             humidity = main.get("humidity", 0)
@@ -139,7 +145,7 @@ class WeatherFetcher(BaseFetcher):
                 "lon": station["lon"],
                 "value": thermal_stress,
                 "capacity": 50.0,
-                "unit": "thermal_stress_index",
+                "unit": "stress_idx",
                 "timestamp": datetime.now(timezone.utc),
                 "source": "openweathermap",
                 "is_mock": False,
@@ -203,7 +209,7 @@ class WeatherFetcher(BaseFetcher):
             "lon": station["lon"],
             "value": self._compute_thermal_stress(adjusted_temp, humidity, uv),
             "capacity": 50.0,
-            "unit": "thermal_stress_index",
+            "unit": "stress_idx",
             "timestamp": datetime.now(timezone.utc),
             "source": "seasonal_fallback",
             "is_mock": True,
@@ -232,7 +238,11 @@ class WeatherFetcher(BaseFetcher):
                 logger.error("Weather DB insert failed: %s", exc)
 
         status = "success" if not errors else ("partial" if inserted > 0 else "failed")
-        result = FetcherResult(status=status, records=len(records), inserted=inserted, errors=errors, elapsed=elapsed)
+        result = FetcherResult(self.source_name)
+        result.status = status
+        result.records = records
+        result.errors = errors
+        result.finished_at = datetime.now(timezone.utc)
         try:
             self._log_run(result)
         except Exception:

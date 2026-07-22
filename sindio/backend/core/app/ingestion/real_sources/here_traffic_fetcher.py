@@ -22,8 +22,8 @@ from ..base import BaseFetcher, FetcherResult
 
 logger = logging.getLogger("sindio.ingestion.here_traffic")
 
-_HERE_FLOW_URL = "https://traffic.ls.hereapi.com/traffic/6.2/flow.json"
-_HERE_INCIDENTS_URL = "https://traffic.ls.hereapi.com/traffic/6.2/incidents.json"
+_HERE_FLOW_URL = "https://data.traffic.hereapi.com/v7/flow"
+_HERE_INCIDENTS_URL = "https://data.traffic.hereapi.com/v7/incidents"
 
 # Nairobi major road segments (TMC codes or lat/lon bounding boxes)
 # Using lat/lon boxes for major arterials
@@ -85,12 +85,23 @@ class HERE_TrafficFetcher(BaseFetcher):
         return records if records else self._fallback_data()
 
     def _fetch_flow(self, segment: dict) -> list[dict]:
+        # HERE v7 bbox requires: west, south, east, north
+        parts = segment["bbox"].split(",")
+        lons = [float(parts[0]), float(parts[2])]
+        lats = [float(parts[1]), float(parts[3])]
+        west, south = min(lons), min(lats)
+        east, north = max(lons), max(lats)
+        bbox_v7 = f"{west},{south},{east},{north}"
+
         params = {
+            "in": f"bbox:{bbox_v7}",
+            "locationReferencing": "shape",
             "apiKey": self._api_key,
-            "bbox": segment["bbox"],
-            "responseattributes": "sh,fc",
         }
-        resp = self._http_get(_HERE_FLOW_URL, params=params, timeout=15.0)
+        import urllib.parse
+        query_str = urllib.parse.urlencode(params)
+        url = f"{_HERE_FLOW_URL}?{query_str}"
+        resp = self._http_get(url, timeout=15.0)
         if resp is None:
             return []
 
@@ -100,74 +111,71 @@ class HERE_TrafficFetcher(BaseFetcher):
             return []
 
         records: list[dict] = []
-        for rsi in data.get("RWS", []):
-            for rw in rsi.get("RW", []):
-                for fis in rw.get("FIS", []):
-                    for fi in fis.get("FI", []):
-                        # Extract current and free-flow speeds
-                        cf = fi.get("CF", [])
-                        current_speed = 0
-                        free_flow = 0
-                        jam_factor = 0
-                        confidence = 0
-                        for c in cf:
-                            if c.get("TY") == "FF":
-                                free_flow = c.get("SP", 0)
-                            elif c.get("TY") == "SU":
-                                current_speed = c.get("SP", 0)
-                                jam_factor = c.get("JF", 0)
-                                confidence = c.get("CN", 0)
+        for result in data.get("results", []):
+            location = result.get("location", {})
+            current_flow = result.get("currentFlow", {})
 
-                        # Parse shape points for centroid
-                        shp = fi.get("SHP", [])
-                        if shp:
-                            coords = shp[0].get("value", [])
-                            if coords:
-                                lat_lon = coords[0].split(",")
-                                lat = float(lat_lon[0])
-                                lon = float(lat_lon[1])
-                            else:
-                                lat, lon = 0, 0
-                        else:
-                            # Use bbox center
-                            bbox_parts = segment["bbox"].split(",")
-                            lon = (float(bbox_parts[0]) + float(bbox_parts[2])) / 2
-                            lat = (float(bbox_parts[1]) + float(bbox_parts[3])) / 2
+            street_name = location.get("description", segment["name"])
+            current_speed = current_flow.get("speed", 0.0)
+            free_flow = current_flow.get("freeFlow", 0.0)
+            jam_factor = current_flow.get("jamFactor", 0.0)
 
-                        # Compute congestion as inverse of speed ratio
-                        congestion = 0.0
-                        if free_flow > 0:
-                            congestion = max(0, min(1, 1.0 - (current_speed / free_flow)))
+            # Get centroid from shape
+            shape = location.get("shape", [])
+            if shape:
+                lats_list = [pt.get("lat") for pt in shape if pt.get("lat") is not None]
+                lons_list = [pt.get("lng", pt.get("lon")) for pt in shape if pt.get("lng") is not None or pt.get("lon") is not None]
+                if lats_list and lons_list:
+                    lat = sum(lats_list) / len(lats_list)
+                    lon = sum(lons_list) / len(lons_list)
+                else:
+                    lat, lon = (south + north) / 2, (west + east) / 2
+            else:
+                lat, lon = (south + north) / 2, (west + east) / 2
 
-                        records.append({
-                            "asset_id": f"HERE-{segment['id']}",
-                            "infrastructure_type": "roads",
-                            "ward": segment["name"],
-                            "lat": lat,
-                            "lon": lon,
-                            "value": round(congestion * 100, 1),
-                            "capacity": free_flow if free_flow else 80,
-                            "unit": "congestion_pct",
-                            "timestamp": datetime.now(timezone.utc),
-                            "source": "here_traffic_flow",
-                            "is_mock": False,
-                            "raw_payload": {
-                                "road_name": segment["name"],
-                                "current_speed_kmh": current_speed,
-                                "free_flow_speed_kmh": free_flow,
-                                "jam_factor": jam_factor,
-                                "confidence": confidence,
-                                "road_type": segment["type"],
-                            },
-                        })
+            congestion = 0.0
+            if free_flow > 0:
+                congestion = max(0, min(1, 1.0 - (current_speed / free_flow)))
+
+            records.append({
+                "asset_id": f"HERE-{segment['id']}",
+                "infrastructure_type": "roads",
+                "ward": segment["name"],
+                "lat": lat,
+                "lon": lon,
+                "value": round(congestion * 100, 1),
+                "capacity": free_flow if free_flow else 80.0,
+                "unit": "congestion_pct",
+                "timestamp": datetime.now(timezone.utc),
+                "source": "here_traffic_flow",
+                "is_mock": False,
+                "raw_payload": {
+                    "road_name": street_name,
+                    "current_speed_kmh": current_speed,
+                    "free_flow_speed_kmh": free_flow,
+                    "jam_factor": jam_factor,
+                    "road_type": segment["type"],
+                },
+            })
         return records
 
     def _fetch_incidents(self, segment: dict) -> list[dict]:
+        parts = segment["bbox"].split(",")
+        lons = [float(parts[0]), float(parts[2])]
+        lats = [float(parts[1]), float(parts[3])]
+        west, south = min(lons), min(lats)
+        east, north = max(lons), max(lats)
+        bbox_v7 = f"{west},{south},{east},{north}"
+
         params = {
+            "in": f"bbox:{bbox_v7}",
+            "locationReferencing": "shape",
             "apiKey": self._api_key,
-            "bbox": segment["bbox"],
         }
-        resp = self._http_get(_HERE_INCIDENTS_URL, params=params, timeout=15.0)
+        import urllib.parse
+        query_str = urllib.parse.urlencode(params)
+        url = f"{_HERE_INCIDENTS_URL}?{query_str}"
+        resp = self._http_get(url, timeout=15.0)
         if resp is None:
             return []
 
@@ -177,28 +185,44 @@ class HERE_TrafficFetcher(BaseFetcher):
             return []
 
         records: list[dict] = []
-        for inc in data.get("TIM", {}).get("TI", []):
-            lat = inc.get("LT", 0)
-            lon = inc.get("LN", 0)
-            desc = inc.get("DE", "")
-            severity = inc.get("SU", 0)  # severity 0-4
+        for inc in data.get("results", []):
+            location = inc.get("location", {})
+            details = inc.get("incidentDetails", {})
+
+            desc = details.get("description", {}).get("value", "") or details.get("description", "") or "Traffic Incident"
+            criticality = details.get("criticality", "minor")
+            severity_map = {"minor": 1, "major": 2, "critical": 3, "block": 4}
+            severity = severity_map.get(criticality.lower(), 1)
+
+            shape = location.get("shape", [])
+            if shape:
+                lats_list = [pt.get("lat") for pt in shape if pt.get("lat") is not None]
+                lons_list = [pt.get("lng", pt.get("lon")) for pt in shape if pt.get("lng") is not None or pt.get("lon") is not None]
+                if lats_list and lons_list:
+                    lat = sum(lats_list) / len(lats_list)
+                    lon = sum(lons_list) / len(lons_list)
+                else:
+                    lat, lon = (south + north) / 2, (west + east) / 2
+            else:
+                lat, lon = (south + north) / 2, (west + east) / 2
 
             records.append({
-                "asset_id": f"HERE-INC-{segment['id']}-{hash(desc) % 10000:04d}",
+                "asset_id": f"HERE-INC-{segment['id']}-{hash(str(desc)) % 10000:04d}",
                 "infrastructure_type": "roads",
                 "ward": segment["name"],
                 "lat": lat,
                 "lon": lon,
                 "value": severity,
-                "capacity": 4,
+                "capacity": 4.0,
                 "unit": "incident_severity",
                 "timestamp": datetime.now(timezone.utc),
                 "source": "here_traffic_incidents",
                 "is_mock": False,
                 "raw_payload": {
                     "road_name": segment["name"],
-                    "description": desc,
+                    "description": str(desc),
                     "severity": severity,
+                    "criticality": criticality,
                 },
             })
         return records

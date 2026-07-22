@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import random
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -155,7 +156,7 @@ class NairobiWasteFetcher(BaseFetcher):
             "lon": landfill["lon"],
             "value": round(capacity_stress, 1),
             "capacity": 100.0,
-            "unit": "capacity_stress_pct",
+            "unit": "stress_pct",
             "timestamp": datetime.now(timezone.utc),
             "source": "nairobi_landfill_model",
             "is_mock": True,

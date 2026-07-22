@@ -97,7 +97,9 @@ class NASA_POWER_Fetcher(BaseFetcher):
             "end": end.strftime("%Y%m%d"),
             "format": "JSON",
         }
-        url = _NASA_POWER_URL
+        import urllib.parse
+        query_str = urllib.parse.urlencode(params)
+        url = f"{_NASA_POWER_URL}?{query_str}"
         try:
             resp = self._http_get(url, timeout=30.0)
             if resp is None:
@@ -191,7 +193,7 @@ class NASA_POWER_Fetcher(BaseFetcher):
             }
             temp, rain, humid, irradiance = seasonal.get(month, (23.0, 2.0, 65.0, 200.0))
 
-            demand_index = max(0, min(100, (temp - 18) * 3.5 + (humidity - 50) * 0.5))
+            demand_index = max(0, min(100, (temp - 18) * 3.5 + (humid - 50) * 0.5))
 
             records.append({
                 "asset_id": f"NASA-{point['name']}-{current.strftime('%Y%m%d')}",
