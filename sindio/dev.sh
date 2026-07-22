@@ -38,8 +38,8 @@ if [ ! -f "$VENV_PYTHON" ] || [ ! -f "$VENV_HASH_FILE" ] || [ "$(cat "$VENV_HASH
 fi
 
 export PYTHONPATH=".:..:${PYTHONPATH:-}"
-export CORE_PORT="${CORE_PORT:-8080}"
-export VITE_API_URL="http://localhost:${CORE_PORT}"
+export API_PORT="${API_PORT:-8080}"
+export VITE_API_URL="http://localhost:${API_PORT}"
 export SINDIO_SKIP_RASTER="${SINDIO_SKIP_RASTER:-0}"
 
 cleanup() {
@@ -60,13 +60,13 @@ start_core() {
 
 start_backend() {
   echo "──────────────────────────────────────"
-  echo " Sindio Backend  → http://localhost:${CORE_PORT}"
-  echo " API docs        → http://localhost:${CORE_PORT}/docs"
+  echo " Sindio Backend  → http://localhost:${API_PORT}"
+  echo " API docs        → http://localhost:${API_PORT}/docs"
   echo "──────────────────────────────────────"
   cd "$BACKEND_DIR" || { echo "ERROR: Cannot cd to $BACKEND_DIR"; exit 1; }
   export CORE_URL="http://localhost:8081"
   export SINDIO_USE_CORE="1"
-  "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "${CORE_PORT}" --reload
+  "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "${API_PORT}" --reload
 }
 
 start_frontend() {
