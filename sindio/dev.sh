@@ -18,7 +18,7 @@ BACKEND_DIR="$SCRIPT_DIR/backend/app"
 FRONTEND_DIR="$SCRIPT_DIR/frontend"
 VENV_PYTHON="/tmp/sindio-venv/bin/python3"
 VENV_HASH_FILE="/tmp/sindio-venv/.reqhash"
-REQUIRED_PACKAGES="fastapi uvicorn httpx pydantic python-multipart starlette numpy prometheus-client redis psycopg2-binary beautifulsoup4 python-dotenv structlog python-jose slowapi sqlalchemy opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-fastapi email-validator"
+REQUIRED_PACKAGES="fastapi uvicorn httpx pydantic python-multipart starlette numpy prometheus-client redis psycopg2-binary beautifulsoup4 python-dotenv structlog python-jose slowapi sqlalchemy opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-fastapi email-validator pydantic-settings apscheduler pandas scipy scikit-learn geopandas shapely pyarrow elasticsearch qdrant-client celery"
 CURRENT_HASH=$(echo "$REQUIRED_PACKAGES" | { command -v sha256sum >/dev/null 2>&1 && sha256sum || shasum -a 256; } | cut -d' ' -f1)
 
 if [ ! -f "$VENV_PYTHON" ] || [ ! -f "$VENV_HASH_FILE" ] || [ "$(cat "$VENV_HASH_FILE")" != "$CURRENT_HASH" ]; then
