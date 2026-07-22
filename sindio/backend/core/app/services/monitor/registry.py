@@ -139,15 +139,15 @@ POWER = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="SCADA power meters",
-            query="SELECT bus_id, voltage_pu, load_mw FROM power_scada WHERE updated_at > NOW() - INTERVAL '5 minutes'",
-            fallback_query="SELECT bus_id, voltage_pu, load_mw FROM power_scada WHERE updated_at > NOW() - INTERVAL '1 hour'",
-            data_type="telemetry", freshness_threshold_sec=300,
+            query="SELECT bus_id, voltage_pu, load_mw FROM power_scada WHERE updated_at > NOW() - INTERVAL '6 hours'",
+            fallback_query="SELECT bus_id, voltage_pu, load_mw FROM power_scada WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=21600,
         ),
         InfraDataSource(
             source_name="Kenya Power API",
             query=os.environ.get("KENYA_POWER_API_URL", ""),
             fallback_query=os.environ.get("KENYA_POWER_FALLBACK_URL", ""),
-            data_type="telemetry", freshness_threshold_sec=900,
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Kenya Power Annual Report",
@@ -182,15 +182,15 @@ WATER = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="Water SCADA sensors",
-            query="SELECT node_id, pressure_m, flow_lps FROM water_scada WHERE updated_at > NOW() - INTERVAL '5 minutes'",
-            fallback_query="SELECT node_id, pressure_m, flow_lps FROM water_scada WHERE updated_at > NOW() - INTERVAL '1 hour'",
-            data_type="telemetry", freshness_threshold_sec=300,
+            query="SELECT node_id, pressure_m, flow_lps FROM water_scada WHERE updated_at > NOW() - INTERVAL '6 hours'",
+            fallback_query="SELECT node_id, pressure_m, flow_lps FROM water_scada WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=21600,
         ),
         InfraDataSource(
             source_name="Nairobi Water API",
             query=os.environ.get("NAIROBI_WATER_API_URL", ""),
             fallback_query=os.environ.get("NAIROBI_WATER_FALLBACK_URL", ""),
-            data_type="telemetry", freshness_threshold_sec=900,
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Nairobi Water & Sewerage Company Report",
@@ -225,15 +225,15 @@ ROADS = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="Traffic sensors (H3 aggregated)",
-            query="SELECT h3_index, vehicle_count FROM mobility_aggregates WHERE time > NOW() - INTERVAL '5 minutes'",
-            fallback_query="SELECT h3_index, vehicle_count FROM mobility_aggregates WHERE time > NOW() - INTERVAL '1 hour'",
-            data_type="telemetry", freshness_threshold_sec=300,
+            query="SELECT h3_index, vehicle_count FROM mobility_aggregates WHERE time > NOW() - INTERVAL '6 hours'",
+            fallback_query="SELECT h3_index, vehicle_count FROM mobility_aggregates WHERE time > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=21600,
         ),
         InfraDataSource(
             source_name="GPS Probe / Traffic API",
             query=os.environ.get("TRAFFIC_PROBE_API_URL", ""),
             fallback_query=os.environ.get("TRAFFIC_PROBE_FALLBACK_URL", ""),
-            data_type="telemetry", freshness_threshold_sec=120,
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Kenya National Highway Authority Report",
@@ -267,8 +267,9 @@ SOLID_WASTE = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="Waste collection IoT sensors",
-            query="SELECT station_id, fill_level FROM waste_sensors WHERE updated_at > NOW() - INTERVAL '15 minutes'",
-            data_type="telemetry", freshness_threshold_sec=900,
+            query="SELECT station_id, fill_level FROM waste_sensors WHERE updated_at > NOW() - INTERVAL '24 hours'",
+            fallback_query="SELECT station_id, fill_level FROM waste_sensors WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Nairobi County Waste Management Report",
@@ -299,8 +300,9 @@ SIDEWALKS = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="Pedestrian counters",
-            query="SELECT path_id, pedestrian_count FROM sidewalk_counters WHERE updated_at > NOW() - INTERVAL '30 minutes'",
-            data_type="telemetry", freshness_threshold_sec=1800,
+            query="SELECT path_id, pedestrian_count FROM sidewalk_counters WHERE updated_at > NOW() - INTERVAL '24 hours'",
+            fallback_query="SELECT path_id, pedestrian_count FROM sidewalk_counters WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Nairobi Urban Design Report",
@@ -341,8 +343,9 @@ LRT = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="LRT signaling system",
-            query="SELECT segment_id, train_count, headway_sec FROM lrt_telemetry WHERE updated_at > NOW() - INTERVAL '2 minutes'",
-            data_type="telemetry", freshness_threshold_sec=120,
+            query="SELECT segment_id, train_count, headway_sec FROM lrt_telemetry WHERE updated_at > NOW() - INTERVAL '12 hours'",
+            fallback_query="SELECT segment_id, train_count, headway_sec FROM lrt_telemetry WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=43200,
         ),
     ],
     report_source="Nairobi Rail Authority Report",
@@ -378,8 +381,9 @@ SGR = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="SGR track sensors",
-            query="SELECT segment_id, stress_level, speed_limit FROM sgr_telemetry WHERE updated_at > NOW() - INTERVAL '5 minutes'",
-            data_type="telemetry", freshness_threshold_sec=300,
+            query="SELECT segment_id, stress_level, speed_limit FROM sgr_telemetry WHERE updated_at > NOW() - INTERVAL '12 hours'",
+            fallback_query="SELECT segment_id, stress_level, speed_limit FROM sgr_telemetry WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=43200,
         ),
     ],
     report_source="Kenya Railways Corporation Report",
@@ -410,8 +414,9 @@ AIRPORTS = _register(InfraConfig(
     data_sources=[
         InfraDataSource(
             source_name="Airport operations system",
-            query="SELECT runway_id, flight_rate, surface_condition FROM airport_telemetry WHERE updated_at > NOW() - INTERVAL '10 minutes'",
-            data_type="telemetry", freshness_threshold_sec=600,
+            query="SELECT runway_id, flight_rate, surface_condition FROM airport_telemetry WHERE updated_at > NOW() - INTERVAL '24 hours'",
+            fallback_query="SELECT runway_id, flight_rate, surface_condition FROM airport_telemetry WHERE updated_at > NOW() - INTERVAL '30 days'",
+            data_type="telemetry", freshness_threshold_sec=86400,
         ),
     ],
     report_source="Kenya Airports Authority Report",
