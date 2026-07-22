@@ -130,26 +130,27 @@ export default function Navbar() {
             <Link
               key={t.system}
               to={`/dashboard?system=${t.system}`}
+              onClick={() => setMobileOpen(false)}
               className="block text-sindio-muted dark:text-slate-400 hover:text-sindio-text dark:hover:text-slate-200"
             >
               {t.label}
             </Link>
           ))}
           <button
-            onClick={() => setDark(!dark)}
+            onClick={() => { setDark(!dark); setMobileOpen(false); }}
             className="flex items-center gap-2 text-sm text-sindio-muted dark:text-slate-400 hover:text-sindio-text dark:hover:text-slate-200"
           >
             {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             {dark ? 'Light Mode' : 'Dark Mode'}
           </button>
           <button
-            onClick={toggleFullscreen}
+            onClick={() => { toggleFullscreen(); setMobileOpen(false); }}
             className="flex items-center gap-2 text-sm text-sindio-muted dark:text-slate-400 hover:text-sindio-text dark:hover:text-slate-200"
           >
             {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
-          <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard}>
+          <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard} onClick={() => setMobileOpen(false)}>
             Launch Dashboard
           </Link>
         </div>

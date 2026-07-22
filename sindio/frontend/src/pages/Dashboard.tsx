@@ -111,7 +111,7 @@ export default function Dashboard() {
           </Suspense>
         </main>
       ) : (
-        <main className="flex-1 p-6 sm:p-8 lg:p-12">
+        <main className="flex-1 p-4 sm:p-8 lg:p-12">
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold mb-2">{title}</h1>
@@ -119,7 +119,7 @@ export default function Dashboard() {
                 {infraDescriptions[activeSystem] || 'Real-time predictive simulation of load distribution and infrastructure resilience.'}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="panel px-4 py-2">
                 <div className="text-[10px] uppercase text-sindio-muted">Stability</div>
                 <div className="text-lg font-semibold text-emerald-400">
@@ -142,7 +142,7 @@ export default function Dashboard() {
           </div>
 
           {/* ── Mini summary cards ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="panel p-4 flex items-center gap-3">
               <div className="w-10 h-10 rounded bg-sindio-accent/10 flex items-center justify-center text-sindio-accent">
                 <Server className="w-5 h-5" />
@@ -192,7 +192,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {metricsReady
               ? metrics.map(m => <MetricCard key={m.label} metric={m} />)
               : Array.from({ length: 4 }).map((_, i) => (

@@ -46,7 +46,7 @@ export default function LandingPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-sindio-accent animate-pulse" />
               Simulation Active &mdash; Nairobi_Run_01
             </div>
-            <h1 className="text-5xl sm:text-6xl font-bold tracking-tight mb-6 leading-tight">
+            <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
               Infrastructure Resilience<br />
               &amp; the <span className="text-sindio-accent">Metabolic Flow of Nairobi</span>
             </h1>

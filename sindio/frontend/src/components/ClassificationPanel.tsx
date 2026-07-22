@@ -193,7 +193,7 @@ export default function ClassificationPanel() {
               {/* Expanded detail */}
               {isExpanded && (
                 <div className="px-4 pb-4 bg-sindio-panel/30">
-                  <div className="grid grid-cols-3 gap-3 mt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
                     {/* Classification breakdown */}
                     <div className="space-y-2">
                       <div className="text-[10px] uppercase text-sindio-muted font-medium">Classification Breakdown</div>
