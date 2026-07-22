@@ -50,12 +50,22 @@ cleanup() {
 }
 trap cleanup INT TERM
 
+start_core() {
+  echo "──────────────────────────────────────"
+  echo " Sindio ML Core  → http://localhost:8081"
+  echo "──────────────────────────────────────"
+  cd "$SCRIPT_DIR/backend/core" || { echo "ERROR: Cannot cd to core"; exit 1; }
+  "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port 8081 --reload &
+}
+
 start_backend() {
   echo "──────────────────────────────────────"
   echo " Sindio Backend  → http://localhost:${CORE_PORT}"
   echo " API docs        → http://localhost:${CORE_PORT}/docs"
   echo "──────────────────────────────────────"
   cd "$BACKEND_DIR" || { echo "ERROR: Cannot cd to $BACKEND_DIR"; exit 1; }
+  export CORE_URL="http://localhost:8081"
+  export SINDIO_USE_CORE="1"
   "$VENV_PYTHON" -m uvicorn app.main:app --host 0.0.0.0 --port "${CORE_PORT}" --reload
 }
 
@@ -69,12 +79,16 @@ start_frontend() {
 
 case "${1:-all}" in
   backend)
+    start_core
+    sleep 2
     start_backend
     ;;
   frontend)
     start_frontend
     ;;
   all)
+    start_core
+    sleep 2
     start_backend &
     BACKEND_PID=$!
     sleep 2
