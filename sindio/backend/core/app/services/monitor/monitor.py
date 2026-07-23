@@ -97,6 +97,10 @@ class MonitorResult:
         return self.run_timestamp
 
 
+# Global cache for monitor results to prevent slow/redundant database queries on every request
+_GLOBAL_MONITOR_CACHE: Dict[str, Tuple[datetime, MonitorResult]] = {}
+
+
 class InfrastructureMonitor:
     """Unified monitor for one infrastructure type.
 
@@ -123,6 +127,7 @@ class InfrastructureMonitor:
         ward: Optional[str] = None,
         force_mock: bool = False,
         include_healthy: bool = True,
+        bypass_cache: bool = False,
     ) -> MonitorResult:
         """Execute full monitoring pipeline.
 
@@ -130,10 +135,21 @@ class InfrastructureMonitor:
             ward: limit to one ward (None = all wards)
             force_mock: use fallback data even if real sources available
             include_healthy: include non-stressed assets in results
+            bypass_cache: force refresh of cached results
 
         Returns:
             MonitorResult with all asset states and summary stats.
         """
+        cache_key = f"{self.config.name}:{ward}:{include_healthy}"
+        global _GLOBAL_MONITOR_CACHE
+        if not bypass_cache and not force_mock:
+            if cache_key in _GLOBAL_MONITOR_CACHE:
+                cached_time, cached_result = _GLOBAL_MONITOR_CACHE[cache_key]
+                # Cache is valid for 5 minutes
+                if datetime.now(timezone.utc) - cached_time < timedelta(minutes=5):
+                    logger.info("[%s] Returning cached monitor result", self.config.display_name)
+                    return cached_result
+
         t_start = time.time()
         now = datetime.now(timezone.utc)
         ts = now.isoformat()
@@ -220,6 +236,10 @@ class InfrastructureMonitor:
             self.config.display_name, elapsed,
             len(assets), len(stressed), len(critical),
         )
+
+        # Store in global cache
+        if not force_mock:
+            _GLOBAL_MONITOR_CACHE[cache_key] = (datetime.now(timezone.utc), result)
 
         self._last_result = result
         return result
