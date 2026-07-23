@@ -6,6 +6,27 @@ from app.services.monitor import InfrastructureMonitor, get_all_configs, get_con
 
 router = APIRouter()
 
+def _format_location(asset) -> str:
+    """Return a location string for an asset.
+    - Prefer asset.ward if present.
+    - Else use coordinates if lat/lon are provided.
+    - Else fallback to a shortened asset_id or "unknown" if missing.
+    """
+    # Ward name takes precedence
+    if getattr(asset, 'ward', None):
+        return asset.ward
+    # Use latitude/longitude if available and non-zero
+    lat = getattr(asset, 'lat', None)
+    lon = getattr(asset, 'lon', None)
+    if lat is not None and lon is not None:
+        return f"{lat:.4f}, {lon:.4f}"
+    # Fallback to asset_id snippet if present
+    asset_id = getattr(asset, 'asset_id', None)
+    if asset_id:
+        return asset_id[:8]
+    # Ultimate fallback
+    return "unknown"
+
 
 def _metric(label, value, delta_str, status="good", source="monitor"):
     return {
@@ -55,14 +76,20 @@ async def dashboard_alerts(limit: int = Query(10, ge=1, le=50)):
         for asset in result.assets:
             if asset.stress >= cfg.thresholds.warning:
                 level = "critical" if asset.stress >= cfg.thresholds.breach else "warning" if asset.stress >= cfg.thresholds.critical else "advisory"
+                location_str = _format_location(asset)
+                # Determine title based on availability of location
+                if location_str and location_str != "unknown":
+                    title = f"{cfg.display_name}: {asset.failure_mode or 'stress anomaly'} at {location_str}"
+                else:
+                    title = f"{cfg.display_name}: {asset.failure_mode or 'stress anomaly'}"
                 all_alerts.append({
                     "id": f"ALT-{asset.asset_id}",
                     "timestamp": result.timestamp,
                     "level": level,
                     "category": cfg.name,
-                    "title": f"{cfg.display_name}: {asset.failure_mode or 'stress anomaly'} at {asset.ward}",
+                    "title": title,
                     "description": asset.recommendation or f"Stress level: {asset.stress:.1%}",
-                    "location": asset.ward,
+                    "location": location_str if location_str != "unknown" else "",
                     "confidence": asset.confidence,
                     "data_sources_used": [asset.data_source] if asset.data_source else ["monitor_fallback"],
                 })

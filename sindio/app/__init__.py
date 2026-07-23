@@ -1,11 +1,8 @@
-import os
 import sys
+from pathlib import Path
 
-# Resolve the path to the actual backend app package
-_current_dir = os.path.abspath(os.path.dirname(__file__))
-_backend_app_path = os.path.join(_current_dir, "backend", "app")
-if _backend_app_path not in sys.path:
-    sys.path.insert(0, _backend_app_path)
+# Add the backend directory to sys.path to allow importing 'app'
+_backend_path = Path(__file__).resolve().parent.parent / "backend"
+sys.path.insert(0, str(_backend_path))
 
-# Re-export the FastAPI app instance
-from main import app  # noqa: F401
+from app import *
