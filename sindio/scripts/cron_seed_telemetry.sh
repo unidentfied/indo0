@@ -49,25 +49,42 @@ try:
 
     # Mobility
     cur.execute("""
-        INSERT INTO mobility_aggregates (time, h3_index, h3_resolution, vehicle_count, avg_speed_ms, freeflow_speed_ms, created_at)
-        SELECT NOW(), '87259' || lpad(i::text, 4, '0'), 9,
-          (random()*200+10)::int, random()*15+2, 13.9, NOW()
+        INSERT INTO mobility_aggregates (time, h3_index, vehicle_count, ward, lat, lon)
+        SELECT NOW(), '87259' || lpad(i::text, 4, '0'),
+          random()*200+10, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1
         FROM generate_series(1,5) i
     """)
 
     # Other telemetry tables
-    for tbl, prefix, cols in [
-        ("waste_sensors", "WST", "station_id, fill_level"),
-        ("sidewalk_counters", "SW", "path_id, pedestrian_count"),
-        ("lrt_telemetry", "LRT", "segment_id, train_count, headway_sec"),
-        ("sgr_telemetry", "SGR", "segment_id, stress_level"),
-        ("airport_telemetry", "RWY", "runway_id, flight_rate, surface_condition"),
-    ]:
-        cur.execute(f"""
-            INSERT INTO {tbl} ({cols}, ward, lat, lon, updated_at)
-            SELECT '{prefix}-' || i, random()*100, 'CBD', -1.29, 36.82, NOW()
-            FROM generate_series(1,3) i
-        """)
+    cur.execute("""
+        INSERT INTO waste_sensors (station_id, fill_level, ward, lat, lon, updated_at)
+        SELECT 'WST-' || i, random()*100, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        FROM generate_series(1,3) i
+    """)
+
+    cur.execute("""
+        INSERT INTO sidewalk_counters (path_id, pedestrian_count, ward, lat, lon, updated_at)
+        SELECT 'SW-' || i, random()*100, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        FROM generate_series(1,3) i
+    """)
+
+    cur.execute("""
+        INSERT INTO lrt_telemetry (segment_id, train_count, headway_sec, ward, lat, lon, updated_at)
+        SELECT 'LRT-' || i, (random()*10)::int, random()*300+60, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        FROM generate_series(1,3) i
+    """)
+
+    cur.execute("""
+        INSERT INTO sgr_telemetry (segment_id, stress_level, ward, lat, lon, updated_at)
+        SELECT 'SGR-' || i, random()*100, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        FROM generate_series(1,3) i
+    """)
+
+    cur.execute("""
+        INSERT INTO airport_telemetry (runway_id, flight_rate, surface_condition, ward, lat, lon, updated_at)
+        SELECT 'RWY-' || i, random()*100, 'dry', 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        FROM generate_series(1,3) i
+    """)
 
     conn.commit()
     cur.close()
