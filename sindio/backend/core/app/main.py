@@ -77,19 +77,20 @@ async def lifespan(app: FastAPI):
     logger.info("Sindio Core stopped")
 
 
+_ENV_NAME = os.getenv("ENV", "development").lower()
 limiter = Limiter(
     key_func=get_remote_address,
-    storage_uri=config.redis_url,
-    enabled=os.getenv("ENV", "development").lower() != "test",
+    storage_uri="memory://" if _ENV_NAME != "production" else config.redis_url,
+    enabled=_ENV_NAME != "test",
 )
 app = FastAPI(
     title="Sindio Core",
     description="Python ML core for predictive urban planning simulations",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs" if os.getenv("ENV", "development").lower() != "production" else None,
-    redoc_url="/redoc" if os.getenv("ENV", "development").lower() != "production" else None,
-    openapi_url="/openapi.json" if os.getenv("ENV", "development").lower() != "production" else None,
+    docs_url="/docs" if _ENV_NAME != "production" else None,
+    redoc_url="/redoc" if _ENV_NAME != "production" else None,
+    openapi_url="/openapi.json" if _ENV_NAME != "production" else None,
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
