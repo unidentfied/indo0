@@ -123,7 +123,20 @@ class ReportIntegrator:
             from sqlalchemy import create_engine, text
             import json
 
-            engine = create_engine(self.db_url)
+            global _GLOBAL_ENGINES
+            if "_GLOBAL_ENGINES" not in globals():
+                globals()["_GLOBAL_ENGINES"] = {}
+
+            if self.db_url not in globals()["_GLOBAL_ENGINES"]:
+                globals()["_GLOBAL_ENGINES"][self.db_url] = create_engine(
+                    self.db_url,
+                    pool_size=3,
+                    max_overflow=5,
+                    pool_timeout=10,
+                    pool_recycle=1800
+                )
+
+            engine = globals()["_GLOBAL_ENGINES"][self.db_url]
             sql = text(
                 """
                 SELECT report_data
