@@ -288,8 +288,8 @@ async def core_proxy_middleware(request: Request, call_next):
                         not in ("transfer-encoding", "content-encoding", "content-length")
                     },
                 )
-    except Exception:
-        pass  # Core unreachable — fall through to mock API
+    except Exception as exc:
+        logger.warning("Proxy request to core failed", error=str(exc))
 
     return await call_next(request)
 
