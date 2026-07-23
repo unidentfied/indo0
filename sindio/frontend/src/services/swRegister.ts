@@ -11,6 +11,20 @@ let _registration: ServiceWorkerRegistration | null = null
 export async function registerServiceWorker(): Promise<void> {
   if (!('serviceWorker' in navigator)) return
 
+  // Automatically unregister service worker on localhost to prevent caching issues in development
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      for (const registration of registrations) {
+        await registration.unregister()
+        console.log('[sw] Unregistered service worker on localhost to bypass dev cache')
+      }
+    } catch (err) {
+      console.warn('[sw] Failed to unregister service worker:', err)
+    }
+    return
+  }
+
   try {
     _registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',
