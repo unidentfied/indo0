@@ -82,7 +82,7 @@ try:
 
     cur.execute("""
         INSERT INTO airport_telemetry (runway_id, flight_rate, surface_condition, ward, lat, lon, updated_at)
-        SELECT 'RWY-' || i, random()*100, 'dry', 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        SELECT 'RWY-' || i, random()*100, 0.95, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
         FROM generate_series(1,3) i
     """)
 
