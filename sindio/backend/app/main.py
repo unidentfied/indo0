@@ -155,7 +155,11 @@ async def rbac_middleware(request: Request, call_next):
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
-    authenticated = False
+    # Disable authentication checks in local development to allow local frontend queries without headers
+    if _ENV != "production":
+        authenticated = True
+
+    authenticated = authenticated or False
 
     # 1. API key check
     if _API_KEY:
