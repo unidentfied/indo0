@@ -75,8 +75,8 @@ try:
     """)
 
     cur.execute("""
-        INSERT INTO sgr_telemetry (segment_id, stress_level, ward, lat, lon, updated_at)
-        SELECT 'SGR-' || i, random()*100, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
+        INSERT INTO sgr_telemetry (segment_id, stress_level, speed_limit, ward, lat, lon, updated_at)
+        SELECT 'SGR-' || i, random()*100, 80.0, 'CBD', -1.29+random()*0.1, 36.82+random()*0.1, NOW()
         FROM generate_series(1,3) i
     """)
 
@@ -89,6 +89,8 @@ try:
     conn.commit()
     cur.close()
     conn.close()
-except Exception:
-    pass  # DB unreachable — non-critical cron, skip silently
+    print("Seeding completed successfully")
+except Exception as e:
+    import traceback
+    traceback.print_exc()
 PYEOF
