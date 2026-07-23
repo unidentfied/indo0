@@ -8,6 +8,12 @@ real ML inference and metrics — falls back to mock data gracefully.
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file from root directory if it exists
+_ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(dotenv_path=_ENV_PATH)
 
 from fastapi import FastAPI, Response, Request, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
