@@ -35,7 +35,7 @@ async def dashboard_metrics(system: str = Query("power")):
     critical_count = sum(1 for a in assets if a.stress >= config.thresholds.critical)
 
     # Determine data source quality label
-    source_label = "real" if any(not a.is_mock for a in assets) else "heuristic"
+    source_label = "actual" if any(not a.is_mock for a in assets) else "heuristic"
 
     return [
         _metric("System Status", "Nominal" if avg_stress < 0.5 else "Degraded", "stable", "good" if avg_stress < 0.5 else "warning", source_label),
