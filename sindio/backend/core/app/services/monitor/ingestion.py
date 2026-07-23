@@ -156,7 +156,7 @@ class DataIngestor:
             return points
 
         except Exception as exc:
-            logger.debug("[%s] Postgres query failed: %s", self.config.display_name, exc)
+            logger.warning("[%s] Postgres query failed: %s", self.config.display_name, exc)
             return []
 
     def _query_api(self, ds: InfraDataSource) -> List[Dict[str, Any]]:
