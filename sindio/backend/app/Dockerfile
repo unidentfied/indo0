@@ -5,13 +5,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ libpq-dev libgeos-dev libgdal-dev postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy entire repository into container
+# Upgrade pip and install build tools
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy the whole repo into the image
 COPY . /workspace
 
-# Install Python dependencies (using pip for mock service)
+# Install Python dependencies (mock service uses pip)
 RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
 
-# Set working directory to mock app
+# Set working directory to the mock app
 WORKDIR /workspace/backend/app
 
 # Runtime env – make backend importable
