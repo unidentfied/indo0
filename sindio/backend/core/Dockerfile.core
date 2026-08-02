@@ -11,28 +11,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir poetry==1.8.5
 
 # Copy dependency files (layer caching)
-COPY backend/core/pyproject.toml backend/core/poetry.lock ./
+COPY sindio/backend/core/pyproject.toml sindio/backend/core/poetry.lock ./
 
 # Install Python deps
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 RUN poetry lock && poetry install --only main --no-root --no-interaction --no-ansi \
     && rm -rf /root/.cache/pypoetry /root/.cache/pip
 
-# Remove build‑time deps
+# Remove build-time deps
 RUN apt-get purge -y gcc g++ libpq-dev libgeos-dev libgdal-dev \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application code
-COPY backend/core/app/ ./app/
-# Copy the top‑level backend package for absolute imports
-COPY backend/ ./backend/
+COPY sindio/backend/core/app/ ./app/
+# Copy the top-level backend package for absolute imports
+COPY sindio/backend/ ./backend/
 
-# Copy model configs (embeddings JSON, tokenizer, READMEs)
-COPY models/ ./models/
+# Copy model configs
+COPY sindio/models/ ./models/
 
 # Entrypoint script
-COPY backend/core/entrypoint.sh /entrypoint.sh
+COPY sindio/backend/core/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Runtime environment
