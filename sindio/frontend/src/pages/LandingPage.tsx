@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+
 import { Link } from 'react-router-dom'
 import TrialNotice from '../components/TrialNotice'
 import PricingBanner from '../components/PricingBanner'
@@ -41,9 +41,9 @@ const capabilities = [
 ]
 
 export default function LandingPage() {
-  const [showSignup, setShowSignup] = useState(false);
-  const openSignup = () => setShowSignup(true);
-  const closeSignup = () => setShowSignup(false);
+
+  const openSignup = () => {}
+
   return (
     <div>
       {/* Hero */}
