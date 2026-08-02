@@ -77,15 +77,7 @@ export interface TokenResponse {
   expires_in: number
 }
 
-import type {
-  Metric,
-  AlertsV1Response,
-  NextUpdatesResponse,
-  SimulateTaskStatus,
-  InfrastructureStatus,
-  ClassificationResponse,
-  Alert as TypesAlert,
-} from '../types'
+
 
 export interface DashboardMetrics {
   power: { load_mw: number; redundancy: number; stress_index: number }

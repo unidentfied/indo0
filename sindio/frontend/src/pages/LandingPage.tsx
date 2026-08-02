@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import TrialNotice from '../components/TrialNotice'
 import PricingBanner from '../components/PricingBanner'
-import SignupModal from '../components/SignupModal'
+
 
 import {
   ArrowRight, Map, BrainCircuit, Clock, Play,
