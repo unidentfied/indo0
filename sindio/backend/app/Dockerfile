@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 COPY . /workspace
 
 # Install Python dependencies (mock service uses pip)
-RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
+RUN pip install --no-cache-dir -r /workspace/requirements.txt
 
 # Set working directory to the mock app
 WORKDIR /workspace/backend/app
