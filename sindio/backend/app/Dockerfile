@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip and install build tools
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy the whole repo into the image
+# Copy the whole repository into the image
 COPY . /workspace
 
 # Install Python dependencies (mock service uses pip)
-RUN pip install --no-cache-dir -r /workspace/requirements.txt
+RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
 
 # Set working directory to the mock app
 WORKDIR /workspace/backend/app
@@ -23,4 +23,5 @@ ENV SINDIO_SKIP_RASTER=1
 
 EXPOSE 8080
 
-CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}
+# Use JSON-formatted CMD to avoid signal handling issues
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "${PORT:-8080}"]
