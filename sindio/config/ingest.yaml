@@ -1,0 +1,24 @@
+download:
+  timeout: 120
+  retries: 3
+  backoff_factor: 0.5
+capacity_map:
+  water:
+    unit: "L/s"
+    default: 120.0
+  power:
+    unit: "kVA"
+    default: 250.0
+  roads:
+    unit: "veh/hr"
+    default: 2000.0
+db:
+  batch_size: 2000
+  use_copy: true
+logging:
+  json: true
+  level: INFO
+
+validation:
+  enforce_length: false
+  exclude_ring_geometries: false

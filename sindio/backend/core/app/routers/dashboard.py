@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
-from app.auth import optional_auth
+from app.auth import require_auth
 
 from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
 
@@ -39,7 +39,7 @@ def _metric(label, value, delta_str, status="good", source="monitor"):
     }
 
 
-@router.get("/dashboard/metrics", dependencies=[Depends(optional_auth)])
+@router.get("/dashboard/metrics", dependencies=[Depends(is_active_user)])
 async def dashboard_metrics(system: str = Query("power")):
     system = system.lower().replace(" ", "_").replace("-", "_")
     try:

@@ -8,14 +8,9 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.util import get_remote_address
 
-import structlog
+from backend.core.app.logging import logger
 from fastapi.middleware.cors import CORSMiddleware
 
-structlog.configure(
-    processors=[structlog.processors.JSONRenderer()],
-    logger_factory=structlog.stdlib.LoggerFactory(),
-)
-logger = structlog.get_logger()
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded

@@ -1,0 +1,4 @@
+parallel: false
+max_workers: 4
+enable_metrics: true
+enable_retry: true

@@ -6,10 +6,18 @@ import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from pydantic import BaseModel
+
+# Email utilities
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+
+# Local helpers (will be defined later)
+from .email_utils import generate_verification_token, send_verification_email
+
 
 logger = structlog.get_logger("sindio.auth")
 
@@ -18,13 +26,29 @@ JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 # Prefer explicit minutes, otherwise compute from hours (default 1 hour)
 _JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
-JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", str(_JWT_EXPIRY_HOURS * 60)))
+TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "14"))
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")
 
-security = HTTPBearer(auto_error=False)
-auth_router = APIRouter()
+from sqlalchemy.orm import Session
+from .database import get_engine
+from .models.user import User
+from passlib.context import CryptContext
 
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_db():
+    """FastAPI dependency providing a DB session."""
+    engine = get_engine()
+    SessionLocal = Session(bind=engine)
+    try:
+        yield SessionLocal
+    finally:
+        SessionLocal.close()
+
+security = HTTPBearer(auto_error=False)
+
+auth_router = APIRouter()
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -66,12 +90,60 @@ async def optional_auth(request: Request, credentials: Optional[HTTPAuthorizatio
         return None
 
 
-@auth_router.post("/token", response_model=TokenResponse)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    if not AUTH_PASSWORD:
-        raise HTTPException(status_code=500, detail="AUTH_PASSWORD environment variable is not set")
-    if not (hmac.compare_digest(form_data.username, AUTH_USERNAME) and hmac.compare_digest(form_data.password, AUTH_PASSWORD)):
+# --- New Auth Endpoints ---
+
+# User signup
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+@auth_router.post("/signup", response_model=TokenResponse)
+async def signup(user: UserCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = Depends()):
+    # Hash password
+    pwd_hash = pwd_context.hash(user.password)
+    # Set trial fields
+    trial_expires = datetime.utcnow() + timedelta(days=TRIAL_DAYS)
+    new_user = User(email=user.email, password_hash=pwd_hash, is_verified=False, is_trial=True, trial_expires_at=trial_expires)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    # Generate verification token
+    token = generate_verification_token(user.email)
+    # Send verification email asynchronously
+    background_tasks.add_task(send_verification_email, user.email, token)
+    # Issue JWT token (user can log in after verification)
+    access_token = create_access_token(data={"sub": new_user.email, "is_paid": new_user.is_paid, "is_trial": new_user.is_trial, "trial_expires_at": new_user.trial_expires_at.isoformat() if new_user.trial_expires_at else None})
+    return TokenResponse(access_token=access_token, expires_in=JWT_EXPIRY_MINUTES * 60)
+
+# User login endpoint (email & password)
+@auth_router.post("/login", response_model=TokenResponse)
+async def login(credentials: UserCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == credentials.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not pwd_context.verify(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    expires_in = JWT_EXPIRY_MINUTES * 60
-    access_token = create_access_token(data={"sub": form_data.username})
-    return TokenResponse(access_token=access_token, expires_in=expires_in)
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Email not verified")
+    # Issue JWT with subscription/trial info
+    token_data = {"sub": user.email, "is_paid": user.is_paid, "is_trial": user.is_trial, "trial_expires_at": user.trial_expires_at.isoformat() if user.trial_expires_at else None}
+    access_token = create_access_token(data=token_data)
+    return TokenResponse(access_token=access_token, expires_in=JWT_EXPIRY_MINUTES * 60)
+
+# Email verification endpoint (kept unchanged)
+@auth_router.get("/verify-email/{token}")
+async def verify_email(token: str, db: Session = Depends(get_db)):
+    try:
+        email = verify_token(token)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_verified:
+        return {"detail": "Email already verified"}
+    user.is_verified = True
+    db.commit()
+    return {"detail": "Email verified successfully"}
+
+

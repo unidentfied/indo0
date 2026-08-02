@@ -31,17 +31,15 @@ from app.limiter import limiter
 from app.shutdown import install_signal_handlers, register_shutdown_handler
 from app.rbac import require_viewer
 
-structlog.configure(
-    processors=[structlog.processors.JSONRenderer()],
-    logger_factory=structlog.stdlib.LoggerFactory(),
-)
-logger = structlog.get_logger("sindio.mock_api")
+from backend.core.app.logging import logger
 
 from app.routers.api import router as api_router
 from app.routers.streaming import router as stream_router
 from app.routers.reports import router as reports_router
 from app.routers.feedback import router as feedback_router
 from app.routers.privacy import router as privacy_router
+# Health endpoints (including DB health)
+from backend.core.app.services.health import router as health_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -319,6 +317,8 @@ app.include_router(stream_router, prefix="/api/v1")
 app.include_router(reports_router, dependencies=[Depends(require_viewer)])
 app.include_router(feedback_router, dependencies=[Depends(require_viewer)])
 app.include_router(privacy_router)   # individual endpoints already enforce role checks
+app.include_router(health_router)
+app.include_router(health_router, prefix="/api")
 
 
 @app.get("/health")
@@ -393,7 +393,8 @@ async def health_ready():
 
 @app.get("/metrics")
 async def metrics(request: Request):
-    return await _proxy_optional(request, "/metrics")
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 # ── Frontend serving (production build) ──────────────────────────

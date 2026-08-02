@@ -1,4 +1,9 @@
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
+import TrialNotice from '../components/TrialNotice'
+import PricingBanner from '../components/PricingBanner'
+import SignupModal from '../components/SignupModal'
+
 import {
   ArrowRight, Map, BrainCircuit, Clock, Play,
   Binary, Wifi, Shield, Database, AlertTriangle, GitBranch,
@@ -36,6 +41,9 @@ const capabilities = [
 ]
 
 export default function LandingPage() {
+  const [showSignup, setShowSignup] = useState(false);
+  const openSignup = () => setShowSignup(true);
+  const closeSignup = () => setShowSignup(false);
   return (
     <div>
       {/* Hero */}
@@ -72,6 +80,8 @@ export default function LandingPage() {
           />
         </div>
       </section>
+      <TrialNotice />
+      <PricingBanner openSignup={openSignup} />
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">

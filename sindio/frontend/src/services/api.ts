@@ -27,7 +27,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   const headers = new Headers(options?.headers)
   headers.set('Content-Type', 'application/json')
-  // Auth is handled via HTTP-only cookies or JWT Bearer set by caller; never bake keys into the bundle
+  // Attach JWT token from localStorage if available
+  const token = localStorage.getItem('sindio_token')
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
 
   const promise = fetch(`${API_BASE}${path}`, {
     headers,
@@ -56,6 +60,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export type InfraType = 'power' | 'water' | 'roads' | 'solid_waste' | 'sidewalks' | 'lrt' | 'sgr' | 'airports'
+
+import type {
+  Metric,
+  AlertsV1Response,
+  NextUpdatesResponse,
+  SimulateTaskStatus,
+  InfrastructureStatus,
+  ClassificationResponse,
+  Alert as TypesAlert,
+} from '../types'
+
+export interface TokenResponse {
+  access_token: string
+  token_type: string
+  expires_in: number
+}
 
 import type {
   Metric,
@@ -134,6 +154,14 @@ export interface GeoJsonFeature {
 
 export const api = {
   health: () => request<{ status: string }>('/api/health'),
+  auth: {
+    signup: (email: string, password: string) =>
+      request<TokenResponse>('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
+    // login can be added similarly
+  },
 
   dashboard: {
     metrics: (system?: string) =>
