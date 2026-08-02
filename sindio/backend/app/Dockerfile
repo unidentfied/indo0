@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # Copy the whole repository into the image
 COPY . /workspace
+COPY ../backend/requirements.txt /workspace/backend/requirements.txt
 
 # Install Python dependencies (mock service uses pip)
 RUN pip install --no-cache-dir -r /workspace/backend/requirements.txt
