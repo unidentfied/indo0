@@ -8,7 +8,7 @@ FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "http://localhost:3000/ve
 
 # FastMail configuration – all required settings must exist in environment
 conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME""),
+    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
     MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
     MAIL_FROM=os.getenv("MAIL_FROM", os.getenv("MAIL_USERNAME")),
     MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),

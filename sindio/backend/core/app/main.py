@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi.util import get_remote_address
 
-from backend.core.app.logging import logger
+from .logging import logger
 from fastapi.middleware.cors import CORSMiddleware
 
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
@@ -16,10 +16,10 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .config import config
 
-from app.routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard, training, simulation_compat
-from app.auth import auth_router, require_auth, optional_auth
-from app.services.data_quality_metrics import registry as dq_registry
-from app.services.model_registry import ModelRegistry
+from .routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard, training, simulation_compat
+from .auth import auth_router, require_auth, optional_auth
+from .services.data_quality_metrics import registry as dq_registry
+from .services.model_registry import ModelRegistry
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

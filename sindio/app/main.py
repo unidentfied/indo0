@@ -1,11 +1,10 @@
 import os
 import sys
 
-# Add the backend/app directory to sys.path so we can import its main module
+# Add the project root to sys.path so absolute imports like backend.core.app work
 _current_dir = os.path.abspath(os.path.dirname(__file__))
-_backend_app_path = os.path.abspath(os.path.join(_current_dir, "..", "backend", "app"))
-if _backend_app_path not in sys.path:
-    sys.path.insert(0, _backend_app_path)
+_project_root = os.path.abspath(os.path.join(_current_dir, ".."))
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-# Re-export the FastAPI app instance
-from main import app  # noqa: F401
+from backend.core.app.main import app  # noqa: F401

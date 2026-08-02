@@ -1,8 +1,9 @@
 import sys
 from pathlib import Path
 
-# Add the backend directory to sys.path to allow importing 'app'
-_backend_path = Path(__file__).resolve().parent.parent / "backend"
-sys.path.insert(0, str(_backend_path))
+# Add the project root to sys.path for absolute imports
+_project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(_project_root))
 
-from app import *
+# Import the FastAPI application from the backend core package
+from backend.core.app.main import app
