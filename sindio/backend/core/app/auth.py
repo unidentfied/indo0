@@ -14,7 +14,7 @@ from pydantic import BaseModel
 # Email utilities
 
 # Local helpers (will be defined later)
-from .email_utils import generate_verification_token, send_verification_email
+from .email_utils import generate_verification_token, send_verification_email, verify_token
 
 
 logger = structlog.get_logger("sindio.auth")
@@ -23,7 +23,7 @@ logger = structlog.get_logger("sindio.auth")
 JWT_SECRET = os.getenv("JWT_SECRET", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 # Prefer explicit minutes, otherwise compute from hours (default 1 hour)
-_JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
+JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", str(int(os.getenv("JWT_EXPIRY_HOURS", "1")) * 60)))
 TRIAL_DAYS = int(os.getenv("TRIAL_DAYS", "14"))
 AUTH_USERNAME = os.getenv("AUTH_USERNAME", "admin")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD", "")

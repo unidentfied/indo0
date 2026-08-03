@@ -7,6 +7,12 @@
   VITE_API_BASE_URL = "https://api.sindio.net"
 
 [[redirects]]
+  from = "/auth/*"
+  to = "https://api.sindio.net/auth/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/*"
   to = "https://api.sindio.net/api/:splat"
   status = 200

@@ -50,6 +50,6 @@ USER sindio
 EXPOSE 8081
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=300s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-${CORE_PORT:-8081}}/health/live')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-${CORE_PORT:-8081}}/health')" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]

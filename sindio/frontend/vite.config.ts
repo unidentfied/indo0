@@ -17,6 +17,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           ws: true,
         },
+        '/auth': {
+          target: apiTarget,
+          changeOrigin: true,
+        },
         '/health': {
           target: apiTarget,
           changeOrigin: true,
