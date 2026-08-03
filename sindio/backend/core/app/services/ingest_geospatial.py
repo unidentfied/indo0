@@ -282,27 +282,6 @@ def load_gdf(asset_type: str, path: Path, force: bool = False):
             from shapely.geometry import shape
             import pandas as pd
             import yaml
-
-# Feature toggles – loaded from config/features.yaml (if present)
-def _load_feature_flags() -> dict:
-    """Load optional feature flags.
-    Returns a dict with defaults if the file does not exist.
-    """
-    default = {
-        "parallel": False,
-        "max_workers": 4,
-        "enable_metrics": True,
-        "enable_retry": True,
-    }
-    cfg_path = Path(__file__).resolve().parents[4] / "config" / "features.yaml"
-    if cfg_path.exists():
-        try:
-            with open(cfg_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            default.update(data)
-        except Exception as exc:
-            logger.warning("feature_flags_load_failed", error=str(exc))
-    return default
             with open(path, "r", encoding="utf-8") as f:
                 geojson = json.load(f)
             features = geojson.get("features", [])
@@ -335,10 +314,6 @@ def _load_feature_flags() -> dict:
     ENFORCE_LENGTH = VALIDATION_CFG.get("enforce_length", True)
     EXCLUDE_RINGS = VALIDATION_CFG.get("exclude_ring_geometries", True)
 
-    @app.get("/metrics")
-    async def metrics(request: Request):
-        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-        return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     def _geom_is_valid(g):
         if g is None:
@@ -417,6 +392,30 @@ def _load_feature_flags() -> dict:
         gdf["source_name"] = f"{asset_type}_segment"
     logger.info("gdf_ready", asset_type=asset_type, rows=len(gdf))
     return gdf
+
+
+# Feature toggles – loaded from config/features.yaml (if present)
+def _load_feature_flags() -> dict:
+    """Load optional feature flags.
+    Returns a dict with defaults if the file does not exist.
+    """
+    default = {
+        "parallel": False,
+        "max_workers": 4,
+        "enable_metrics": True,
+        "enable_retry": True,
+    }
+    cfg_path = Path(__file__).resolve().parents[4] / "config" / "features.yaml"
+    if cfg_path.exists():
+        try:
+            import yaml
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+            default.update(data)
+        except Exception as exc:
+            logger.warning("feature_flags_load_failed", error=str(exc))
+    return default
+
 
 # -----------------------------------------------------------------------------
 # Database engine (lazy import sqlalchemy)
