@@ -1,19 +1,21 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Sun, Moon, Maximize, Minimize } from 'lucide-react'
+import { Menu, X, Sun, Moon, Maximize, Minimize, LogOut, User } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import AuthModal from './AuthModal'
 
 function prefetchDashboard() {
   import('../pages/Dashboard')
 }
 
-function readStoredTheme(): 'dark' | 'light' | null {
+function readStoredTheme(): 'dark' | 'light' {
   try {
     const stored = window.localStorage?.getItem('theme')
     if (stored === 'dark' || stored === 'light') return stored
   } catch {
-    // localStorage may be unavailable in private mode or restricted contexts
+    // ignore storage failures
   }
-  return null
+  return prefersDarkMode() ? 'dark' : 'light'
 }
 
 function prefersDarkMode(): boolean {
@@ -38,13 +40,11 @@ const TABS: { label: string; system: string }[] = [
 
 export default function Navbar() {
   const location = useLocation()
+  const { isAuthenticated, user, logout } = useAuth()
   const isDash = location.pathname.startsWith('/dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dark, setDark] = useState(() => {
-    const stored = readStoredTheme()
-    if (stored) return stored === 'dark'
-    return prefersDarkMode()
-  })
+  const [showAuth, setShowAuth] = useState(false)
+  const [dark, setDark] = useState(() => readStoredTheme() === 'dark')
 
   useEffect(() => {
     if (dark) {
@@ -55,7 +55,7 @@ export default function Navbar() {
     try {
       window.localStorage?.setItem('theme', dark ? 'dark' : 'light')
     } catch {
-      // ignore storage failures
+      // ignore
     }
   }, [dark])
 
@@ -83,7 +83,7 @@ export default function Navbar() {
             <Link to="/" className="text-xl font-bold tracking-tight text-sindio-accent">
               Sindio
             </Link>
-            {isDash && (
+            {isDash && isAuthenticated && (
               <div className="hidden md:flex items-center gap-6 text-sm text-sindio-muted dark:text-slate-400">
                 {TABS.map((t) => (
                   <Link
@@ -113,6 +113,26 @@ export default function Navbar() {
             >
               {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>
+
+            {isAuthenticated ? (
+              <>
+                <span className="text-sm text-sindio-muted truncate max-w-[160px]">
+                  <User className="w-3.5 h-3.5 inline mr-1" />
+                  {user?.email || user?.sub || 'User'}
+                </span>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-lg text-sindio-muted hover:text-red-400 hover:bg-red-900/20 transition-colors"
+                  title="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setShowAuth(true)} className="btn-primary text-sm">
+                Sign In
+              </button>
+            )}
             <Link to="/dashboard" className="btn-primary text-sm" onMouseEnter={prefetchDashboard}>
               Launch Dashboard
             </Link>
@@ -124,9 +144,11 @@ export default function Navbar() {
         </div>
       </div>
 
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+
       {mobileOpen && (
         <div className="md:hidden border-t border-sindio-border dark:border-slate-800 px-4 py-4 space-y-3">
-          {TABS.map((t) => (
+          {isDash && isAuthenticated && TABS.map((t) => (
             <Link
               key={t.system}
               to={`/dashboard?system=${t.system}`}
@@ -150,6 +172,19 @@ export default function Navbar() {
             {fullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             {fullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
+          {isAuthenticated ? (
+            <button
+              onClick={() => { logout(); setMobileOpen(false); }}
+              className="flex items-center gap-2 text-sm text-red-400 hover:text-red-300"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          ) : (
+            <button onClick={() => { setShowAuth(true); setMobileOpen(false); }} className="btn-primary w-full justify-center">
+              Sign In
+            </button>
+          )}
           <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard} onClick={() => setMobileOpen(false)}>
             Launch Dashboard
           </Link>

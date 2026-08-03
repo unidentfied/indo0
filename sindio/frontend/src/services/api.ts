@@ -152,7 +152,11 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
-    // login can be added similarly
+    login: (email: string, password: string) =>
+      request<TokenResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
   },
 
   dashboard: {

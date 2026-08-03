@@ -1,11 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import MetricCard from '../components/MetricCard'
 import AlertPanel from '../components/AlertPanel'
 import type { Metric, Alert, SimulationResult, InfrastructureStatus, SimulationSummary } from '../types'
 import { api } from '../services/api'
-import { Gauge, AlertTriangle, AlertOctagon, Loader2, Server, Activity, BarChart3, Clock } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { Gauge, AlertTriangle, AlertOctagon, Loader2, Server, Activity, BarChart3, Clock, ArrowRight, Shield } from 'lucide-react'
 
 const StressMap = lazy(() => import('../components/StressMap'))
 const SimulationChart = lazy(() => import('../components/SimulationChart'))
@@ -51,6 +52,7 @@ const infraDescriptions: Record<string, string> = {
 }
 
 export default function Dashboard() {
+  const { hasActiveSubscription } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSystem = searchParams.get('system') || 'power'
 
@@ -100,6 +102,26 @@ export default function Dashboard() {
   const riskAlerts = alerts.filter(a => a.level !== 'advisory').slice(0, 3)
   const showAlertFeed = activeSystem === 'alerts'
   const title = infraTitles[activeSystem] || 'Infrastructure Analysis'
+
+  if (!hasActiveSubscription) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="max-w-md w-full text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-sindio-accent/10 border border-sindio-accent/30 flex items-center justify-center">
+            <Shield className="w-8 h-8 text-sindio-accent" />
+          </div>
+          <h2 className="text-2xl font-bold mb-3">Subscribe to Access</h2>
+          <p className="text-sindio-muted mb-8 leading-relaxed">
+            Your trial has ended or you haven't subscribed yet. Choose a plan to continue monitoring Nairobi's infrastructure.
+          </p>
+          <Link to="/" className="btn-primary inline-flex items-center gap-2">
+            View Plans
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-1 w-full">

@@ -1,12 +1,16 @@
 
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
-import SignupModal from '../components/SignupModal';
+import { useState, useMemo } from 'react';
+import AuthModal from '../components/AuthModal';
+import { useAuth } from '../contexts/AuthContext';
 
 import {
   ArrowRight, Map, BrainCircuit, Clock, Play,
   Binary, Wifi, Shield, Database, AlertTriangle, GitBranch,
+  Zap, CheckCircle, CreditCard,
 } from 'lucide-react'
+
+const MONTHLY_PRICE = 83800
 
 const features = [
   {
@@ -39,10 +43,45 @@ const capabilities = [
   { icon: Database, label: 'Telemetry & Observability', desc: 'Deep metrics on database health, telemetry streaming, and machine learning model confidence mapped to pre-configured Grafana views.' },
 ]
 
-export default function LandingPage() {
+const trialFeatures = [
+  'Full access to all 8 infrastructure sectors',
+  'Real-time stress monitoring dashboard',
+  'Predictive analytics & STL decomposition',
+  'Interactive PostGIS spatial heatmaps',
+  'Live WebSocket alert feeds',
+  'Unlimited simulations during trial',
+]
 
-  const [showSignup, setShowSignup] = useState(false);
-  const openSignup = () => setShowSignup(true);
+const proFeatures = [
+  'Everything in the free trial',
+  'Priority data ingestion pipelines',
+  'Classification history & shift detection',
+  'CSV/GeoJSON data exports',
+  'Long-window Spearman correlation',
+  'Multi-user team accounts (coming soon)',
+]
+
+export default function LandingPage() {
+  const { isAuthenticated } = useAuth()
+  const [showAuth, setShowAuth] = useState(false)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+
+  const annualPrice = useMemo(() => Math.round(MONTHLY_PRICE * 12 * 0.8), [])
+  const displayPrice = billingCycle === 'monthly' ? MONTHLY_PRICE : annualPrice
+
+  const openAuth = () => setShowAuth(true)
+
+  const dashboardLink = isAuthenticated ? (
+    <Link to="/dashboard" className="btn-primary">
+      Open Dashboard
+      <ArrowRight className="w-4 h-4" />
+    </Link>
+  ) : (
+    <button onClick={openAuth} className="btn-primary">
+      Sign In
+      <ArrowRight className="w-4 h-4" />
+    </button>
+  )
 
   return (
     <div>
@@ -62,14 +101,13 @@ export default function LandingPage() {
               High-fidelity spatial modeling and long-window stress classification across eight critical systems. Engineered to optimize metropolitan load dynamics and preempt system failures.
             </p>
             <div className="flex flex-wrap items-center gap-4">
-              <Link to="/dashboard" className="btn-primary">
-                Open Dashboard
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <button onClick={openSignup} className="btn-primary">
-                Sign Up
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {dashboardLink}
+              {!isAuthenticated && (
+                <button onClick={openAuth} className="btn-primary">
+                  Sign Up
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
               <a href="#features" className="btn-secondary">Explore Features</a>
             </div>
           </div>
@@ -84,7 +122,8 @@ export default function LandingPage() {
           />
         </div>
       </section>
-      {showSignup && <SignupModal onClose={() => setShowSignup(false)} />}
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">
@@ -94,10 +133,17 @@ export default function LandingPage() {
               <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Core Architecture</div>
               <h2 className="text-3xl font-bold max-w-md">Data-Driven Resilience for Nairobi's Dense Urban Environment</h2>
             </div>
-            <Link to="/dashboard" className="hidden sm:flex items-center gap-2 text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">
-              Explore All Modules
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="hidden sm:flex items-center gap-2 text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">
+                Explore All Modules
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button onClick={openAuth} className="hidden sm:flex items-center gap-2 text-sm text-sindio-accent hover:text-sindio-accent-hover transition-colors">
+                Explore All Modules
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -146,12 +192,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Platform Previews */}
+      {/* Platform Previews — Three Lenses */}
       <section className="border-t border-sindio-border py-20">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="text-center mb-12">
             <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform</div>
-            <h2 className="text-3xl font-bold mb-4">Three Lenses on Nairobi’s Dynamics</h2>
+            <h2 className="text-3xl font-bold mb-4">Three Lenses on Nairobi&rsquo;s Dynamics</h2>
             <p className="text-sindio-muted max-w-xl mx-auto">
               Explore interactive stress heatmaps, live alert feeds, and high-level health diagnostics powered by PostGIS spatial indexing and WebSockets.
             </p>
@@ -200,6 +246,112 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing & Trial Section */}
+      <section className="border-t border-sindio-border py-20 bg-gradient-to-b from-sindio-dark to-sindio-accent/5">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="text-center mb-12">
+            <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">
+              Pricing
+            </div>
+            <h2 className="text-3xl font-bold mb-4">Start with a 14-day free trial</h2>
+            <p className="text-sindio-muted max-w-xl mx-auto">
+              No credit card required. Full access to all features. Cancel anytime.
+            </p>
+
+            {/* Billing Toggle */}
+            <div className="inline-flex items-center gap-3 mt-8 p-1 rounded-full border border-sindio-border bg-sindio-panel">
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  billingCycle === 'monthly'
+                    ? 'bg-sindio-accent text-white'
+                    : 'text-sindio-muted hover:text-white'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle('annual')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  billingCycle === 'annual'
+                    ? 'bg-sindio-accent text-white'
+                    : 'text-sindio-muted hover:text-white'
+                }`}
+              >
+                Annual
+                <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-green-500/20 text-green-400 align-middle">
+                  −20%
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* Trial Card */}
+            <div className="panel p-8 border-sindio-border hover:border-sindio-accent/30 transition-colors relative">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-sindio-accent rounded-t-xl" />
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="w-5 h-5 text-sindio-accent" />
+                <h3 className="text-xl font-bold">14-Day Free Trial</h3>
+              </div>
+              <div className="mb-6">
+                <span className="text-4xl font-bold">KES 0</span>
+                <span className="text-sindio-muted text-sm ml-1">/ first 14 days</span>
+              </div>
+              <ul className="space-y-3 mb-8">
+                {trialFeatures.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-sindio-muted">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={openAuth} className="btn-primary w-full justify-center">
+                Start 14-Day Trial
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Pro Subscription Card */}
+            <div className="panel p-8 border-sindio-accent/40 bg-sindio-accent/5 relative">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sindio-accent to-purple-500 rounded-t-xl" />
+              <div className="flex items-center gap-2 mb-4">
+                <CreditCard className="w-5 h-5 text-sindio-accent" />
+                <h3 className="text-xl font-bold">Sindio Pro</h3>
+              </div>
+              <div className="mb-1">
+                <span className="text-4xl font-bold">KES {displayPrice.toLocaleString()}</span>
+                <span className="text-sindio-muted text-sm ml-1">/ {billingCycle}</span>
+              </div>
+              {billingCycle === 'annual' && (
+                <p className="text-xs text-green-400 mb-4">
+                  Save KES {(MONTHLY_PRICE * 12 - annualPrice).toLocaleString()} per year with annual billing
+                </p>
+              )}
+              {billingCycle === 'monthly' && (
+                <p className="text-xs text-sindio-muted mb-4">Billed monthly</p>
+              )}
+              <ul className="space-y-3 mb-8">
+                {proFeatures.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-sindio-muted">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button onClick={openAuth} className="btn-primary w-full justify-center bg-sindio-accent hover:bg-sindio-accent-hover">
+                Subscribe Now
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <p className="text-center text-xs text-sindio-muted mt-8">
+            All prices in Kenyan Shillings (KES). VAT inclusive where applicable.
+          </p>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="border-t border-sindio-border py-20 bg-sindio-accent/5">
         <div className="max-w-3xl mx-auto px-6 text-center">
@@ -208,10 +360,17 @@ export default function LandingPage() {
             Join the next era of data-driven metropolitan planning and enhance infrastructure resilience.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link to="/dashboard" className="btn-primary">
-              <Play className="w-4 h-4" />
-              Open Dashboard
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="btn-primary">
+                <Play className="w-4 h-4" />
+                Open Dashboard
+              </Link>
+            ) : (
+              <button onClick={openAuth} className="btn-primary">
+                <Play className="w-4 h-4" />
+                Get Started
+              </button>
+            )}
             <Link to="/dashboard?system=alerts" className="btn-secondary">
               View Alert Feed
             </Link>
