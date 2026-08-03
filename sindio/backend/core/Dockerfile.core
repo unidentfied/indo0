@@ -13,6 +13,11 @@ RUN pip install --no-cache-dir poetry==1.8.5
 # Copy dependency files (layer caching)
 COPY sindio/backend/core/pyproject.toml ./
 
+# Copy application code (rebuild timestamp: 2026-08-03)
+COPY sindio/backend/core/app/ ./app/
+# Copy the top-level backend package for absolute imports
+COPY sindio/backend/ ./backend/
+
 # Install Python deps
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
 RUN poetry lock && poetry install --only main --no-root --no-interaction --no-ansi \
@@ -22,11 +27,6 @@ RUN poetry lock && poetry install --only main --no-root --no-interaction --no-an
 RUN apt-get purge -y gcc g++ libpq-dev libgeos-dev libgdal-dev \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy application code
-COPY sindio/backend/core/app/ ./app/
-# Copy the top-level backend package for absolute imports
-COPY sindio/backend/ ./backend/
 
 # Copy model configs
 COPY sindio/models/ ./models/
