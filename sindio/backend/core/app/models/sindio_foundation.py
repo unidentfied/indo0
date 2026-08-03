@@ -19,7 +19,10 @@ from .fusion import CrossModalFusion
 from .heads import StressHead, ForecastHead, BreachClassifier
 
 
-class SindioFoundationModel(nn.Module):
+class SindioFoundation(SindioFoundationModel):
+    """Alias for backward compatibility"""
+    pass
+
     """Multi-modal foundation model for urban infrastructure stress prediction.
 
     Three modalities → fused latent → three task heads.

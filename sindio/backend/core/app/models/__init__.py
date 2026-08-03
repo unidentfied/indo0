@@ -1,4 +1,4 @@
-from app.models.sindio_foundation import SindioFoundation
+from .sindio_foundation import SindioFoundation
 from app.models.encoders_vision import SwinEncoder
 from app.models.encoders_graph import GINEncoder
 from app.models.encoders_temporal import RoPETransformer
