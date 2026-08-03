@@ -1,8 +1,7 @@
 
-import { Link } from 'react-router-dom'
-import TrialNotice from '../components/TrialNotice'
-import PricingBanner from '../components/PricingBanner'
-
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import SignupForm from '../components/SignupForm';
 
 import {
   ArrowRight, Map, BrainCircuit, Clock, Play,
@@ -42,7 +41,8 @@ const capabilities = [
 
 export default function LandingPage() {
 
-  const openSignup = () => {}
+  const [showSignup, setShowSignup] = useState(false);
+  const openSignup = () => setShowSignup(true);
 
   return (
     <div>
@@ -66,6 +66,10 @@ export default function LandingPage() {
                 Open Dashboard
                 <ArrowRight className="w-4 h-4" />
               </Link>
+              <button onClick={openSignup} className="btn-primary">
+                Sign Up
+                <ArrowRight className="w-4 h-4" />
+              </button>
               <a href="#features" className="btn-secondary">Explore Features</a>
             </div>
           </div>
@@ -80,8 +84,7 @@ export default function LandingPage() {
           />
         </div>
       </section>
-      <TrialNotice />
-      <PricingBanner openSignup={openSignup} />
+      {showSignup && <SignupForm onClose={() => setShowSignup(false)} />}
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">
