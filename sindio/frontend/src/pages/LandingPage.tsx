@@ -1,7 +1,7 @@
 
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import SignupForm from '../components/SignupForm';
+import SignupModal from '../components/SignupModal';
 
 import {
   ArrowRight, Map, BrainCircuit, Clock, Play,
@@ -84,7 +84,7 @@ export default function LandingPage() {
           />
         </div>
       </section>
-      {showSignup && <SignupForm onClose={() => setShowSignup(false)} />}
+      {showSignup && <SignupModal onClose={() => setShowSignup(false)} />}
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">

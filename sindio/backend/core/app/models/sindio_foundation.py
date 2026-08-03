@@ -19,10 +19,7 @@ from .fusion import CrossModalFusion
 from .heads import StressHead, ForecastHead, BreachClassifier
 
 
-class SindioFoundation(SindioFoundationModel):
-    """Alias for backward compatibility"""
-    pass
-
+class SindioFoundationModel(nn.Module):
     """Multi-modal foundation model for urban infrastructure stress prediction.
 
     Three modalities → fused latent → three task heads.
@@ -235,3 +232,6 @@ class SindioFoundation(SindioFoundationModel):
         """Convenience: stress levels per infrastructure type."""
         out = self.forward(**kwargs)
         return out["stress"]
+
+
+SindioFoundation = SindioFoundationModel

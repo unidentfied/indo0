@@ -1,8 +1,8 @@
 FROM python:3.11-slim
 
-# System dependencies
+# System dependencies (minimal — all Python deps install from pre-built wheels)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc g++ libpq-dev libgeos-dev libgdal-dev postgresql-client \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and install build tools
