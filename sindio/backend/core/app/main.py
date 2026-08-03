@@ -1,5 +1,6 @@
 import json
 import os
+import structlog
 import threading
 
 from contextlib import asynccontextmanager
