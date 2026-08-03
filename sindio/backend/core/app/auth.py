@@ -12,8 +12,6 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 
 # Email utilities
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 
 # Local helpers (will be defined later)
 from .email_utils import generate_verification_token, send_verification_email
