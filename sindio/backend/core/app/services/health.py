@@ -4,9 +4,16 @@ Provides additional health checks such as database connectivity.
 """
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import text
-from backend.core.app.services.ingest_geospatial import _get_db_engine
+from sqlalchemy import text, create_engine
 from backend.core.app.logging import logger
+
+
+def _get_db_engine():
+    """Lightweight DB engine factory — inlined here to avoid importing the
+    heavy ingest_geospatial module (which pulls in pandas, geopandas, etc.)."""
+    from backend.core.app.config import config
+    return create_engine(config.database_url)
+
 
 router = APIRouter()
 
