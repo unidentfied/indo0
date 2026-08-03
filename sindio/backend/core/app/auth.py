@@ -96,7 +96,7 @@ class UserCreate(BaseModel):
     password: str
 
 @auth_router.post("/signup", response_model=TokenResponse)
-async def signup(user: UserCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks = Depends()):
+async def signup(user: UserCreate, db: Session = Depends(get_db), background_tasks: BackgroundTasks):
     # Hash password
     pwd_hash = pwd_context.hash(user.password)
     # Set trial fields
