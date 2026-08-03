@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 import httpx
 import yaml
 import structlog
-import pandas as pd
+# pandas imported lazily inside functions that need it (not all consumers have it installed)
 # Import retry decorator for DB operations
 from backend.core.app.services.retry_decorator import retry_if_enabled
 # Optional third‑party helpers – imported lazily to avoid hard dependency failures
@@ -260,6 +260,7 @@ async def _resolve_source(asset_type: str, local_cache: Optional[Path] = None) -
 # Load GeoDataFrame (lazy import of geopandas)
 # -----------------------------------------------------------------------------
 def load_gdf(asset_type: str, path: Path, force: bool = False):
+    import pandas as pd
     gpd = _import_geopandas()
     if gpd is None:
         logger.warning("geopandas_unavailable", asset_type=asset_type)
