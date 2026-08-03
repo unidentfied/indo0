@@ -4,7 +4,7 @@ import uvicorn
 
 from backend.core.app.logging import logger
 from backend.app.main import app as api_app
-from backend.core.app.services.ingest_geospatial import run_all as ingest_all
+from backend.core.app.services.ingest_geospatial import run as ingest_all
 
 app = typer.Typer(help="Sindio CLI for managing services")
 
