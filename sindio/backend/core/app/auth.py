@@ -157,6 +157,8 @@ async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Sessio
         "detail": "Account created. Please check your email for the verification link.",
         "verified": False,
         "verification_email_sent": email_ok,
+        "trial_days": TRIAL_DAYS,
+        "trial_expires_at": trial_expires.isoformat(),
     }
 
 

@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Droplet, Zap, Route, Recycle, Footprints, TrainFront, Train, Plane,
   BellRing, BookOpen, User, LogOut, Trash2, AlertTriangle, ChevronDown, ChevronUp,
+  Clock, Crown,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -31,6 +32,21 @@ export default function Sidebar({ activeSystem, onSelect }: SidebarProps) {
 
   const displayName = user?.name || user?.email || user?.sub || 'User'
   const displayEmail = user?.email || user?.sub || ''
+
+  const trialStatus = useMemo(() => {
+    if (!user) return null
+    if (user.is_paid) return { label: 'Paid subscriber', color: 'text-green-400', icon: Crown, bg: 'bg-green-900/20 border-green-500/30' }
+    if (user.is_trial && user.trial_expires_at) {
+      const now = new Date()
+      const end = new Date(user.trial_expires_at)
+      const diffMs = end.getTime() - now.getTime()
+      if (diffMs <= 0) return { label: 'Trial expired', color: 'text-red-400', icon: AlertTriangle, bg: 'bg-red-900/20 border-red-500/30' }
+      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+      if (days <= 3) return { label: `Trial: ${days} day${days > 1 ? 's' : ''} left`, color: 'text-yellow-400', icon: Clock, bg: 'bg-yellow-900/20 border-yellow-500/30' }
+      return { label: `Trial: ${days} days left`, color: 'text-sindio-accent', icon: Clock, bg: 'bg-sindio-accent/10 border-sindio-accent/30' }
+    }
+    return null
+  }, [user])
 
   const handleDeleteAccount = async () => {
     setDeleting(true)
@@ -116,6 +132,12 @@ export default function Sidebar({ activeSystem, onSelect }: SidebarProps) {
 
         {profileOpen && (
           <div className="px-4 pb-4 space-y-1">
+            {trialStatus && (
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs mb-2 ${trialStatus.bg} ${trialStatus.color}`}>
+                <trialStatus.icon className="w-3.5 h-3.5 shrink-0" />
+                <span>{trialStatus.label}</span>
+              </div>
+            )}
             <button
               onClick={logout}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-sindio-muted hover:text-red-400 hover:bg-red-900/10 rounded-lg transition-colors"

@@ -52,7 +52,7 @@ const infraDescriptions: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const { hasActiveSubscription } = useAuth()
+  const { hasActiveSubscription, user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSystem = searchParams.get('system') || 'power'
 
@@ -104,15 +104,20 @@ export default function Dashboard() {
   const title = infraTitles[activeSystem] || 'Infrastructure Analysis'
 
   if (!hasActiveSubscription) {
+    const isTrialExpired = user?.is_trial && user?.trial_expires_at && new Date(user.trial_expires_at) <= new Date()
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="max-w-md w-full text-center">
           <div className="w-16 h-16 mx-auto mb-6 rounded-xl bg-sindio-accent/10 border border-sindio-accent/30 flex items-center justify-center">
             <Shield className="w-8 h-8 text-sindio-accent" />
           </div>
-          <h2 className="text-2xl font-bold mb-3">Subscribe to Access</h2>
+          <h2 className="text-2xl font-bold mb-3">
+            {isTrialExpired ? 'Trial Expired' : 'Subscribe to Access'}
+          </h2>
           <p className="text-sindio-muted mb-8 leading-relaxed">
-            Your trial has ended or you haven't subscribed yet. Choose a plan to continue monitoring Nairobi's infrastructure.
+            {isTrialExpired
+              ? 'Your 14-day free trial has ended. Subscribe to a plan to continue monitoring Nairobi&apos;s infrastructure.'
+              : 'Your trial has ended or you haven&apos;t subscribed yet. Choose a plan to get started.'}
           </p>
           <Link to="/" className="btn-primary inline-flex items-center gap-2">
             View Plans

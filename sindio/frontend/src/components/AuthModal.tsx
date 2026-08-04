@@ -32,6 +32,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
   const [error, setError] = useState<string | null>(null)
   const [verificationSent, setVerificationSent] = useState(false)
   const [resentMessage, setResentMessage] = useState<string | null>(null)
+  const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) onClose()
@@ -53,6 +54,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
       } else {
         const result = await signup(name, email, password)
         if (!result.verified) {
+          setTrialExpiresAt(result.trialExpiresAt || null)
           setVerificationSent(true)
         }
       }
@@ -99,6 +101,11 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
     'Very Strong': 'bg-green-600',
   }
 
+  const formatDate = (iso: string) => {
+    try { return new Date(iso).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) }
+    catch { return iso }
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 bg-black/60 backdrop-blur-sm">
       <div className="bg-sindio-panel rounded-xl shadow-xl w-full max-w-md mx-4 p-6 relative max-h-[90vh] overflow-y-auto">
@@ -114,11 +121,16 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
         {verificationSent ? (
           <div className="text-center">
             <h2 className="text-xl font-semibold mb-4 text-sindio-accent">
-              Check your email!
+              Start your free {trialExpiresAt ? '14-day' : ''} trial
             </h2>
             <p className="text-sindio-muted mb-2">
               A verification link has been sent to <strong>{email}</strong>.
             </p>
+            {trialExpiresAt && (
+              <p className="text-xs text-sindio-accent mb-2">
+                Your free trial ends on <strong>{formatDate(trialExpiresAt)}</strong>. No credit card required.
+              </p>
+            )}
             <p className="text-xs text-sindio-muted mb-6">
               Don't see it? Check your spam folder or click the button below to resend.
             </p>
@@ -151,11 +163,17 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
             <h2 className="text-2xl font-bold mb-1 text-sindio-accent">
               {mode === 'signin' ? 'Sign in' : 'Create your account'}
             </h2>
-            <p className="text-sm text-sindio-muted mb-6">
+            <p className="text-sm text-sindio-muted mb-4">
               {mode === 'signin'
                 ? 'Access your Sindio dashboard'
-                : 'Start your 14-day free trial'}
+                : 'Start your 14-day free trial — no credit card required'}
             </p>
+
+            {mode === 'signup' && (
+              <div className="bg-sindio-accent/10 border border-sindio-accent/20 rounded-lg p-3 mb-4 text-xs text-sindio-accent">
+                You get full access to all infrastructure monitoring tools free for 14 days. After the trial, subscribe to continue.
+              </div>
+            )}
 
             {error && (
               <div className="bg-red-900/30 border border-red-500/50 text-red-300 p-3 rounded mb-4 text-sm">
