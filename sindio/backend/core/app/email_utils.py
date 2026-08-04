@@ -1,6 +1,12 @@
 import os
 import logging
+from pathlib import Path
+from dotenv import load_dotenv
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+
+_ENV_PATH = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(_ENV_PATH)
 
 logger = logging.getLogger("sindio.email")
 

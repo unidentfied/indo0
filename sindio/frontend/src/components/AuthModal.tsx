@@ -21,7 +21,7 @@ function passwordStrength(pw: string): { score: number; label: string } {
 }
 
 export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModalProps) {
-  const { login, signup, isAuthenticated } = useAuth()
+  const { login, signup, resendVerification, isAuthenticated } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -31,6 +31,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [verificationSent, setVerificationSent] = useState(false)
+  const [resentMessage, setResentMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) onClose()
@@ -50,13 +51,32 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
       if (mode === 'signin') {
         await login(email, password)
       } else {
-        const autoVerified = await signup(name, email, password)
-        if (!autoVerified) {
+        const result = await signup(name, email, password)
+        if (!result.verified) {
           setVerificationSent(true)
         }
       }
     } catch (err: any) {
-      setError(err?.message ?? `${mode === 'signin' ? 'Sign in' : 'Sign up'} failed`)
+      const msg = err?.message ?? `${mode === 'signin' ? 'Sign in' : 'Sign up'} failed`
+      if (mode === 'signin' && msg.toLowerCase().includes('verify your email')) {
+        setVerificationSent(true)
+      } else {
+        setError(msg)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResend = async () => {
+    setLoading(true)
+    setError(null)
+    setResentMessage(null)
+    try {
+      await resendVerification(email)
+      setResentMessage('Verification email resent! Check your inbox.')
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to resend verification email')
     } finally {
       setLoading(false)
     }
@@ -96,10 +116,33 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
             <h2 className="text-xl font-semibold mb-4 text-sindio-accent">
               Check your email!
             </h2>
-            <p className="text-sindio-muted mb-6">
+            <p className="text-sindio-muted mb-2">
               A verification link has been sent to <strong>{email}</strong>.
             </p>
-            <button type="button" className="btn-primary w-full" onClick={handleClose}>
+            <p className="text-xs text-sindio-muted mb-6">
+              Don't see it? Check your spam folder or click the button below to resend.
+            </p>
+
+            {error && (
+              <div className="bg-red-900/30 border border-red-500/50 text-red-300 p-3 rounded mb-4 text-sm">
+                {error}
+              </div>
+            )}
+            {resentMessage && (
+              <div className="bg-green-900/30 border border-green-500/50 text-green-300 p-3 rounded mb-4 text-sm">
+                {resentMessage}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn-primary w-full mb-3 flex items-center justify-center gap-2 disabled:opacity-50"
+              onClick={handleResend}
+              disabled={loading}
+            >
+              {loading ? 'Sending…' : 'Resend Verification Email'}
+            </button>
+            <button type="button" className="text-sm text-sindio-muted hover:text-white underline" onClick={handleClose}>
               Close
             </button>
           </div>

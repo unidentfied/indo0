@@ -19,7 +19,8 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
-  signup: (name: string, email: string, password: string) => Promise<boolean>
+  signup: (name: string, email: string, password: string) => Promise<{ verified: boolean; verificationEmailSent: boolean }>
+  resendVerification: (email: string) => Promise<void>
   logout: () => void
   deleteAccount: () => Promise<void>
   hasActiveSubscription: boolean
@@ -105,13 +106,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(detail)
     }
     const data = await res.json()
-    const hasToken = !!data.access_token
-    if (hasToken) {
+    const verified = !!data.verified
+    if (verified && data.access_token) {
       localStorage.setItem(TOKEN_KEY, data.access_token)
       const user = parseJwt(data.access_token)
       setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
     }
-    return hasToken
+    return { verified, verificationEmailSent: !!data.verification_email_sent }
+  }, [])
+
+  const resendVerification = useCallback(async (email: string) => {
+    let res: Response
+    try {
+      res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/resend-verification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+    } catch {
+      throw new Error('Unable to reach the server. Please check your connection and try again.')
+    }
+    if (!res.ok) {
+      let detail = 'Failed to resend verification email'
+      try {
+        const body = JSON.parse(await res.text())
+        detail = body.detail || detail
+      } catch {}
+      throw new Error(detail)
+    }
   }, [])
 
   const logout = useCallback(() => {
@@ -141,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout, deleteAccount, hasActiveSubscription }}>
+    <AuthContext.Provider value={{ ...state, login, signup, resendVerification, logout, deleteAccount, hasActiveSubscription }}>
       {children}
     </AuthContext.Provider>
   )
