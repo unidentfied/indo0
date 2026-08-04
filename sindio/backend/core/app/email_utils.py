@@ -1,4 +1,5 @@
 import os
+import asyncio
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,14 +12,10 @@ if _ENV_PATH.exists():
 logger = logging.getLogger("sindio.email")
 
 EMAIL_SECRET = os.getenv("EMAIL_SECRET", "sindio-email-dev-secret-change-in-production")
-# FRONTEND_VERIFY_URL must be set to the deployed frontend domain in production
-# (e.g. https://sindio.net/verify-email) so verification emails contain the correct link.
 FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "https://sindio.net/verify-email")
 
 
 def _get_mail_config():
-    """Lazily create the FastMail ConnectionConfig to avoid importing
-    fastapi_mail at module level (it has a pydantic SecretStr bug in some versions)."""
     from fastapi_mail import ConnectionConfig
     return ConnectionConfig(
         MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
@@ -33,7 +30,6 @@ def _get_mail_config():
     )
 
 
-# Serializer for time-limited tokens (default 24 h)
 def generate_verification_token(email: str) -> str:
     serializer = URLSafeTimedSerializer(EMAIL_SECRET)
     return serializer.dumps(email, salt="email-verify")
@@ -61,4 +57,18 @@ async def send_verification_email(to_email: str, token: str) -> None:
     )
     conf = _get_mail_config()
     fm = FastMail(conf)
-    await fm.send_message(message)
+
+    last_error = None
+    for attempt in range(1, 4):
+        try:
+            await fm.send_message(message)
+            logger.info("verification_email_sent", email=to_email, attempt=attempt)
+            return
+        except Exception as exc:
+            last_error = exc
+            logger.warning("verification_email_attempt_failed", email=to_email, attempt=attempt, error=str(exc))
+            if attempt < 3:
+                await asyncio.sleep(2 ** attempt)
+
+    logger.error("verification_email_failed_after_retries", email=to_email, error=str(last_error))
+    raise last_error
