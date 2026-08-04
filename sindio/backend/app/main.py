@@ -62,7 +62,7 @@ async def generic_options(full_path: str):
 install_signal_handlers()
 
 # ── Trusted Host Middleware (Host Header Attack Protection) ──
-_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,api.sindio.net,sindio.net,*.sindio.net,*").split(",")
+_ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,api.sindio.net,sindio.net,*.sindio.net").split(",") + ["*"]
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[h.strip() for h in _ALLOWED_HOSTS if h.strip()],
