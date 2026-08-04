@@ -8,17 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip and install build tools
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy requirements first (layer caching)
+# Copy requirements and source code BEFORE pip install to break stale cache
 COPY sindio/backend/app/requirements.txt /workspace/requirements.txt
+
+# Copy the mock app and backend package
+COPY sindio/backend/app/ /workspace/app/
+COPY sindio/backend/ /workspace/backend/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /workspace/requirements.txt
-
-# Copy the mock app into /workspace/app/ (preserving the package name)
-COPY sindio/backend/app/ /workspace/app/
-
-# Copy the backend package for cross-imports (e.g. from backend.core.app.logging)
-COPY sindio/backend/ /workspace/backend/
 
 WORKDIR /workspace
 
