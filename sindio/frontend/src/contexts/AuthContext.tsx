@@ -84,10 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const body = await res.text()
       throw new Error(body || 'Signup failed')
     }
-    const data = await res.json()
-    localStorage.setItem(TOKEN_KEY, data.access_token)
-    const user = parseJwt(data.access_token)
-    setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
   }, [])
 
   const logout = useCallback(() => {
