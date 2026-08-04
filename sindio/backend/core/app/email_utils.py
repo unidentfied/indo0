@@ -3,7 +3,7 @@ import asyncio
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from itsdangerous import URLSafeSerializer, BadSignature
 
 _ENV_PATH = Path(__file__).resolve().parent.parent.parent.parent / ".env"
 if _ENV_PATH.exists():
@@ -31,18 +31,29 @@ def _get_mail_config():
 
 
 def generate_verification_token(email: str) -> str:
-    serializer = URLSafeTimedSerializer(EMAIL_SECRET)
-    return serializer.dumps(email, salt="email-verify")
+    import time, json, base64
+    payload = json.dumps({"email": email, "iat": int(time.time())})
+    encoded = base64.urlsafe_b64encode(payload.encode()).rstrip(b"=").decode()
+    serializer = URLSafeSerializer(EMAIL_SECRET)
+    return serializer.dumps(encoded, salt="email-verify")
 
 
 def verify_token(token: str, max_age: int = 86400) -> str:
-    serializer = URLSafeTimedSerializer(EMAIL_SECRET)
+    import time, json, base64
+    serializer = URLSafeSerializer(EMAIL_SECRET)
     try:
-        email = serializer.loads(token, salt="email-verify", max_age=max_age)
-        return email
-    except SignatureExpired:
-        raise ValueError("Verification link has expired")
+        raw = serializer.loads(token, salt="email-verify")
     except BadSignature:
+        raise ValueError("Invalid verification token")
+
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(raw + "==="))
+        email = payload["email"]
+        iat = payload.get("iat", 0)
+        if time.time() - iat > max_age:
+            raise ValueError("Verification link has expired")
+        return email
+    except (json.JSONDecodeError, KeyError, UnicodeDecodeError):
         raise ValueError("Invalid verification token")
 
 
