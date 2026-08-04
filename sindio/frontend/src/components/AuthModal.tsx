@@ -194,7 +194,6 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={loading}
-                  placeholder="Your name"
                 />
               </div>
             )}

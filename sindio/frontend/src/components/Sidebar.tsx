@@ -7,6 +7,8 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
+const TRIAL_DAYS = 14
+
 const menuItems = [
   { icon: Zap, label: 'Power Systems', id: 'power' },
   { icon: Droplet, label: 'Water Grid', id: 'water' },
@@ -35,15 +37,17 @@ export default function Sidebar({ activeSystem, onSelect }: SidebarProps) {
 
   const trialStatus = useMemo(() => {
     if (!user) return null
-    if (user.is_paid) return { label: 'Paid subscriber', color: 'text-green-400', icon: Crown, bg: 'bg-green-900/20 border-green-500/30' }
+    if (user.is_paid) return { variant: 'paid' as const, label: 'Subscriber', textColor: 'text-green-300', barColor: 'bg-green-500', icon: Crown, iconBg: 'bg-green-500/20' }
     if (user.is_trial && user.trial_expires_at) {
       const now = new Date()
       const end = new Date(user.trial_expires_at)
-      const diffMs = end.getTime() - now.getTime()
-      if (diffMs <= 0) return { label: 'Trial expired', color: 'text-red-400', icon: AlertTriangle, bg: 'bg-red-900/20 border-red-500/30' }
-      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-      if (days <= 3) return { label: `Trial: ${days} day${days > 1 ? 's' : ''} left`, color: 'text-yellow-400', icon: Clock, bg: 'bg-yellow-900/20 border-yellow-500/30' }
-      return { label: `Trial: ${days} days left`, color: 'text-sindio-accent', icon: Clock, bg: 'bg-sindio-accent/10 border-sindio-accent/30' }
+      const total = end.getTime() - new Date(new Date(end).setDate(new Date(end).getDate() - TRIAL_DAYS)).getTime()
+      const remaining = Math.max(0, end.getTime() - now.getTime())
+      const pct = Math.floor((remaining / total) * 100)
+      const days = Math.ceil(remaining / (1000 * 60 * 60 * 24))
+      if (remaining <= 0) return { variant: 'expired' as const, label: 'Trial expired', pct: 0, days: 0, textColor: 'text-red-400', barColor: 'bg-red-500', icon: AlertTriangle, iconBg: 'bg-red-500/20' }
+      if (days <= 3) return { variant: 'warning' as const, label: `${days}d remaining`, pct, days, textColor: 'text-yellow-300', barColor: 'bg-yellow-500', icon: Clock, iconBg: 'bg-yellow-500/20' }
+      return { variant: 'active' as const, label: `${days}d remaining`, pct, days, textColor: 'text-sindio-accent', barColor: 'bg-sindio-accent', icon: Clock, iconBg: 'bg-sindio-accent/20' }
     }
     return null
   }, [user])
@@ -133,9 +137,36 @@ export default function Sidebar({ activeSystem, onSelect }: SidebarProps) {
         {profileOpen && (
           <div className="px-4 pb-4 space-y-1">
             {trialStatus && (
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs mb-2 ${trialStatus.bg} ${trialStatus.color}`}>
-                <trialStatus.icon className="w-3.5 h-3.5 shrink-0" />
-                <span>{trialStatus.label}</span>
+              <div className="px-3 py-2.5 rounded-lg border border-sindio-border bg-sindio-dark/50 mb-2">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${trialStatus.iconBg}`}>
+                    <trialStatus.icon className={`w-3.5 h-3.5 ${trialStatus.textColor}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-xs font-semibold ${trialStatus.textColor}`}>
+                      {trialStatus.label}
+                    </div>
+                    {trialStatus.variant !== 'paid' && trialStatus.variant !== 'expired' && (
+                      <div className="text-[10px] text-sindio-muted">
+                        Free trial · {TRIAL_DAYS - trialStatus.days}d used
+                      </div>
+                    )}
+                    {trialStatus.variant === 'expired' && (
+                      <div className="text-[10px] text-sindio-muted">Subscribe to continue</div>
+                    )}
+                    {trialStatus.variant === 'paid' && (
+                      <div className="text-[10px] text-sindio-muted">Full access</div>
+                    )}
+                  </div>
+                </div>
+                {trialStatus.variant !== 'paid' && (
+                  <div className="h-1 rounded-full bg-sindio-border overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${trialStatus.barColor}`}
+                      style={{ width: `${trialStatus.pct}%` }}
+                    />
+                  </div>
+                )}
               </div>
             )}
             <button
