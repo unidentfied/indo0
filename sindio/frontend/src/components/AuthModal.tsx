@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Eye, EyeOff } from 'lucide-react'
 
@@ -20,7 +20,7 @@ function passwordStrength(pw: string): { score: number; label: string } {
 }
 
 export default function AuthModal({ onClose }: AuthModalProps) {
-  const { login, signup } = useAuth()
+  const { login, signup, isAuthenticated } = useAuth()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,6 +29,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [verificationSent, setVerificationSent] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated) onClose()
+  }, [isAuthenticated, onClose])
 
   const strength = useMemo(() => passwordStrength(password), [password])
 

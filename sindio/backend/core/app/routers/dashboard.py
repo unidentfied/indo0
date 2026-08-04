@@ -1,9 +1,9 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Query
-from app.auth import require_auth, optional_auth
-from app.dependencies.auth import is_active_user
+from ..auth import require_auth, optional_auth
+from ..dependencies.auth import is_active_user
 
-from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
+from ..services.monitor import InfrastructureMonitor, get_all_configs, get_config
 
 router = APIRouter()
 

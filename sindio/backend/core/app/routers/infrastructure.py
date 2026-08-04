@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Path
 
-from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
-from app.auth import optional_auth
+from ..services.monitor import InfrastructureMonitor, get_all_configs, get_config
+from ..auth import optional_auth
 
 router = APIRouter()
 

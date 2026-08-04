@@ -8,11 +8,11 @@ and official report summaries across ALL infrastructure types.
 
 import os
 from fastapi import APIRouter, Depends, Query
-from app.auth import optional_auth
+from ..auth import optional_auth
 from typing import Optional
 from datetime import datetime, timezone
 
-from app.services.monitor import get_all_stressed_assets, get_all_configs, get_config
+from ..services.monitor import get_all_stressed_assets, get_all_configs, get_config
 
 router = APIRouter()
 
@@ -75,7 +75,7 @@ def get_stress(
 
     if include_healthy:
         # Re-run with healthy included for the filtered types
-        from app.services.monitor import InfrastructureMonitor
+        from ..services.monitor import InfrastructureMonitor
 
         types = [infra_type] if infra_type else [c.name for c in get_all_configs()]
         healthy_assets = []
@@ -148,7 +148,7 @@ def get_infra_types():
 @router.get("/api/v1/monitor/{infra_type}/report", dependencies=[Depends(optional_auth)])
 def get_report_summary(infra_type: str):
     """Get the official report summary for one infrastructure type."""
-    from app.services.monitor import ReportIntegrator
+    from ..services.monitor import ReportIntegrator
     from datetime import datetime, timezone
 
     try:
@@ -177,7 +177,7 @@ def get_classification_summary(
     Classification requires ≥ 6 months of data (varies by type).
     STL recurring detection specifically requires ≥ 3 years of hourly data.
     """
-    from app.services.long_window_classifier import (
+    from ..services.long_window_classifier import (
         MIN_DATA_WINDOWS,
         DENSITY_RHO_THRESHOLD,
         SEASONAL_STRENGTH_MIN,

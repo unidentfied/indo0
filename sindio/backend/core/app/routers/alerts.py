@@ -1,10 +1,10 @@
 from typing import Optional
 
 from fastapi import APIRouter, Query, Depends
-from app.auth import optional_auth
+from ..auth import optional_auth
 
-from app.services.monitor import get_all_configs, get_config
-from app.database import get_engine
+from ..services.monitor import get_all_configs, get_config
+from ..database import get_engine
 from sqlalchemy import text
 
 router = APIRouter()

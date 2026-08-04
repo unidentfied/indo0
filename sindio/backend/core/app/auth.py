@@ -95,43 +95,65 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
-@auth_router.post("/signup", response_model=TokenResponse)
+@auth_router.post("/signup")
 async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     existing = db.query(User).filter(User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=409, detail="An account with this email already exists")
-    # Hash password
     pwd_hash = pwd_context.hash(user.password)
-    # Set trial fields
     trial_expires = datetime.now(timezone.utc) + timedelta(days=TRIAL_DAYS)
-    new_user = User(email=user.email, password_hash=pwd_hash, is_verified=False, is_trial=True, trial_expires_at=trial_expires)
+
+    _env = os.getenv("ENV", "development").lower()
+    auto_verify = _env != "production"
+
+    new_user = User(
+        email=user.email,
+        password_hash=pwd_hash,
+        is_verified=auto_verify,
+        is_trial=True,
+        trial_expires_at=trial_expires,
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    # Generate verification token
+
+    if auto_verify:
+        logger.info("signup_auto_verified", email=user.email, env=_env)
+        access_token = create_access_token(data={
+            "sub": new_user.email,
+            "is_paid": new_user.is_paid,
+            "is_trial": new_user.is_trial,
+            "trial_expires_at": new_user.trial_expires_at.isoformat() if new_user.trial_expires_at else None,
+        })
+        return {"detail": "Account created and verified", "access_token": access_token, "token_type": "bearer", "expires_in": JWT_EXPIRY_MINUTES * 60}
+
     try:
         token = generate_verification_token(user.email)
         background_tasks.add_task(send_verification_email, user.email, token)
+        logger.info("verification_email_queued", email=user.email)
     except Exception as exc:
-        logger.warning("verification_email_skipped", email=user.email, error=str(exc))
-    # Issue JWT token (user can log in after verification)
-    access_token = create_access_token(data={"sub": new_user.email, "is_paid": new_user.is_paid, "is_trial": new_user.is_trial, "trial_expires_at": new_user.trial_expires_at.isoformat() if new_user.trial_expires_at else None})
-    return TokenResponse(access_token=access_token, expires_in=JWT_EXPIRY_MINUTES * 60)
+        logger.error("verification_email_failed", email=user.email, error=str(exc))
+        db.delete(new_user)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
+
+    return {"detail": "Account created. Please check your email for the verification link."}
 
 # User login endpoint (email & password)
-@auth_router.post("/login", response_model=TokenResponse)
+@auth_router.post("/login")
 async def login(credentials: UserCreate, db: Session = Depends(get_db)):
+    if not credentials.email or not credentials.password:
+        raise HTTPException(status_code=422, detail="Email and password are required")
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     if not pwd_context.verify(credentials.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_verified:
-        raise HTTPException(status_code=403, detail="Email not verified")
-    # Issue JWT with subscription/trial info
+        raise HTTPException(status_code=403, detail="Please verify your email before signing in. Check your inbox for the verification link.")
     token_data = {"sub": user.email, "is_paid": user.is_paid, "is_trial": user.is_trial, "trial_expires_at": user.trial_expires_at.isoformat() if user.trial_expires_at else None}
     access_token = create_access_token(data=token_data)
-    return TokenResponse(access_token=access_token, expires_in=JWT_EXPIRY_MINUTES * 60)
+    return {"access_token": access_token, "token_type": "bearer", "expires_in": JWT_EXPIRY_MINUTES * 60}
 
 # Email verification endpoint (kept unchanged)
 @auth_router.get("/verify-email/{token}")

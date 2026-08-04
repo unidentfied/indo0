@@ -59,14 +59,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    let res: Response
+    try {
+      res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+    } catch {
+      throw new Error('Unable to reach the server. Please check your connection and try again.')
+    }
     if (!res.ok) {
-      const body = await res.text()
-      throw new Error(body || 'Login failed')
+      let detail = 'Login failed'
+      try {
+        const body = JSON.parse(await res.text())
+        detail = body.detail || detail
+      } catch {}
+      throw new Error(detail)
     }
     const data = await res.json()
     localStorage.setItem(TOKEN_KEY, data.access_token)
@@ -75,14 +84,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signup = useCallback(async (email: string, password: string) => {
-    const res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    let res: Response
+    try {
+      res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+    } catch {
+      throw new Error('Unable to reach the server. Please check your connection and try again.')
+    }
     if (!res.ok) {
-      const body = await res.text()
-      throw new Error(body || 'Signup failed')
+      let detail = 'Signup failed'
+      try {
+        const body = JSON.parse(await res.text())
+        detail = body.detail || detail
+      } catch {}
+      throw new Error(detail)
+    }
+    const data = await res.json()
+    if (data.access_token) {
+      localStorage.setItem(TOKEN_KEY, data.access_token)
+      const user = parseJwt(data.access_token)
+      setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
     }
   }, [])
 

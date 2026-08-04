@@ -163,18 +163,17 @@ async def rbac_middleware(request: Request, call_next):
         return await call_next(request)
     """Enforce authentication on protected endpoints.
 
-    Public endpoints (health, metrics, docs, stream) are exempt.
+    Public endpoints (health, metrics, docs, stream, auth) are exempt.
     All other endpoints require a valid API key OR a valid JWT Bearer token.
     """
-    public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/api/v1/stream", "/api/v1/dashboard", "/api/v1/dashboard/metrics", "/api/v1/dashboard/alerts"}
+    public_paths = {"/health", "/metrics", "/docs", "/openapi.json", "/auth/", "/api/v1/stream", "/api/v1/dashboard", "/api/v1/dashboard/metrics", "/api/v1/dashboard/alerts"}
     if any(request.url.path.startswith(p) for p in public_paths):
         return await call_next(request)
 
     # Disable authentication checks in local development to allow local frontend queries without headers
+    authenticated = False
     if _ENV != "production":
         authenticated = True
-
-    authenticated = authenticated or False
 
     # 1. API key check
     if _API_KEY:

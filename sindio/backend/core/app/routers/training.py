@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.auth import require_auth
-from app.services.model_registry import ModelRegistry
+from ..auth import require_auth
+from ..services.model_registry import ModelRegistry
 
 logger = logging.getLogger("sindio.training")
 router = APIRouter()
@@ -33,7 +33,7 @@ def _run_training():
         "error": None,
     }
     try:
-        from app.training.train_model import main as train_main
+        from ..training.train_model import main as train_main
         train_main()
         _training_status["state"] = "completed"
     except Exception as exc:
@@ -57,7 +57,7 @@ async def start_training():
 
     # Guard: verify data exists before starting
     try:
-        from app.database import get_engine
+        from ..database import get_engine
         from sqlalchemy import text
         with get_engine().connect() as conn:
             count = conn.execute(text("SELECT COUNT(*) FROM sensor_readings")).scalar()
@@ -96,7 +96,7 @@ async def training_status():
 async def training_config():
     """Return current hyperparameters and data requirements."""
     try:
-        from app.training.train_model import HYPERPARAMS, HELD_OUT_WARDS
+        from ..training.train_model import HYPERPARAMS, HELD_OUT_WARDS
         return {
             "hyperparameters": HYPERPARAMS,
             "held_out_wards": HELD_OUT_WARDS,
@@ -112,7 +112,7 @@ async def training_config():
 async def trigger_ingestion():
     """Manually trigger all ingestion fetchers. Returns result counts."""
     try:
-        from app.ingestion import run_all
+        from ..ingestion import run_all
         results = run_all()
         return results
     except Exception as exc:
@@ -126,14 +126,14 @@ async def monitoring_health():
     """Return scheduler health, ingestion status, and DB connectivity."""
     health = {"scheduler": "unknown", "ingestion": None, "db": "unknown"}
     try:
-        from app.scheduler import get_health
+        from ..scheduler import get_health
         health["scheduler"] = get_health()["status"]
         health["ingestion"] = get_health()["last_ingestion"]
     except Exception:
         health["scheduler"] = "unavailable"
 
     try:
-        from app.database import get_engine
+        from ..database import get_engine
         from sqlalchemy import text
         with get_engine().connect() as conn:
             conn.execute(text("SELECT 1"))

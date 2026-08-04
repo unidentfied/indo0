@@ -3,9 +3,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.auth import optional_auth
+from ..auth import optional_auth
 
-from app.services.monitor import InfrastructureMonitor, get_all_configs, get_config
+from ..services.monitor import InfrastructureMonitor, get_all_configs, get_config
 
 router = APIRouter()
 

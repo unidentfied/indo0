@@ -10,7 +10,7 @@ from fastapi import APIRouter
 router = APIRouter()
 
 try:
-    from app.services.alert_scheduler import get_schedule_status
+    from ..services.alert_scheduler import get_schedule_status
     HAS_SCHEDULER = True
 except ImportError:
     HAS_SCHEDULER = False
@@ -27,7 +27,7 @@ async def next_updates():
 
     # Fallback: return static schedule from unified registry
     from datetime import datetime, timezone, timedelta
-    from app.services.monitor.registry import get_all_configs
+    from ..services.monitor.registry import get_all_configs
 
     now = datetime.now(timezone.utc)
     return [

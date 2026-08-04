@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException
 
-from app.routers.simulations import run_simulation, SimulationRequest
+from .simulations import run_simulation, SimulationRequest
 
 router = APIRouter()
 

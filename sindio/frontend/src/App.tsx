@@ -12,6 +12,7 @@ import PrivacyPage from './pages/PrivacyPage'
 import CookiesPage from './pages/CookiesPage'
 import TermsPage from './pages/TermsPage'
 import NotFoundPage from './pages/NotFoundPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 
@@ -37,6 +38,7 @@ function App() {
                   <Route path="/terms" element={<TermsPage />} />
                   <Route path="/people" element={<PeoplePage />} />
                   <Route path="/faq" element={<FAQPage />} />
+                  <Route path="/verify-email" element={<VerifyEmailPage />} />
                   <Route path="*" element={<NotFoundPage />} />
                 </Routes>
               </Suspense>
