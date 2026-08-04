@@ -63,6 +63,8 @@ async def on_startup():
         from backend.core.app.database import get_engine
         engine = get_engine()
         Base.metadata.create_all(bind=engine)
+        from backend.core.app.models.user import UserBase
+        UserBase.metadata.create_all(bind=engine)
         logger.info("Database tables verified/created")
     except Exception as exc:
         logger.warning("Table creation skipped (DB may not be available): %s", exc)

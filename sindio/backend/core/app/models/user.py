@@ -1,9 +1,11 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, func
-from ..ingestion.models import Base
+from sqlalchemy.orm import declarative_base
 
-class User(Base):
+UserBase = declarative_base()
+
+
+class User(UserBase):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
