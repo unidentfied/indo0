@@ -22,7 +22,6 @@ RUN POETRY_HTTP_TIMEOUT=1800 poetry config virtualenvs.create false && \
 
 # Copy application source code
 COPY sindio/backend/ ./backend/
-COPY sindio/app/ ./app/
 COPY sindio/models/ /app/models
 COPY sindio/data/ /app/data
 
@@ -47,5 +46,5 @@ EXPOSE 8081
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8081/health/live')" || exit 1
 
-# Start FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]
+# CMD
+CMD ["uvicorn", "backend.core.app.main:app", "--host", "0.0.0.0", "--port", "8081"]
