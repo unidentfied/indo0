@@ -120,9 +120,8 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 id="auth-email"
                 type="email"
                 required
-                placeholder="you@example.com"
                 autoComplete="email"
-                className="w-full px-3 py-2 border border-sindio-border rounded bg-sindio-dark text-sindio-text placeholder:text-gray-500 focus:outline-none focus:border-sindio-accent focus:ring-1 focus:ring-sindio-accent transition"
+                className="w-full px-3 py-2 border border-sindio-border rounded bg-sindio-dark text-sindio-text focus:outline-none focus:border-sindio-accent focus:ring-1 focus:ring-sindio-accent transition"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
