@@ -9,13 +9,19 @@ CREATE EXTENSION IF NOT EXISTS "timescaledb";
 -- Users & Authentication
 -- ============================================================
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'viewer',
-    org_id UUID,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    password_hash VARCHAR(255) NOT NULL,
+    is_paid BOOLEAN NOT NULL DEFAULT FALSE,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_trial BOOLEAN NOT NULL DEFAULT TRUE,
+    trial_expires_at TIMESTAMPTZ,
+    subscription_type VARCHAR(20),
+    subscription_price INTEGER,
+    subscription_start TIMESTAMPTZ,
+    subscription_end TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================
@@ -57,7 +63,7 @@ CREATE INDEX idx_telemetry_node ON sensor_telemetry(node_id, recorded_at DESC);
 -- ============================================================
 CREATE TABLE simulations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    created_by UUID REFERENCES users(id),
+    created_by INTEGER REFERENCES users(id),
     network_type VARCHAR(20) NOT NULL CHECK (network_type IN ('power', 'water', 'roads', 'solid_waste', 'sidewalks', 'lrt', 'sgr', 'airports')),
     stress_factor VARCHAR(255),
     failure_risk VARCHAR(10) NOT NULL CHECK (failure_risk IN ('low', 'medium', 'high')),

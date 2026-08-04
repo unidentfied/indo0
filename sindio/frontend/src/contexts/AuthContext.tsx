@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 interface UserPayload {
   sub: string
   email?: string
+  name?: string | null
   is_paid?: boolean
   is_trial?: boolean
   trial_expires_at?: string
@@ -18,8 +19,9 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string) => Promise<void>
+  signup: (name: string, email: string, password: string) => Promise<boolean>
   logout: () => void
+  deleteAccount: () => Promise<void>
   hasActiveSubscription: boolean
 }
 
@@ -27,7 +29,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 
 function parseJwt(token: string): UserPayload | null {
   try {
-    const base64 = token.split('.')[1]
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
     const json = atob(base64)
     return JSON.parse(json)
   } catch {
@@ -49,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(TOKEN_KEY)
     if (stored) {
       const user = parseJwt(stored)
-      if (user && user.exp ? (user.exp * 1000) > Date.now() : true) {
+      if (user && typeof user.exp === 'number' && (user.exp * 1000) > Date.now()) {
         setState({ token: stored, user, isAuthenticated: true, isLoading: false })
         return
       }
@@ -83,13 +85,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
   }, [])
 
-  const signup = useCallback(async (email: string, password: string) => {
+  const signup = useCallback(async (name: string, email: string, password: string) => {
     let res: Response
     try {
       res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       })
     } catch {
       throw new Error('Unable to reach the server. Please check your connection and try again.')
@@ -103,14 +105,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(detail)
     }
     const data = await res.json()
-    if (data.access_token) {
+    const hasToken = !!data.access_token
+    if (hasToken) {
       localStorage.setItem(TOKEN_KEY, data.access_token)
       const user = parseJwt(data.access_token)
       setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
     }
+    return hasToken
   }, [])
 
   const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY)
+    setState({ token: null, user: null, isAuthenticated: false, isLoading: false })
+  }, [])
+
+  const deleteAccount = useCallback(async () => {
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (!token) throw new Error('Not authenticated')
+    const res = await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || ''}/auth/account`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) {
+      let detail = 'Failed to delete account'
+      try { const body = JSON.parse(await res.text()); detail = body.detail || detail } catch {}
+      throw new Error(detail)
+    }
     localStorage.removeItem(TOKEN_KEY)
     setState({ token: null, user: null, isAuthenticated: false, isLoading: false })
   }, [])
@@ -121,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthContext.Provider value={{ ...state, login, signup, logout, hasActiveSubscription }}>
+    <AuthContext.Provider value={{ ...state, login, signup, logout, deleteAccount, hasActiveSubscription }}>
       {children}
     </AuthContext.Provider>
   )

@@ -14,7 +14,8 @@ const REQUEST_TIMEOUT = 8000
 const pending = new Map<string, Promise<unknown>>()
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const method = options?.method || 'GET'
+  const { headers: optHeaders, signal: optSignal, ...rest } = options || {}
+  const method = rest.method || 'GET'
   const key = `${method}:${path}`
 
   // Only deduplicate GET requests to avoid POST body collisions
@@ -25,24 +26,27 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
-  const headers = new Headers(options?.headers)
+  const headers = new Headers(optHeaders)
   headers.set('Content-Type', 'application/json')
-  // Attach JWT token from localStorage if available
   const token = localStorage.getItem('sindio_token')
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
 
   const promise = fetch(`${API_BASE}${path}`, {
+    ...rest,
     headers,
     signal: controller.signal,
-    ...options,
   })
     .then(async (res) => {
       if (!res.ok) {
-        const body = await res.text()
-        console.error(`[Sindio API] ${res.status} on ${path}:`, body)
-        throw new Error(`API ${res.status} on ${path}: ${body}`)
+        let detail = `API ${res.status} on ${path}`
+        try {
+          const body = await res.json()
+          detail = body.detail || detail
+        } catch {}
+        console.error(`[Sindio API] ${res.status} on ${path}:`, detail)
+        throw new Error(detail)
       }
       return res.json() as T
     })
@@ -147,15 +151,19 @@ export interface GeoJsonFeature {
 export const api = {
   health: () => request<{ status: string }>('/api/health'),
   auth: {
-    signup: (email: string, password: string) =>
+    signup: (name: string, email: string, password: string) =>
       request<TokenResponse>('/auth/signup', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       }),
     login: (email: string, password: string) =>
       request<TokenResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
+      }),
+    deleteAccount: () =>
+      request<{ detail: string }>('/auth/account', {
+        method: 'DELETE',
       }),
   },
 

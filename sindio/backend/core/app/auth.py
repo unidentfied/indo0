@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import structlog
 import os
-import hmac
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
@@ -90,8 +89,12 @@ async def optional_auth(request: Request, credentials: Optional[HTTPAuthorizatio
 
 # --- New Auth Endpoints ---
 
-# User signup
 class UserCreate(BaseModel):
+    email: str
+    password: str
+    name: Optional[str] = None
+
+class UserLogin(BaseModel):
     email: str
     password: str
 
@@ -107,6 +110,7 @@ async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Sessio
     auto_verify = _env != "production"
 
     new_user = User(
+        name=user.name,
         email=user.email,
         password_hash=pwd_hash,
         is_verified=auto_verify,
@@ -117,31 +121,44 @@ async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Sessio
     db.commit()
     db.refresh(new_user)
 
+    verification_token_sent = False
+    try:
+        token = generate_verification_token(user.email)
+        background_tasks.add_task(send_verification_email, user.email, token)
+        verification_token_sent = True
+        logger.info("verification_email_queued", email=user.email)
+    except Exception as exc:
+        logger.error("verification_email_failed", email=user.email, error=str(exc))
+        if not auto_verify:
+            db.delete(new_user)
+            db.commit()
+            raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
+
     if auto_verify:
         logger.info("signup_auto_verified", email=user.email, env=_env)
         access_token = create_access_token(data={
             "sub": new_user.email,
+            "name": new_user.name,
             "is_paid": new_user.is_paid,
             "is_trial": new_user.is_trial,
             "trial_expires_at": new_user.trial_expires_at.isoformat() if new_user.trial_expires_at else None,
         })
-        return {"detail": "Account created and verified", "access_token": access_token, "token_type": "bearer", "expires_in": JWT_EXPIRY_MINUTES * 60}
+        return {
+            "detail": "Account created and verified",
+            "access_token": access_token,
+            "token_type": "bearer",
+            "expires_in": JWT_EXPIRY_MINUTES * 60,
+            "verification_email_sent": verification_token_sent,
+        }
 
-    try:
-        token = generate_verification_token(user.email)
-        background_tasks.add_task(send_verification_email, user.email, token)
-        logger.info("verification_email_queued", email=user.email)
-    except Exception as exc:
-        logger.error("verification_email_failed", email=user.email, error=str(exc))
-        db.delete(new_user)
-        db.commit()
-        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
-
-    return {"detail": "Account created. Please check your email for the verification link."}
+    return {
+        "detail": "Account created. Please check your email for the verification link.",
+        "verification_email_sent": True,
+    }
 
 # User login endpoint (email & password)
 @auth_router.post("/login")
-async def login(credentials: UserCreate, db: Session = Depends(get_db)):
+async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     if not credentials.email or not credentials.password:
         raise HTTPException(status_code=422, detail="Email and password are required")
     user = db.query(User).filter(User.email == credentials.email).first()
@@ -151,7 +168,7 @@ async def login(credentials: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email before signing in. Check your inbox for the verification link.")
-    token_data = {"sub": user.email, "is_paid": user.is_paid, "is_trial": user.is_trial, "trial_expires_at": user.trial_expires_at.isoformat() if user.trial_expires_at else None}
+    token_data = {"sub": user.email, "name": user.name, "is_paid": user.is_paid, "is_trial": user.is_trial, "trial_expires_at": user.trial_expires_at.isoformat() if user.trial_expires_at else None}
     access_token = create_access_token(data=token_data)
     return {"access_token": access_token, "token_type": "bearer", "expires_in": JWT_EXPIRY_MINUTES * 60}
 
@@ -170,5 +187,18 @@ async def verify_email(token: str, db: Session = Depends(get_db)):
     user.is_verified = True
     db.commit()
     return {"detail": "Email verified successfully"}
+
+@auth_router.delete("/account")
+async def delete_account(payload: dict[str, Any] = Depends(require_auth), db: Session = Depends(get_db)):
+    email = payload.get("sub")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    logger.info("account_deleted", email=email)
+    return {"detail": "Account deleted successfully"}
 
 

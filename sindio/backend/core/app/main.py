@@ -39,10 +39,10 @@ async def lifespan(app: FastAPI):
     # Initialize database schema for ingestion + users in background
     def _init_tables():
         try:
-            from backend.core.app.database import get_engine, init_ingestion_tables
+            from .database import get_engine, init_ingestion_tables
             engine = get_engine()
             init_ingestion_tables()
-            from backend.core.app.models.user import UserBase
+            from .models.user import UserBase
             UserBase.metadata.create_all(bind=engine)
             logger.info("Database tables verified/created (core)")
         except Exception as exc:
@@ -105,7 +105,7 @@ _CORS_ORIGINS = os.getenv("CORS_ORIGINS", "")
 if not _CORS_ORIGINS:
     if os.getenv("ENV", "development").lower() == "production":
         raise RuntimeError("CORS_ORIGINS environment variable is required in production")
-    _CORS_ORIGINS = "http://localhost:3000,https://sindio.net"
+    _CORS_ORIGINS = "http://localhost:4000,http://localhost:3000,https://sindio.net"
 
 app.add_middleware(
     CORSMiddleware,

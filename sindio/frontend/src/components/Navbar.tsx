@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Sun, Moon, Maximize, Minimize, LogOut, User } from 'lucide-react'
+import { Menu, X, Sun, Moon, Maximize, Minimize, LogOut } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import AuthModal from './AuthModal'
@@ -40,7 +40,7 @@ const TABS: { label: string; system: string }[] = [
 
 export default function Navbar() {
   const location = useLocation()
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, logout } = useAuth()
   const isDash = location.pathname.startsWith('/dashboard')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showAuth, setShowAuth] = useState(false)
@@ -115,31 +115,12 @@ export default function Navbar() {
             </button>
 
             {isAuthenticated ? (
-              <>
-                <span className="text-sm text-sindio-muted truncate max-w-[160px]">
-                  <User className="w-3.5 h-3.5 inline mr-1" />
-                  {user?.email || user?.sub || 'User'}
-                </span>
-                <button
-                  onClick={logout}
-                  className="p-2 rounded-lg text-sindio-muted hover:text-red-400 hover:bg-red-900/20 transition-colors"
-                  title="Sign out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </>
-            ) : (
-              <button onClick={() => setShowAuth(true)} className="btn-primary text-sm">
-                Sign In
-              </button>
-            )}
-            {isAuthenticated ? (
               <Link to="/dashboard" className="btn-primary text-sm" onMouseEnter={prefetchDashboard}>
                 Launch Dashboard
               </Link>
             ) : (
               <button onClick={() => setShowAuth(true)} className="btn-primary text-sm">
-                Launch Dashboard
+                Sign In
               </button>
             )}
           </div>

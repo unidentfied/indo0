@@ -1,6 +1,6 @@
 
-import { Link } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
 import AuthModal from '../components/AuthModal';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -63,7 +63,19 @@ const proFeatures = [
 
 export default function LandingPage() {
   const { isAuthenticated } = useAuth()
+  const location = useLocation()
   const [showAuth, setShowAuth] = useState(false)
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+
+  useEffect(() => {
+    const state = location.state as { requireAuth?: boolean; from?: string } | null
+    const params = new URLSearchParams(location.search)
+    if (state?.requireAuth || params.get('auth') === 'signin') {
+      setAuthMode('signin')
+      setShowAuth(true)
+    }
+  }, [location.state, location.search])
+
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
 
   const annualPrice = useMemo(() => Math.round(MONTHLY_PRICE * 12 * 0.8), [])
@@ -123,7 +135,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} initialMode={authMode} />}
 
       {/* Core Features */}
       <section id="features" className="border-t border-sindio-border py-20">

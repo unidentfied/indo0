@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [message, setMessage] = useState('Verifying your email...')
 
@@ -18,11 +19,10 @@ export default function VerifyEmailPage() {
     const base = (import.meta as any).env?.VITE_API_BASE_URL || ''
     fetch(`${base}/auth/verify-email/${encodeURIComponent(token)}`)
       .then(async (res) => {
+        const body = await res.json().catch(() => ({ detail: 'Verification failed' }))
         if (!res.ok) {
-          const body = await res.json().catch(() => ({ detail: 'Verification failed' }))
           throw new Error(body.detail || 'Verification failed')
         }
-        const body = await res.json()
         setStatus('success')
         setMessage(body.detail || 'Email verified successfully')
       })
@@ -53,10 +53,7 @@ export default function VerifyEmailPage() {
         {status === 'success' && (
           <button
             className="btn-primary"
-            onClick={() => {
-              const modal = document.querySelector('[data-auth-trigger]') as HTMLElement | null
-              modal?.click()
-            }}
+            onClick={() => navigate('/?auth=signin')}
           >
             Sign In
           </button>

@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react'
 
 interface AuthModalProps {
   onClose: () => void
+  initialMode?: 'signin' | 'signup'
 }
 
 function passwordStrength(pw: string): { score: number; label: string } {
@@ -19,9 +20,10 @@ function passwordStrength(pw: string): { score: number; label: string } {
   return { score, label: 'Very Strong' }
 }
 
-export default function AuthModal({ onClose }: AuthModalProps) {
+export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModalProps) {
   const { login, signup, isAuthenticated } = useAuth()
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -48,8 +50,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
       if (mode === 'signin') {
         await login(email, password)
       } else {
-        await signup(email, password)
-        setVerificationSent(true)
+        const autoVerified = await signup(name, email, password)
+        if (!autoVerified) {
+          setVerificationSent(true)
+        }
       }
     } catch (err: any) {
       setError(err?.message ?? `${mode === 'signin' ? 'Sign in' : 'Sign up'} failed`)
@@ -116,6 +120,24 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               </div>
             )}
 
+            {mode === 'signup' && (
+              <div className="mb-4">
+                <label htmlFor="auth-name" className="block text-sm font-medium text-sindio-muted mb-1">
+                  Full Name
+                </label>
+                <input
+                  id="auth-name"
+                  type="text"
+                  autoComplete="name"
+                  className="w-full px-3 py-2 border border-sindio-border rounded bg-sindio-dark text-sindio-text focus:outline-none focus:border-sindio-accent focus:ring-1 focus:ring-sindio-accent transition"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={loading}
+                  placeholder="Your name"
+                />
+              </div>
+            )}
+
             <div className="mb-4">
               <label htmlFor="auth-email" className="block text-sm font-medium text-sindio-muted mb-1">
                 Email
@@ -172,14 +194,6 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               </div>
             )}
 
-            {mode === 'signin' && (
-              <div className="mb-4">
-                <button type="button" className="text-xs text-sindio-accent hover:underline">
-                  Forgot password?
-                </button>
-              </div>
-            )}
-
             {mode === 'signup' && (
               <div className="mb-4">
                 <label className="flex items-start gap-2 cursor-pointer">
@@ -192,9 +206,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                   />
                   <span className="text-xs text-sindio-muted leading-relaxed">
                     I agree to the{' '}
-                    <a href="/terms" target="_blank" className="text-sindio-accent hover:underline">Terms & Conditions</a>
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sindio-accent hover:underline">Terms & Conditions</a>
                     {' '}and{' '}
-                    <a href="/privacy" target="_blank" className="text-sindio-accent hover:underline">Privacy Policy</a>
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sindio-accent hover:underline">Privacy Policy</a>
                   </span>
                 </label>
               </div>

@@ -5,6 +5,8 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 logger = logging.getLogger("sindio.email")
 
 EMAIL_SECRET = os.getenv("EMAIL_SECRET", "sindio-email-dev-secret-change-in-production")
+# FRONTEND_VERIFY_URL must be set to the deployed frontend domain in production
+# (e.g. https://sindio.net/verify-email) so verification emails contain the correct link.
 FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "https://sindio.net/verify-email")
 
 
