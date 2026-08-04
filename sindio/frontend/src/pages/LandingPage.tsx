@@ -371,9 +371,15 @@ export default function LandingPage() {
                 Get Started
               </button>
             )}
-            <Link to="/dashboard?system=alerts" className="btn-secondary">
-              View Alert Feed
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard?system=alerts" className="btn-secondary">
+                View Alert Feed
+              </Link>
+            ) : (
+              <button onClick={openAuth} className="btn-secondary">
+                View Alert Feed
+              </button>
+            )}
           </div>
         </div>
       </section>

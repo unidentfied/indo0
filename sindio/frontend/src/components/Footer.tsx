@@ -1,5 +1,8 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { Map } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import AuthModal from './AuthModal'
 
 const resources = [
   { label: 'Privacy Policy', href: '/privacy' },
@@ -13,6 +16,15 @@ const company = [
 ]
 
 export default function Footer() {
+  const { isAuthenticated } = useAuth()
+  const [showAuth, setShowAuth] = useState(false)
+
+  const platformLinks = [
+    { label: 'Infrastructure Types', href: '/dashboard' },
+    { label: 'Simulation Dashboard', href: '/dashboard' },
+    { label: 'Alert Feed', href: '/dashboard?system=alerts' },
+  ]
+
   return (
     <footer className="border-t border-sindio-border bg-sindio-panel">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -53,9 +65,22 @@ export default function Footer() {
           <div>
             <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-muted mb-5">Platform</h4>
             <ul className="space-y-3">
-              <li><Link to="/dashboard" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Infrastructure Types</Link></li>
-              <li><Link to="/dashboard" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Simulation Dashboard</Link></li>
-              <li><Link to="/dashboard?system=alerts" className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">Alert Feed</Link></li>
+              {platformLinks.map(pl => (
+                <li key={pl.label}>
+                  {isAuthenticated ? (
+                    <Link to={pl.href} className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors">
+                      {pl.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => setShowAuth(true)}
+                      className="text-sm text-sindio-muted hover:text-sindio-accent transition-colors"
+                    >
+                      {pl.label}
+                    </button>
+                  )}
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -64,6 +89,8 @@ export default function Footer() {
           COPYRIGHT &copy; 2026 SINDIO.NET ALL RIGHTS RESERVED.
         </div>
       </div>
+
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </footer>
   )
 }
