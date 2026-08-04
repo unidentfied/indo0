@@ -255,7 +255,7 @@ async def core_proxy_middleware(request: Request, call_next):
         return await call_next(request)
 
     path = request.url.path
-    if not path.startswith("/api/"):
+    if not (path.startswith("/api/") or path.startswith("/auth/")):
         return await call_next(request)
 
     try:
