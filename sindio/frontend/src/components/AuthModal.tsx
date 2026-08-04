@@ -73,7 +73,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-sindio-panel rounded-xl shadow-xl w-full max-w-md mx-4 p-6 relative">
+      <div className="bg-sindio-panel rounded-xl shadow-xl w-full max-w-md mx-4 p-6 relative max-h-[90vh] overflow-y-auto">
         <button
           type="button"
           className="absolute top-3 right-3 text-sindio-muted hover:text-sindio-accent"
@@ -120,7 +120,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                 id="auth-email"
                 type="email"
                 required
-                className="w-full px-3 py-2 border border-sindio-border rounded bg-sindio-dark text-white focus:outline-none focus:border-sindio-accent transition"
+                placeholder="you@example.com"
+                autoComplete="email"
+                className="w-full px-3 py-2 border border-sindio-border rounded bg-sindio-dark text-sindio-text placeholder:text-gray-500 focus:outline-none focus:border-sindio-accent focus:ring-1 focus:ring-sindio-accent transition"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -137,7 +139,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
                   type={showPassword ? 'text' : 'password'}
                   required
                   minLength={8}
-                  className="w-full px-3 py-2 pr-10 border border-sindio-border rounded bg-sindio-dark text-white focus:outline-none focus:border-sindio-accent transition"
+                  className="w-full px-3 py-2 pr-10 border border-sindio-border rounded bg-sindio-dark text-sindio-text focus:outline-none focus:border-sindio-accent transition"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
