@@ -133,9 +133,15 @@ export default function Navbar() {
                 Sign In
               </button>
             )}
-            <Link to="/dashboard" className="btn-primary text-sm" onMouseEnter={prefetchDashboard}>
-              Launch Dashboard
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="btn-primary text-sm" onMouseEnter={prefetchDashboard}>
+                Launch Dashboard
+              </Link>
+            ) : (
+              <button onClick={() => setShowAuth(true)} className="btn-primary text-sm">
+                Launch Dashboard
+              </button>
+            )}
           </div>
 
           <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
@@ -185,9 +191,15 @@ export default function Navbar() {
               Sign In
             </button>
           )}
-          <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard} onClick={() => setMobileOpen(false)}>
-            Launch Dashboard
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/dashboard" className="btn-primary w-full justify-center mt-2" onMouseEnter={prefetchDashboard} onClick={() => setMobileOpen(false)}>
+              Launch Dashboard
+            </Link>
+          ) : (
+            <button onClick={() => { setShowAuth(true); setMobileOpen(false); }} className="btn-primary w-full justify-center mt-2">
+              Launch Dashboard
+            </button>
+          )}
         </div>
       )}
     </nav>
