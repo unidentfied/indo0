@@ -26,8 +26,8 @@ def _get_mail_config():
         MAIL_FROM=os.getenv("MAIL_FROM", os.getenv("MAIL_USERNAME")),
         MAIL_PORT=int(os.getenv("MAIL_PORT", "587")),
         MAIL_SERVER=os.getenv("MAIL_SERVER", "smtp-relay.brevo.com"),
-        MAIL_TLS=os.getenv("MAIL_TLS", "True").lower() == "true",
-        MAIL_SSL=os.getenv("MAIL_SSL", "False").lower() == "true",
+        MAIL_STARTTLS=os.getenv("MAIL_TLS", "True").lower() == "true",
+        MAIL_SSL_TLS=os.getenv("MAIL_SSL", "False").lower() == "true",
         USE_CREDENTIALS=True,
         VALIDATE_CERTS=True,
     )
