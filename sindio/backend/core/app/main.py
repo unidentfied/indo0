@@ -39,10 +39,19 @@ async def lifespan(app: FastAPI):
     # Initialize database schema for ingestion + users in background
     def _init_tables():
         try:
+            from sqlalchemy import inspect
             from .database import get_engine, init_ingestion_tables
             engine = get_engine()
             init_ingestion_tables()
-            from .models.user import UserBase
+            from .models.user import UserBase, User
+
+            inspector = inspect(engine)
+            if "users" in inspector.get_table_names():
+                cols = {c["name"] for c in inspector.get_columns("users")}
+                if "password_hash" not in cols or "full_name" in cols:
+                    logger.warning("users table has old schema — dropping and recreating (no user data will be lost because the old schema was incompatible)")
+                    UserBase.metadata.drop_all(bind=engine, tables=[User.__table__])
+
             UserBase.metadata.create_all(bind=engine)
             logger.info("Database tables verified/created (core)")
         except Exception as exc:

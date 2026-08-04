@@ -59,11 +59,20 @@ app = FastAPI(
 @app.on_event("startup")
 async def on_startup():
     try:
+        from sqlalchemy import inspect
         from backend.core.app.ingestion.models import Base
         from backend.core.app.database import get_engine
         engine = get_engine()
         Base.metadata.create_all(bind=engine)
-        from backend.core.app.models.user import UserBase
+
+        from backend.core.app.models.user import UserBase, User
+        inspector = inspect(engine)
+        if "users" in inspector.get_table_names():
+            cols = {c["name"] for c in inspector.get_columns("users")}
+            if "password_hash" not in cols or "full_name" in cols:
+                logger.warning("users table has old schema — dropping and recreating")
+                UserBase.metadata.drop_all(bind=engine, tables=[User.__table__])
+
         UserBase.metadata.create_all(bind=engine)
         logger.info("Database tables verified/created")
     except Exception as exc:
