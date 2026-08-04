@@ -41,6 +41,7 @@ export PYTHONPATH="..:.:../..:${PYTHONPATH:-}"
 export API_PORT="${API_PORT:-8080}"
 export VITE_API_URL="http://localhost:${API_PORT}"
 export SINDIO_SKIP_RASTER="${SINDIO_SKIP_RASTER:-0}"
+export DB_PASSWORD=""
 
 cleanup() {
   echo ""
