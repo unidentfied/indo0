@@ -40,6 +40,8 @@ from app.routers.feedback import router as feedback_router
 from app.routers.privacy import router as privacy_router
 # Health endpoints (including DB health)
 from backend.core.app.services.health import router as health_router
+# Auth endpoints (signup, login, email verification)
+from backend.core.app.auth import auth_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -319,6 +321,7 @@ app.include_router(feedback_router, dependencies=[Depends(require_viewer)])
 app.include_router(privacy_router)   # individual endpoints already enforce role checks
 app.include_router(health_router)
 app.include_router(health_router, prefix="/api")
+app.include_router(auth_router, prefix="/auth")
 
 
 @app.get("/health")
