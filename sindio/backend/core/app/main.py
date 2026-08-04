@@ -36,13 +36,17 @@ async def lifespan(app: FastAPI):
     import asyncio as _asyncio
     _asyncio.create_task(_load_models_bg())
 
-    # Initialize database schema for ingestion in background so HTTP server starts immediately
+    # Initialize database schema for ingestion + users in background
     def _init_tables():
         try:
-            from app.database import init_ingestion_tables
+            from backend.core.app.database import get_engine, init_ingestion_tables
+            engine = get_engine()
             init_ingestion_tables()
+            from backend.core.app.models.user import UserBase
+            UserBase.metadata.create_all(bind=engine)
+            logger.info("Database tables verified/created (core)")
         except Exception as exc:
-            logger.warning("Ingestion table init failed (non-critical): %s", exc)
+            logger.warning("Table init failed (non-critical): %s", exc)
 
     threading.Thread(target=_init_tables, daemon=True).start()
 
