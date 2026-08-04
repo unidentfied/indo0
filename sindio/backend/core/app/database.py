@@ -15,11 +15,12 @@ def _build_db_url() -> str:
     from urllib.parse import quote
     user = os.getenv("DB_USER", "sindio_user")
     password = os.getenv("DB_PASSWORD")
-    if not password:
-        raise RuntimeError("DB_PASSWORD environment variable is required for database access")
     host = os.getenv("DB_HOST", "localhost")
     port = os.getenv("DB_PORT", "5432")
     dbname = os.getenv("DB_NAME", "sindio")
+    if not password:
+        logger.warning("DB_PASSWORD not set — falling back to SQLite for local/dev use")
+        return "sqlite:///./sindio_local.db"
     return f"postgresql://{user}:{quote(password, safe='')}@{host}:{port}/{dbname}"
 
 

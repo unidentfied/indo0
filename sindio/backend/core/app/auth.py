@@ -20,7 +20,7 @@ from .email_utils import generate_verification_token, send_verification_email, v
 logger = structlog.get_logger("sindio.auth")
 
 # Environment variables
-JWT_SECRET = os.getenv("JWT_SECRET", "")
+JWT_SECRET = os.getenv("JWT_SECRET", "sindio-dev-secret-change-in-production")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 # Prefer explicit minutes, otherwise compute from hours (default 1 hour)
 JWT_EXPIRY_MINUTES = int(os.getenv("JWT_EXPIRY_MINUTES", str(int(os.getenv("JWT_EXPIRY_HOURS", "1")) * 60)))
@@ -97,18 +97,23 @@ class UserCreate(BaseModel):
 
 @auth_router.post("/signup", response_model=TokenResponse)
 async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == user.email).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
     # Hash password
     pwd_hash = pwd_context.hash(user.password)
     # Set trial fields
-    trial_expires = datetime.utcnow() + timedelta(days=TRIAL_DAYS)
+    trial_expires = datetime.now(timezone.utc) + timedelta(days=TRIAL_DAYS)
     new_user = User(email=user.email, password_hash=pwd_hash, is_verified=False, is_trial=True, trial_expires_at=trial_expires)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     # Generate verification token
-    token = generate_verification_token(user.email)
-    # Send verification email asynchronously
-    background_tasks.add_task(send_verification_email, user.email, token)
+    try:
+        token = generate_verification_token(user.email)
+        background_tasks.add_task(send_verification_email, user.email, token)
+    except Exception as exc:
+        logger.warning("verification_email_skipped", email=user.email, error=str(exc))
     # Issue JWT token (user can log in after verification)
     access_token = create_access_token(data={"sub": new_user.email, "is_paid": new_user.is_paid, "is_trial": new_user.is_trial, "trial_expires_at": new_user.trial_expires_at.isoformat() if new_user.trial_expires_at else None})
     return TokenResponse(access_token=access_token, expires_in=JWT_EXPIRY_MINUTES * 60)

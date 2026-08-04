@@ -1,9 +1,11 @@
 import os
+import logging
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
-# Load environment variables (should be set in .env or system)
-EMAIL_SECRET = os.getenv("EMAIL_SECRET")
-FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "http://localhost:3000/verify-email")
+logger = logging.getLogger("sindio.email")
+
+EMAIL_SECRET = os.getenv("EMAIL_SECRET", "sindio-email-dev-secret-change-in-production")
+FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "https://sindio.net/verify-email")
 
 
 def _get_mail_config():

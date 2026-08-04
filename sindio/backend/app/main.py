@@ -54,6 +54,19 @@ app = FastAPI(
     openapi_url="/openapi.json" if _ENV != "production" else None,
 )
 
+# ── Startup: ensure database tables exist ────────────────────────
+
+@app.on_event("startup")
+async def on_startup():
+    try:
+        from backend.core.app.ingestion.models import Base
+        from backend.core.app.database import get_engine
+        engine = get_engine()
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables verified/created")
+    except Exception as exc:
+        logger.warning("Table creation skipped (DB may not be available): %s", exc)
+
 # Generic CORS preflight handler for any /api path
 @app.options("/api/{full_path:path}")
 async def generic_options(full_path: str):
