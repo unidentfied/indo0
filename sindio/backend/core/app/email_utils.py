@@ -119,12 +119,22 @@ async def send_verification_email(to_email: str, token: str) -> None:
 async def test_smtp_connection() -> dict:
     result = {"smtp_reachable": False, "authenticated": False, "error": None, "config": {}}
 
+    raw_username = os.getenv("MAIL_USERNAME")
+    raw_password = os.getenv("MAIL_PASSWORD")
+
     result["config"] = {
         "server": MAIL_SERVER,
         "port": MAIL_PORT,
         "username_set": bool(MAIL_USERNAME),
         "password_set": bool(MAIL_PASSWORD),
         "from": MAIL_FROM,
+        "raw_env": {
+            "MAIL_USERNAME_present": raw_username is not None,
+            "MAIL_USERNAME_value": bool(raw_username),
+            "MAIL_PASSWORD_present": raw_password is not None,
+            "MAIL_PASSWORD_value": bool(raw_password),
+            "MAIL_FROM_raw": os.getenv("MAIL_FROM", "(unset)"),
+        },
     }
 
     if not MAIL_USERNAME or not MAIL_PASSWORD:
