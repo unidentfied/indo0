@@ -33,6 +33,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
   const [verificationSent, setVerificationSent] = useState(false)
   const [resentMessage, setResentMessage] = useState<string | null>(null)
   const [trialExpiresAt, setTrialExpiresAt] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) onClose()
@@ -48,6 +49,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
     }
     setLoading(true)
     setError(null)
+    setEmailError(null)
     try {
       if (mode === 'signin') {
         await login(email, password)
@@ -55,7 +57,11 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
         const result = await signup(name, email, password)
         if (!result.verified) {
           setTrialExpiresAt(result.trialExpiresAt || null)
-          setVerificationSent(true)
+          if (!result.verificationEmailSent) {
+            setEmailError(result.emailError || 'Unable to send verification email. Please try again later.')
+          } else {
+            setVerificationSent(true)
+          }
         }
       }
     } catch (err: any) {
@@ -90,6 +96,7 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
 
   const switchMode = () => {
     setError(null)
+    setEmailError(null)
     setMode(mode === 'signin' ? 'signup' : 'signin')
     setTermsAccepted(false)
   }
@@ -178,6 +185,12 @@ export default function AuthModal({ onClose, initialMode = 'signin' }: AuthModal
             {error && (
               <div className="bg-red-900/30 border border-red-500/50 text-red-300 p-3 rounded mb-4 text-sm">
                 {error}
+              </div>
+            )}
+
+            {emailError && (
+              <div className="bg-yellow-900/30 border border-yellow-500/50 text-yellow-300 p-3 rounded mb-4 text-sm">
+                {emailError}
               </div>
             )}
 

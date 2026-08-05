@@ -13,7 +13,7 @@ from pydantic import BaseModel
 # Email utilities
 
 # Local helpers (will be defined later)
-from .email_utils import generate_verification_token, send_verification_email, verify_token
+from .email_utils import generate_verification_token, send_verification_email, verify_token, test_smtp_connection
 
 
 logger = structlog.get_logger("sindio.auth")
@@ -102,15 +102,15 @@ class ResendVerificationRequest(BaseModel):
     email: str
 
 
-def _queue_verification_email(user: User, background_tasks: BackgroundTasks) -> bool:
+def _queue_verification_email(user: User, background_tasks: BackgroundTasks) -> tuple[bool, str]:
     try:
         token = generate_verification_token(user.email)
         background_tasks.add_task(send_verification_email, user.email, token)
         logger.info("verification_email_queued", email=user.email)
-        return True
+        return True, ""
     except Exception as exc:
         logger.error("verification_email_failed", email=user.email, error=str(exc))
-        return False
+        return False, "Email service is temporarily unavailable. Please try again or contact support."
 
 
 def _make_user_token(user: User) -> dict[str, Any]:
@@ -128,11 +128,12 @@ async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Sessio
     existing = db.query(User).filter(User.email == user.email).first()
     if existing:
         if not existing.is_verified:
-            email_ok = _queue_verification_email(existing, background_tasks)
+            email_ok, email_error = _queue_verification_email(existing, background_tasks)
             return {
                 "detail": "Account already exists but is not verified. A new verification email has been sent.",
                 "verified": False,
                 "verification_email_sent": email_ok,
+                "email_error": email_error,
             }
         raise HTTPException(status_code=409, detail="An account with this email already exists")
 
@@ -151,12 +152,13 @@ async def signup(user: UserCreate, background_tasks: BackgroundTasks, db: Sessio
     db.commit()
     db.refresh(new_user)
 
-    email_ok = _queue_verification_email(new_user, background_tasks)
+    email_ok, email_error = _queue_verification_email(new_user, background_tasks)
 
     return {
         "detail": "Account created. Please check your email for the verification link.",
         "verified": False,
         "verification_email_sent": email_ok,
+        "email_error": email_error,
         "trial_days": TRIAL_DAYS,
         "trial_expires_at": trial_expires.isoformat(),
     }
@@ -170,9 +172,9 @@ async def resend_verification(body: ResendVerificationRequest, background_tasks:
     if user.is_verified:
         return {"detail": "Email is already verified. You can sign in.", "verified": True, "verification_email_sent": False}
 
-    email_ok = _queue_verification_email(user, background_tasks)
+    email_ok, email_error = _queue_verification_email(user, background_tasks)
     if not email_ok:
-        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again later.")
+        raise HTTPException(status_code=500, detail=email_error or "Failed to send verification email. Please try again later.")
 
     return {"detail": "Verification email resent. Please check your inbox.", "verified": False, "verification_email_sent": True}
 
@@ -220,5 +222,10 @@ async def delete_account(payload: dict[str, Any] = Depends(require_auth), db: Se
     db.commit()
     logger.info("account_deleted", email=email)
     return {"detail": "Account deleted successfully"}
+
+
+@auth_router.get("/debug/email-status")
+async def debug_email_status():
+    return await test_smtp_connection()
 
 

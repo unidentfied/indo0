@@ -19,7 +19,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>
-  signup: (name: string, email: string, password: string) => Promise<{ verified: boolean; verificationEmailSent: boolean; trialExpiresAt?: string }>
+  signup: (name: string, email: string, password: string) => Promise<{ verified: boolean; verificationEmailSent: boolean; emailError?: string; trialExpiresAt?: string }>
   resendVerification: (email: string) => Promise<void>
   logout: () => void
   deleteAccount: () => Promise<void>
@@ -112,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = parseJwt(data.access_token)
       setState({ token: data.access_token, user, isAuthenticated: true, isLoading: false })
     }
-    return { verified, verificationEmailSent: !!data.verification_email_sent, trialExpiresAt: data.trial_expires_at }
+    return { verified, verificationEmailSent: !!data.verification_email_sent, emailError: data.email_error || undefined, trialExpiresAt: data.trial_expires_at }
   }, [])
 
   const resendVerification = useCallback(async (email: string) => {
