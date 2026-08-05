@@ -283,9 +283,11 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Suspense fallback={<SkeletonBlock />}>
-                <CascadePanel />
-              </Suspense>
+              <div className="panel p-4">
+                <Suspense fallback={<SkeletonBlock />}>
+                  <CascadePanel />
+                </Suspense>
+              </div>
               <div className="panel p-3">
                 <div className="flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-sindio-accent" />
@@ -307,15 +309,19 @@ export default function Dashboard() {
               }>
                 <StressMap />
               </Suspense>
-              <Suspense fallback={<SkeletonBlock />}>
-                <DataFreshnessPanel />
-              </Suspense>
+              <div className="panel p-4">
+                <Suspense fallback={<SkeletonBlock />}>
+                  <DataFreshnessPanel />
+                </Suspense>
+              </div>
               <Suspense fallback={<SkeletonBlock />}>
                 <ScheduleStatus />
               </Suspense>
-              <Suspense fallback={null}>
-                <NlMapSearch />
-              </Suspense>
+              <div className="panel p-4">
+                <Suspense fallback={null}>
+                  <NlMapSearch />
+                </Suspense>
+              </div>
               <Suspense fallback={<SkeletonBlock />}>
                 <SimulationPanel onSimulationComplete={handleSimulationComplete} />
               </Suspense>
@@ -343,17 +349,23 @@ export default function Dashboard() {
             }
           </div>
 
-          <Suspense fallback={<SkeletonBlock />}>
-            <RoiCalculator />
-          </Suspense>
+          <div className="panel p-4">
+            <Suspense fallback={<SkeletonBlock />}>
+              <RoiCalculator />
+            </Suspense>
+          </div>
 
-          <Suspense fallback={<SkeletonBlock />}>
-            <CarbonDashboard citySlug="nairobi" />
-          </Suspense>
+          <div className="panel p-4">
+            <Suspense fallback={<SkeletonBlock />}>
+              <CarbonDashboard citySlug="nairobi" />
+            </Suspense>
+          </div>
 
-          <Suspense fallback={<SkeletonBlock />}>
-            <InsuranceDashboard citySlug="nairobi" />
-          </Suspense>
+          <div className="panel p-4">
+            <Suspense fallback={<SkeletonBlock />}>
+              <InsuranceDashboard citySlug="nairobi" />
+            </Suspense>
+          </div>
         </main>
       )}
     </div>
