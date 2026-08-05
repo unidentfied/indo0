@@ -1,10 +1,23 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, JSON, DateTime
+from sqlalchemy import Column, Integer, String, Float, JSON, DateTime, Text
 from sqlalchemy.orm import declarative_base
 
 RoiBase = declarative_base()
+
+
+class UpgradeOption(RoiBase):
+    __tablename__ = "roi_upgrade_options"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    infra_type = Column(String(32), index=True, nullable=False)
+    asset_id = Column(String(128), nullable=False)
+    name = Column(String(255), nullable=False)
+    typical_cost_kes = Column(Float, nullable=False)
+    typical_annual_savings_kes = Column(Float, nullable=False)
+    description = Column(Text, default="")
+    payback_years = Column(Float, nullable=False)
 
 
 class RoiCalculation(RoiBase):

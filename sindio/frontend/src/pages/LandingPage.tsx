@@ -52,7 +52,7 @@ const trialFeatures = [
   'Carbon impact & insurance risk dashboards',
   'Interactive PostGIS spatial heatmaps',
   'Live WebSocket alert feeds',
-  'Unlimited simulations during trial',
+  'Priority simulation queue',
 ]
 
 const proFeatures = [

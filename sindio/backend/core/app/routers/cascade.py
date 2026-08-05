@@ -7,9 +7,10 @@ Endpoints for cascade failure analysis across infrastructure types.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Any, Dict, Optional
 
+from ..auth import optional_auth
 from ..services.cascade_analyzer import CascadeAnalyzer
 from ..services.cascade_analyzer import get_cascade_history
 
@@ -24,7 +25,7 @@ def _get_analyzer(city_slug: str) -> CascadeAnalyzer:
     return _analyzers[city_slug]
 
 
-@cascade_router.post("/analyze")
+@cascade_router.post("/analyze", dependencies=[Depends(optional_auth)])
 async def analyze_cascade_post(body: Dict[str, Any]) -> Dict[str, Any]:
     """Run a cascade failure analysis.
 
@@ -59,7 +60,7 @@ async def analyze_cascade_post(body: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
-@cascade_router.get("/analyze")
+@cascade_router.get("/analyze", dependencies=[Depends(optional_auth)])
 async def analyze_cascade_get(
     asset_type: str = Query(..., description="Asset type (power_substation, water_pump)"),
     asset_id: str = Query(..., description="Asset ID (e.g. ngong, embakasi, kabete)"),
@@ -83,7 +84,7 @@ async def analyze_cascade_get(
     return result
 
 
-@cascade_router.get("/assets")
+@cascade_router.get("/assets", dependencies=[Depends(optional_auth)])
 async def list_assets(
     city_slug: str = Query("nairobi", description="City slug"),
 ) -> Dict[str, Any]:
@@ -95,7 +96,7 @@ async def list_assets(
     return analyzer.list_assets(city_slug=city_slug)
 
 
-@cascade_router.get("/dependencies/{asset_id}")
+@cascade_router.get("/dependencies/{asset_id}", dependencies=[Depends(optional_auth)])
 async def get_dependencies(
     asset_id: str,
     city_slug: str = Query("nairobi", description="City slug"),
@@ -113,7 +114,7 @@ async def get_dependencies(
     return result
 
 
-@cascade_router.get("/history")
+@cascade_router.get("/history", dependencies=[Depends(optional_auth)])
 async def get_analysis_history(
     city_slug: str = Query("nairobi"),
     limit: int = Query(20, ge=1, le=100),

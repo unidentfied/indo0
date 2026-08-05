@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
 from ..models.carbon import CarbonBase, CarbonBaseline, CarbonCredit
+
+logger = logging.getLogger("sindio.services.carbon_tracker")
 
 _KES_PER_USD = 145.0
 

@@ -329,7 +329,7 @@ export default function Dashboard() {
               </Suspense>
           </div>
 
-          <div className="space-y-6">
+          <div className="mt-8 space-y-6">
             <Suspense fallback={<SkeletonBlock className="h-96" />}>
               <ClassificationPanel />
             </Suspense>

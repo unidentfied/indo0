@@ -220,15 +220,11 @@ def calculate_roi(params: dict) -> dict:
         recommendation = "low"
 
     logger.info(
-        "roi_calculated",
-        infra_type=infra_type,
-        upgrade_cost=upgrade_cost,
-        annual_savings=round(annual_savings, 2),
-        payback_years=round(payback_years, 2),
-        recommendation=recommendation,
+        "roi_calculated: infra_type=%s upgrade_cost=%s annual_savings=%s payback_years=%s recommendation=%s",
+        infra_type, upgrade_cost, round(annual_savings, 2), round(payback_years, 2), recommendation,
     )
 
-    return {
+    result = {
         "upgrade_cost_kes": upgrade_cost,
         "upgrade_description": description,
         "asset_lifespan_years": lifespan,
@@ -237,6 +233,9 @@ def calculate_roi(params: dict) -> dict:
         "5yr_roi_pct": _roi_pct(5),
         "10yr_roi_pct": _roi_pct(10),
         "20yr_roi_pct": _roi_pct(20),
+        "five_year_roi_pct": _roi_pct(5),
+        "ten_year_roi_pct": _roi_pct(10),
+        "twenty_year_roi_pct": _roi_pct(20),
         "avoided_outage_days_per_year": round(outage_days, 1),
         "avoided_outage_cost_per_year_kes": round(outage_cost, 2),
         "maintenance_savings_per_year_kes": round(maintenance_savings, 2),
@@ -270,163 +269,106 @@ def calculate_roi(params: dict) -> dict:
 
 
 def list_upgrade_options(infra_type: str) -> list[dict]:
+    """Return upgrade options for a given infrastructure type. DB-first, fallback to hardcoded."""
+    if infra_type not in INFRA_TYPES:
+        valid = ", ".join(INFRA_TYPES)
+        raise ValueError(f"Unknown infra_type '{infra_type}'. Valid types: {valid}")
+
+    try:
+        from ..models.roi import UpgradeOption
+        from sqlalchemy.orm import Session
+        from ..database import get_engine
+        with Session(bind=get_engine()) as session:
+            rows = session.query(UpgradeOption).filter_by(infra_type=infra_type).all()
+            if rows:
+                return [{
+                    "asset_id": r.asset_id,
+                    "name": r.name,
+                    "typical_cost_kes": r.typical_cost_kes,
+                    "typical_annual_savings_kes": r.typical_annual_savings_kes,
+                    "description": r.description,
+                    "payback_years": r.payback_years,
+                } for r in rows]
+    except Exception:
+        pass
+
     _K = _KES_PER_USD
     options = {
         "power": [
-            {
-                "asset_id": "power-substation-001",
-                "name": "Substation Transformer Upgrade",
-                "typical_cost": 180000 * _K,
-                "typical_savings": 55000 * _K,
-                "description": "Replace aging transformer to reduce unplanned outages and improve voltage stability.",
-            },
-            {
-                "asset_id": "power-substation-002",
-                "name": "Distribution Line Reconductoring",
-                "typical_cost": 120000 * _K,
-                "typical_savings": 40000 * _K,
-                "description": "Upgrade distribution lines to reduce line losses and outage frequency.",
-            },
-            {
-                "asset_id": "power-grid-automation",
-                "name": "SCADA & Grid Automation",
-                "typical_cost": 350000 * _K,
-                "typical_savings": 95000 * _K,
-                "description": "Install remote monitoring and automated switching to reduce outage duration by 60%.",
-            },
+            {"asset_id": "power-substation-001", "name": "Substation Transformer Upgrade",
+             "typical_cost_kes": 180000 * _K, "typical_annual_savings_kes": 55000 * _K,
+             "description": "Replace aging transformer to reduce unplanned outages and improve voltage stability.", "payback_years": 3.0},
+            {"asset_id": "power-substation-002", "name": "Distribution Line Reconductoring",
+             "typical_cost_kes": 120000 * _K, "typical_annual_savings_kes": 40000 * _K,
+             "description": "Upgrade distribution lines to reduce line losses and outage frequency.", "payback_years": 2.7},
+            {"asset_id": "power-grid-automation", "name": "SCADA & Grid Automation",
+             "typical_cost_kes": 350000 * _K, "typical_annual_savings_kes": 95000 * _K,
+             "description": "Install remote monitoring and automated switching to reduce outage duration by 60%.", "payback_years": 3.7},
         ],
         "water": [
-            {
-                "asset_id": "water-pipeline-001",
-                "name": "Pipeline Replacement (PVC to HDPE)",
-                "typical_cost": 200000 * _K,
-                "typical_savings": 45000 * _K,
-                "description": "Replace old PVC pipes with HDPE to reduce burst frequency and water loss.",
-            },
-            {
-                "asset_id": "water-treatment-001",
-                "name": "Treatment Plant Capacity Expansion",
-                "typical_cost": 500000 * _K,
-                "typical_savings": 80000 * _K,
-                "description": "Expand treatment capacity to meet growing demand and reduce rationing events.",
-            },
-            {
-                "asset_id": "water-smart-meters",
-                "name": "Smart Water Meter Network",
-                "typical_cost": 150000 * _K,
-                "typical_savings": 35000 * _K,
-                "description": "Deploy smart meters to detect leaks early and reduce non-revenue water.",
-            },
+            {"asset_id": "water-pipeline-001", "name": "Pipeline Replacement (PVC to HDPE)",
+             "typical_cost_kes": 200000 * _K, "typical_annual_savings_kes": 45000 * _K,
+             "description": "Replace old PVC pipes with HDPE to reduce burst frequency and water loss.", "payback_years": 4.4},
+            {"asset_id": "water-treatment-001", "name": "Treatment Plant Capacity Expansion",
+             "typical_cost_kes": 500000 * _K, "typical_annual_savings_kes": 80000 * _K,
+             "description": "Expand treatment capacity to meet growing demand and reduce rationing events.", "payback_years": 6.3},
+            {"asset_id": "water-smart-meters", "name": "Smart Water Meter Network",
+             "typical_cost_kes": 150000 * _K, "typical_annual_savings_kes": 35000 * _K,
+             "description": "Deploy smart meters to detect leaks early and reduce non-revenue water.", "payback_years": 4.3},
         ],
         "roads": [
-            {
-                "asset_id": "road-intersection-001",
-                "name": "Intersection Signal Optimization",
-                "typical_cost": 80000 * _K,
-                "typical_savings": 60000 * _K,
-                "description": "Install adaptive traffic signals to reduce peak-hour congestion by 25%.",
-            },
-            {
-                "asset_id": "road-resurface-001",
-                "name": "Road Resurfacing (10 km)",
-                "typical_cost": 500000 * _K,
-                "typical_savings": 90000 * _K,
-                "description": "Full resurfacing of arterial road to reduce vehicle operating costs and travel time.",
-            },
-            {
-                "asset_id": "road-drainage-001",
-                "name": "Stormwater Drainage Upgrade",
-                "typical_cost": 250000 * _K,
-                "typical_savings": 40000 * _K,
-                "description": "Improve drainage to prevent road flooding and pothole formation during rain events.",
-            },
+            {"asset_id": "road-intersection-001", "name": "Intersection Signal Optimization",
+             "typical_cost_kes": 80000 * _K, "typical_annual_savings_kes": 60000 * _K,
+             "description": "Install adaptive traffic signals to reduce peak-hour congestion by 25%.", "payback_years": 1.3},
+            {"asset_id": "road-resurface-001", "name": "Road Resurfacing (10 km)",
+             "typical_cost_kes": 500000 * _K, "typical_annual_savings_kes": 90000 * _K,
+             "description": "Full resurfacing of arterial road to reduce vehicle operating costs and travel time.", "payback_years": 5.6},
+            {"asset_id": "road-drainage-001", "name": "Stormwater Drainage Upgrade",
+             "typical_cost_kes": 250000 * _K, "typical_annual_savings_kes": 40000 * _K,
+             "description": "Improve drainage to prevent road flooding and pothole formation during rain events.", "payback_years": 6.3},
         ],
         "solid_waste": [
-            {
-                "asset_id": "waste-compactor-001",
-                "name": "Compactor Truck Fleet Renewal",
-                "typical_cost": 300000 * _K,
-                "typical_savings": 50000 * _K,
-                "description": "Replace aging compactor trucks to reduce breakdowns and missed collection routes.",
-            },
-            {
-                "asset_id": "waste-transfer-001",
-                "name": "Transfer Station Modernization",
-                "typical_cost": 450000 * _K,
-                "typical_savings": 70000 * _K,
-                "description": "Upgrade transfer station with sorting lines to reduce landfill volume and increase recycling.",
-            },
+            {"asset_id": "waste-compactor-001", "name": "Compactor Truck Fleet Renewal",
+             "typical_cost_kes": 300000 * _K, "typical_annual_savings_kes": 50000 * _K,
+             "description": "Replace aging compactor trucks to reduce breakdowns and missed collection routes.", "payback_years": 6.0},
+            {"asset_id": "waste-transfer-001", "name": "Transfer Station Modernization",
+             "typical_cost_kes": 450000 * _K, "typical_annual_savings_kes": 70000 * _K,
+             "description": "Upgrade transfer station with sorting lines to reduce landfill volume and increase recycling.", "payback_years": 6.4},
         ],
         "sidewalks": [
-            {
-                "asset_id": "sidewalk-corridor-001",
-                "name": "Complete Streets Corridor Upgrade",
-                "typical_cost": 180000 * _K,
-                "typical_savings": 25000 * _K,
-                "description": "Widen sidewalks, add ramps, and improve crossings along a major pedestrian corridor.",
-            },
-            {
-                "asset_id": "sidewalk-network-001",
-                "name": "Neighborhood Sidewalk Gap Closure",
-                "typical_cost": 320000 * _K,
-                "typical_savings": 40000 * _K,
-                "description": "Fill missing sidewalk segments across a neighborhood to create a complete pedestrian network.",
-            },
+            {"asset_id": "sidewalk-corridor-001", "name": "Complete Streets Corridor Upgrade",
+             "typical_cost_kes": 180000 * _K, "typical_annual_savings_kes": 25000 * _K,
+             "description": "Widen sidewalks, add ramps, and improve crossings along a major pedestrian corridor.", "payback_years": 7.2},
+            {"asset_id": "sidewalk-network-001", "name": "Neighborhood Sidewalk Gap Closure",
+             "typical_cost_kes": 320000 * _K, "typical_annual_savings_kes": 40000 * _K,
+             "description": "Fill missing sidewalk segments across a neighborhood to create a complete pedestrian network.", "payback_years": 8.0},
         ],
         "lrt": [
-            {
-                "asset_id": "lrt-signaling-001",
-                "name": "CBTC Signaling Upgrade",
-                "typical_cost": 2500000 * _K,
-                "typical_savings": 350000 * _K,
-                "description": "Upgrade to communications-based train control to increase frequency by 30%.",
-            },
-            {
-                "asset_id": "lrt-station-001",
-                "name": "Station Platform Extension",
-                "typical_cost": 800000 * _K,
-                "typical_savings": 120000 * _K,
-                "description": "Extend platforms to accommodate longer trains and increase per-trip capacity.",
-            },
+            {"asset_id": "lrt-signaling-001", "name": "CBTC Signaling Upgrade",
+             "typical_cost_kes": 2500000 * _K, "typical_annual_savings_kes": 350000 * _K,
+             "description": "Upgrade to communications-based train control to increase frequency by 30%.", "payback_years": 7.1},
+            {"asset_id": "lrt-station-001", "name": "Station Platform Extension",
+             "typical_cost_kes": 800000 * _K, "typical_annual_savings_kes": 120000 * _K,
+             "description": "Extend platforms to accommodate longer trains and increase per-trip capacity.", "payback_years": 6.7},
         ],
         "sgr": [
-            {
-                "asset_id": "sgr-rail-section-001",
-                "name": "Rail Section Replacement (50 km)",
-                "typical_cost": 3000000 * _K,
-                "typical_savings": 400000 * _K,
-                "description": "Replace worn rail sections to reduce speed restrictions and maintenance interventions.",
-            },
-            {
-                "asset_id": "sgr-freight-terminal-001",
-                "name": "Freight Terminal Expansion",
-                "typical_cost": 5000000 * _K,
-                "typical_savings": 600000 * _K,
-                "description": "Expand freight handling capacity to reduce dwell time and increase throughput.",
-            },
+            {"asset_id": "sgr-rail-section-001", "name": "Rail Section Replacement (50 km)",
+             "typical_cost_kes": 3000000 * _K, "typical_annual_savings_kes": 400000 * _K,
+             "description": "Replace worn rail sections to reduce speed restrictions and maintenance interventions.", "payback_years": 7.5},
+            {"asset_id": "sgr-freight-terminal-001", "name": "Freight Terminal Expansion",
+             "typical_cost_kes": 5000000 * _K, "typical_annual_savings_kes": 600000 * _K,
+             "description": "Expand freight handling capacity to reduce dwell time and increase throughput.", "payback_years": 8.3},
         ],
         "airports": [
-            {
-                "asset_id": "airport-runway-001",
-                "name": "Runway Surface Rehabilitation",
-                "typical_cost": 4000000 * _K,
-                "typical_savings": 700000 * _K,
-                "description": "Rehabilitate runway surface to reduce closure hours and flight diversion events.",
-            },
-            {
-                "asset_id": "airport-terminal-001",
-                "name": "Terminal Baggage System Upgrade",
-                "typical_cost": 1200000 * _K,
-                "typical_savings": 250000 * _K,
-                "description": "Replace baggage handling system to reduce turnaround delays and lost baggage claims.",
-            },
-            {
-                "asset_id": "airport-ils-001",
-                "name": "ILS/Navigation Equipment Upgrade",
-                "typical_cost": 2000000 * _K,
-                "typical_savings": 400000 * _K,
-                "description": "Upgrade instrument landing system to reduce weather-related diversions and delays.",
-            },
+            {"asset_id": "airport-runway-001", "name": "Runway Surface Rehabilitation",
+             "typical_cost_kes": 4000000 * _K, "typical_annual_savings_kes": 700000 * _K,
+             "description": "Rehabilitate runway surface to reduce closure hours and flight diversion events.", "payback_years": 5.7},
+            {"asset_id": "airport-terminal-001", "name": "Terminal Baggage System Upgrade",
+             "typical_cost_kes": 1200000 * _K, "typical_annual_savings_kes": 250000 * _K,
+             "description": "Replace baggage handling system to reduce turnaround delays and lost baggage claims.", "payback_years": 4.8},
+            {"asset_id": "airport-ils-001", "name": "ILS/Navigation Equipment Upgrade",
+             "typical_cost_kes": 2000000 * _K, "typical_annual_savings_kes": 400000 * _K,
+             "description": "Upgrade instrument landing system to reduce weather-related diversions and delays.", "payback_years": 5.0},
         ],
     }
 

@@ -55,6 +55,9 @@ def get_stress(
         min_stress=min_stress,
     )
 
+    from ..services.lifecycle_hooks import on_monitor_cycle_complete
+    on_monitor_cycle_complete(result.get("stressed_assets", []))
+
     # If infra_type filter, narrow results
     if infra_type:
         result["per_type_summary"] = [

@@ -45,7 +45,7 @@ export default function NlMapSearch({ onResult }: { onResult?: (result: NlMapRes
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder=""
+            placeholder="Search assets, wards, or infrastructure types..."
             className="w-full bg-sindio-panel border border-sindio-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-sindio-muted focus:border-sindio-accent focus:outline-none"
           />
         </div>

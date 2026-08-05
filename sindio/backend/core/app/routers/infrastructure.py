@@ -28,7 +28,7 @@ def get_all():
 
 
 @router.get("/{system}", dependencies=[Depends(optional_auth)])
-def get_infrastructure(system: str = Path(..., regex="^[a-z0-9_-]+$")):
+def get_infrastructure(system: str = Path(..., pattern=r"^[a-z0-9_-]+$")):
     try:
         config = get_config(system)
     except KeyError:

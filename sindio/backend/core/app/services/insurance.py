@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timedelta, timezone
 
 from ..models.insurance import InsuranceBase, InsurancePolicy, RiskAssessment, ClaimEvent
+
+logger = logging.getLogger("sindio.services.insurance")
 
 _KES_PER_USD = 145.0
 
@@ -262,6 +265,10 @@ def get_insurance_dashboard(city_slug: str, engine) -> dict:
                     "status": c.status,
                     "created_at": c.created_at.isoformat() if c.created_at else None,
                 }
-                for c in sorted(claims, key=lambda x: x.created_at or datetime.min, reverse=True)[:20]
-            ],
-        }
+            for c in sorted(claims, key=lambda x: x.created_at or datetime.min, reverse=True)[:20]
+        ],
+    }
+
+
+# ── Parametric claim trigger ────────────────────────────────────────
+

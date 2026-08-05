@@ -46,6 +46,8 @@ from backend.core.app.routers.cities import city_router
 from backend.core.app.routers.population import population_router
 from backend.core.app.routers.carbon import carbon_router
 from backend.core.app.routers.insurance import insurance_router
+from backend.core.app.routers.roi import roi_router
+from backend.core.app.routers.nl_map import nl_map_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -361,6 +363,8 @@ app.include_router(city_router, prefix="/api/v1")
 app.include_router(population_router, prefix="/api/v1")
 app.include_router(carbon_router, prefix="/api/v1")
 app.include_router(insurance_router, prefix="/api/v1")
+app.include_router(roi_router, prefix="/api/v1")
+app.include_router(nl_map_router, prefix="/api/v1")
 
 
 @app.get("/health")

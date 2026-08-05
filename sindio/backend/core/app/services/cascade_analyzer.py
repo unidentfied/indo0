@@ -48,10 +48,19 @@ ALL_WARDS: List[str] = list(WARD_POPULATIONS.keys())
 
 
 def _load_ward_populations(city_slug: str = "nairobi") -> Dict[str, int]:
-    """Load ward populations from city config, fall back to hardcoded."""
+    """Load ward populations from DB, fall back to city config or hardcoded."""
+    try:
+        from ..models.cascade import CascadeWardPopulation
+        from sqlalchemy.orm import Session
+        from ..database import get_engine
+        with Session(bind=get_engine()) as session:
+            rows = session.query(CascadeWardPopulation).filter_by(city_slug=city_slug).all()
+            if rows:
+                return {r.ward_name: r.population for r in rows}
+    except Exception:
+        pass
     try:
         from .city_config import get_city
-
         city = get_city(city_slug)
         if city and hasattr(city, "wards") and len(city.wards) > 0:
             return {w: 150000 for w in city.wards}
@@ -268,15 +277,15 @@ class CascadeAnalyzer:
         self._nodes.clear()
         self._adj_out.clear()
 
-        # Power substations
-        for sub_id, sub in POWER_SUBSTATIONS.items():
+        substations, pumps = self._load_db_assets()
+
+        for sub_id, sub in substations.items():
             self._nodes[sub_id] = _CascadeNode(
                 asset_id=sub_id,
                 asset_type="power_substation",
                 description=sub["name"],
                 affected_wards=list(sub["serves_wards"]),
             )
-            # Power → wards (direct)
             for ward in sub["serves_wards"]:
                 power_ward_id = f"power_ward_{ward.lower().replace(' ', '_')}"
                 self._nodes[power_ward_id] = _CascadeNode(
@@ -289,7 +298,6 @@ class CascadeAnalyzer:
                     (power_ward_id, "power_to_ward")
                 )
 
-            # Cell towers per ward (dependent on power)
             for ward in sub["serves_wards"]:
                 tower_id = f"cell_tower_{ward.lower().replace(' ', '_')}"
                 power_ward_id = f"power_ward_{ward.lower().replace(' ', '_')}"
@@ -303,7 +311,6 @@ class CascadeAnalyzer:
                     (tower_id, "power_to_tower")
                 )
 
-            # Traffic signals per ward (dependent on power)
             for ward in sub["serves_wards"]:
                 signal_id = f"signals_{ward.lower().replace(' ', '_')}"
                 power_ward_id = f"power_ward_{ward.lower().replace(' ', '_')}"
@@ -317,7 +324,6 @@ class CascadeAnalyzer:
                     (signal_id, "power_to_signals")
                 )
 
-            # Road congestion per ward (follows signal failure)
             for ward in sub["serves_wards"]:
                 road_id = f"road_congestion_{ward.lower().replace(' ', '_')}"
                 signal_id = f"signals_{ward.lower().replace(' ', '_')}"
@@ -331,8 +337,7 @@ class CascadeAnalyzer:
                     (road_id, "signals_to_road")
                 )
 
-        # Water pumps
-        for pump_id, pump in WATER_PUMPS.items():
+        for pump_id, pump in pumps.items():
             self._nodes[pump_id] = _CascadeNode(
                 asset_id=pump_id,
                 asset_type="water_pump",
@@ -344,7 +349,6 @@ class CascadeAnalyzer:
                 (pump_id, "power_to_pump")
             )
 
-            # Water supply to wards
             for ward in pump["serves_wards"]:
                 water_ward_id = f"water_ward_{ward.lower().replace(' ', '_')}"
                 self._nodes[water_ward_id] = _CascadeNode(
@@ -357,7 +361,6 @@ class CascadeAnalyzer:
                     (water_ward_id, "pump_to_water")
                 )
 
-            # Water pipe burst → road subsidence (for wards served by pump)
             for ward in pump["serves_wards"]:
                 subsidence_id = f"road_subsidence_{ward.lower().replace(' ', '_')}"
                 water_ward_id = f"water_ward_{ward.lower().replace(' ', '_')}"
@@ -376,6 +379,35 @@ class CascadeAnalyzer:
             len(self._nodes),
             sum(len(v) for v in self._adj_out.values()),
         )
+
+    def _load_db_assets(self):
+        try:
+            from ..models.cascade import CascadeAsset
+            from sqlalchemy.orm import Session
+            from ..database import get_engine
+            with Session(bind=get_engine()) as session:
+                rows = session.query(CascadeAsset).filter_by(city_slug=self.city_slug).all()
+                if rows:
+                    subs = {}
+                    pumps = {}
+                    for a in rows:
+                        d = {"name": a.name, "serves_wards": a.serves_wards or []}
+                        if a.asset_type == "power_substation":
+                            d.update({"lat": a.lat, "lon": a.lon,
+                                      "capacity_mw": a.capacity_mw,
+                                      "restoration_hours": a.restoration_hours})
+                            subs[a.asset_id] = d
+                        elif a.asset_type == "water_pump":
+                            d.update({"lat": a.lat, "lon": a.lon,
+                                      "capacity_m3_day": a.capacity_m3_day,
+                                      "powered_by": a.powered_by,
+                                      "restoration_hours": a.restoration_hours})
+                            pumps[a.asset_id] = d
+                    if subs and pumps:
+                        return subs, pumps
+        except Exception as e:
+            logger.warning("Cascade assets DB load failed: %s. Using hardcoded.", e)
+        return POWER_SUBSTATIONS, WATER_PUMPS
 
     @staticmethod
     def _time_offset_for(asset_type: str, parent_depth: int) -> int:
@@ -540,9 +572,27 @@ class CascadeAnalyzer:
     def _build_critical_facilities(
         self, affected_wards: Set[str]
     ) -> List[Dict[str, Any]]:
-        """Identify critical facilities in affected wards."""
+        """Identify critical facilities in affected wards. DB-first, fallback to hardcoded."""
+        facilities_data = CRITICAL_FACILITIES
+        try:
+            from ..models.cascade import CascadeCriticalFacility
+            from sqlalchemy.orm import Session
+            from ..database import get_engine
+            with Session(bind=get_engine()) as session:
+                rows = session.query(CascadeCriticalFacility).filter_by(
+                    city_slug=self.city_slug).all()
+                if rows:
+                    facilities_data = [{
+                        "name": f.name, "type": f.facility_type, "ward": f.ward,
+                        "lat": f.lat, "lon": f.lon,
+                        "beds": f.beds, "students": f.students,
+                        "annual_passengers": f.annual_passengers,
+                    } for f in rows]
+        except Exception:
+            pass
+
         impacted = []
-        for facility in CRITICAL_FACILITIES:
+        for facility in facilities_data:
             if facility["ward"] in affected_wards:
                 entry = dict(facility)
                 entry["impacts"] = []
@@ -606,6 +656,11 @@ class CascadeAnalyzer:
             "estimated_full_restoration_hours": max_restoration + 2.0,
             "cascade_depth": max((e["cascade_depth"] for e in events), default=0),
             "total_failure_events": len(events),
+            # Frontend-compatible aliases
+            "asset_name": seed_name,
+            "asset_type": seed_asset_type,
+            "total_population_affected": total_affected,
+            "wards": sorted(affected_wards.keys()),
         }
 
     # ── Public API ─────────────────────────────────────────────────────────
@@ -688,9 +743,53 @@ class CascadeAnalyzer:
         return result
 
     def list_assets(self, city_slug: str = "nairobi") -> Dict[str, Any]:
-        """Return all analyzable assets grouped by type."""
+        """Return all analyzable assets grouped by type. DB-first, fallback to hardcoded."""
         if city_slug != "nairobi":
             return {"error": f"City '{city_slug}' not supported", "supported_cities": ["nairobi"]}
+
+        try:
+            from ..models.cascade import CascadeAsset, CascadeCriticalFacility
+            from sqlalchemy.orm import Session
+            from ..database import get_engine
+            with Session(bind=get_engine()) as session:
+                db_assets = session.query(CascadeAsset).filter_by(city_slug=city_slug).all()
+                db_facilities = session.query(CascadeCriticalFacility).filter_by(city_slug=city_slug).all()
+
+                if db_assets:
+                    substations = []
+                    pumps = []
+                    for a in db_assets:
+                        item = {
+                            "asset_id": a.asset_id, "name": a.name, "type": a.asset_type,
+                            "lat": a.lat, "lon": a.lon,
+                            "serves_wards": a.serves_wards or [],
+                            "wards_count": len(a.serves_wards or []),
+                        }
+                        if a.asset_type == "power_substation":
+                            item["capacity_mw"] = a.capacity_mw
+                            substations.append(item)
+                        elif a.asset_type == "water_pump":
+                            item["capacity_m3_day"] = a.capacity_m3_day
+                            item["powered_by"] = a.powered_by
+                            pumps.append(item)
+
+                    facilities = [{
+                        "name": f.name, "type": f.facility_type, "ward": f.ward,
+                        "lat": f.lat, "lon": f.lon,
+                        "beds": f.beds, "students": f.students,
+                        "annual_passengers": f.annual_passengers,
+                    } for f in db_facilities]
+
+                    wards = _load_ward_populations(city_slug)
+
+                    return {
+                        "city": city_slug, "source": "database",
+                        "assets": {"power_substations": substations, "water_pumps": pumps},
+                        "critical_facilities": facilities,
+                        "wards": [{"name": w, "population": p} for w, p in sorted(wards.items())],
+                    }
+        except Exception:
+            pass
 
         return {
             "city": city_slug,
@@ -803,7 +902,7 @@ def _persist_analysis(result: Dict[str, Any], city_slug: str, asset_type: str, a
             )
             session.add(analysis)
             session.commit()
-            logger.info("Cascade analysis persisted", analysis_id=analysis_id)
+            logger.info("Cascade analysis persisted: %s", analysis_id)
     except Exception as exc:
         logger.warning("Failed to persist cascade analysis: %s", exc)
 

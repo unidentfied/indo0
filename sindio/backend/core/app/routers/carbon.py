@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from ..auth import optional_auth
 from ..database import get_engine
 from ..services.carbon_tracker import (
     compute_carbon_savings,
@@ -12,7 +13,7 @@ from ..services.carbon_tracker import (
 )
 from ..services.city_config import get_city
 
-carbon_router = APIRouter()
+carbon_router = APIRouter(prefix="/carbon", tags=["carbon"])
 
 
 class CarbonRegistrationRequest(BaseModel):
@@ -23,7 +24,7 @@ class CarbonRegistrationRequest(BaseModel):
     stress_reduction_pct: float = 20.0
 
 
-@carbon_router.get("/carbon/baseline")
+@carbon_router.get("/baseline", dependencies=[Depends(optional_auth)])
 async def api_compute_baseline(
     city_slug: str = Query(default="nairobi"),
     infra_type: str = Query(default="power"),
@@ -43,7 +44,7 @@ async def api_compute_baseline(
     }
 
 
-@carbon_router.post("/carbon/calculate-savings")
+@carbon_router.post("/calculate-savings", dependencies=[Depends(optional_auth)])
 async def api_calculate_savings(req: CarbonRegistrationRequest):
     city = get_city(req.city_slug)
     if not city:
@@ -58,7 +59,7 @@ async def api_calculate_savings(req: CarbonRegistrationRequest):
     )
 
 
-@carbon_router.post("/carbon/register-credit")
+@carbon_router.post("/register-credit", dependencies=[Depends(optional_auth)])
 async def api_register_credit(req: CarbonRegistrationRequest):
     city = get_city(req.city_slug)
     if not city:
@@ -82,7 +83,7 @@ async def api_register_credit(req: CarbonRegistrationRequest):
     )
 
 
-@carbon_router.get("/carbon/dashboard")
+@carbon_router.get("/dashboard", dependencies=[Depends(optional_auth)])
 async def api_carbon_dashboard(
     city_slug: str = Query(default="nairobi"),
 ):

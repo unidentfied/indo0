@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from ..auth import optional_auth
 from ..database import get_engine
 from ..services.insurance import (
     assess_risk,
@@ -12,7 +13,7 @@ from ..services.insurance import (
 )
 from ..services.city_config import get_city
 
-insurance_router = APIRouter()
+insurance_router = APIRouter(prefix="/insurance", tags=["insurance"])
 
 
 class PolicyCreateRequest(BaseModel):
@@ -32,7 +33,7 @@ class ClaimCheckRequest(BaseModel):
     current_stress: float
 
 
-@insurance_router.get("/insurance/assess-risk")
+@insurance_router.get("/assess-risk", dependencies=[Depends(optional_auth)])
 async def api_assess_risk(
     city_slug: str = Query(default="nairobi"),
     asset_id: str = Query(default="asset-001"),
@@ -46,7 +47,7 @@ async def api_assess_risk(
     return assess_risk(city_slug, asset_id, infra_type, current_stress)
 
 
-@insurance_router.post("/insurance/create-policy")
+@insurance_router.post("/create-policy", dependencies=[Depends(optional_auth)])
 async def api_create_policy(req: PolicyCreateRequest):
     city = get_city(req.city_slug)
     if not city:
@@ -64,7 +65,7 @@ async def api_create_policy(req: PolicyCreateRequest):
     )
 
 
-@insurance_router.post("/insurance/check-claim")
+@insurance_router.post("/check-claim", dependencies=[Depends(optional_auth)])
 async def api_check_claim(req: ClaimCheckRequest):
     city = get_city(req.city_slug)
     if not city:
@@ -79,7 +80,7 @@ async def api_check_claim(req: ClaimCheckRequest):
     )
 
 
-@insurance_router.get("/insurance/dashboard")
+@insurance_router.get("/dashboard", dependencies=[Depends(optional_auth)])
 async def api_insurance_dashboard(
     city_slug: str = Query(default="nairobi"),
 ):

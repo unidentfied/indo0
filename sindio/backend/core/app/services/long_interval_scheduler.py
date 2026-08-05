@@ -507,6 +507,9 @@ def run_stress_test_for_type(
                 "tested_at": datetime.now(timezone.utc).isoformat(),
             }
             _mark_completed(asset_id, result)
+
+            from .lifecycle_hooks import on_stress_test_complete
+            on_stress_test_complete(infra_type, asset_id, stress_val)
             results["assets"][asset_id] = result
 
     except Exception as exc:

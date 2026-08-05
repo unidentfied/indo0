@@ -50,7 +50,9 @@ export default function RoiCalculator() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.roi.upgradeOptions(infraType).then(setOptions).catch(() => {})
+    api.roi.upgradeOptions(infraType).then((data: any) => {
+      setOptions(Array.isArray(data) ? data : (data?.options || []))
+    }).catch(() => {})
     setSelectedOption(null)
     setResult(null)
     setError(null)

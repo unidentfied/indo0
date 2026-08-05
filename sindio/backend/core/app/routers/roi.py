@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from ..auth import optional_auth
 from ..services.roi_calculator import calculate_roi, list_upgrade_options
 from ..services.roi_calculator import get_roi_history
 
-roi_router = APIRouter()
+roi_router = APIRouter(prefix="/roi", tags=["roi"])
 
 
 class RoiCalculateRequest(BaseModel):
@@ -17,7 +18,7 @@ class RoiCalculateRequest(BaseModel):
     asset_lifespan_years: int = 20
 
 
-@roi_router.post("/roi/calculate")
+@roi_router.post("/calculate", dependencies=[Depends(optional_auth)])
 async def api_calculate_roi(body: RoiCalculateRequest):
     params = body.model_dump()
     if not params["upgrade_description"]:
@@ -29,7 +30,7 @@ async def api_calculate_roi(body: RoiCalculateRequest):
     return result
 
 
-@roi_router.get("/roi/upgrade-options")
+@roi_router.get("/upgrade-options", dependencies=[Depends(optional_auth)])
 async def api_list_upgrade_options(
     infra_type: str = Query(default="power", description="Infrastructure type"),
 ):
@@ -44,7 +45,7 @@ async def api_list_upgrade_options(
     }
 
 
-@roi_router.get("/roi/history")
+@roi_router.get("/history", dependencies=[Depends(optional_auth)])
 async def get_calculation_history(
     city_slug: str = Query("nairobi"),
     limit: int = Query(20, ge=1, le=100),

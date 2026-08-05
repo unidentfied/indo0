@@ -305,6 +305,10 @@ class AlertGenerator:
         # 6b. Index asynchronously in Elasticsearch for hybrid search
         self._index_alerts_async(alert_dicts)
 
+        # 6c. Auto-maintenance: trigger cascade analysis for critical power/water alerts
+        from .lifecycle_hooks import on_critical_alerts_generated
+        on_critical_alerts_generated(alert_dicts)
+
         # 7. Generate RAG-based explanations for each alert
         for alert_d in alert_dicts:
             self._generate_explanation(alert_d)
