@@ -282,9 +282,6 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-              <Suspense fallback={<SkeletonBlock />}>
-                <ScheduleStatus />
-              </Suspense>
               <div className="panel p-4">
                 <Suspense fallback={<SkeletonBlock />}>
                   <CascadePanel />
@@ -345,6 +342,10 @@ export default function Dashboard() {
                   </div>
                 </div>
             }
+
+            <Suspense fallback={<SkeletonBlock />}>
+              <ScheduleStatus />
+            </Suspense>
 
             <div className="panel p-4">
               <Suspense fallback={<SkeletonBlock />}>
