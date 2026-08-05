@@ -50,15 +50,15 @@ export default function InsuranceDashboard({ citySlug }: InsuranceDashboardProps
         </div>
         <div className="bg-sindio-panel rounded-lg p-3 border border-sindio-border">
           <div className="text-xs text-sindio-muted mb-1">Coverage</div>
-          <div className="text-xl font-bold text-green-400">${String(data.total_coverage_usd)}</div>
+          <div className="text-xl font-bold text-green-400">KSh {String(data.total_coverage_kes || data.total_coverage_usd)}</div>
         </div>
         <div className="bg-sindio-panel rounded-lg p-3 border border-sindio-border">
           <div className="text-xs text-sindio-muted mb-1">Premium Pool</div>
-          <div className="text-xl font-bold text-blue-400">${String(data.total_premium_usd)}</div>
+          <div className="text-xl font-bold text-blue-400">KSh {String(data.total_premium_kes || data.total_premium_usd)}</div>
         </div>
         <div className="bg-sindio-panel rounded-lg p-3 border border-sindio-border">
           <div className="text-xs text-sindio-muted mb-1">Claims Paid</div>
-          <div className="text-xl font-bold text-yellow-400">${String(data.total_paid_usd)}</div>
+          <div className="text-xl font-bold text-yellow-400">KSh {String(data.total_paid_kes || data.total_paid_usd)}</div>
         </div>
       </div>
 
@@ -75,10 +75,10 @@ export default function InsuranceDashboard({ citySlug }: InsuranceDashboardProps
                   <div className="w-32 bg-sindio-dark rounded-full h-2 overflow-hidden">
                     <div
                       className="h-full bg-blue-500 rounded-full transition-all"
-                      style={{ width: `${Math.min((Number(amount) / (Number(data.total_coverage_usd) || 1)) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((Number(amount) / (Number(data.total_coverage_kes || data.total_coverage_usd) || 1)) * 100, 100)}%` }}
                     />
                   </div>
-                  <span className="text-blue-400 w-16 text-right">${String(amount)}</span>
+                  <span className="text-blue-400 w-16 text-right">KSh {String(amount)}</span>
                 </div>
               </div>
             ))}
@@ -97,7 +97,7 @@ export default function InsuranceDashboard({ citySlug }: InsuranceDashboardProps
                 <span className="text-white capitalize">{String(r.infra_type)}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-sindio-muted">Risk: {String(r.risk_score)}</span>
-                  <span className="text-red-400">Loss: ${String(r.expected_annual_loss_usd)}</span>
+                  <span className="text-red-400">Loss: KSh {String(r.expected_annual_loss_kes || r.expected_annual_loss_usd)}</span>
                 </div>
               </div>
             ))}
@@ -118,7 +118,7 @@ export default function InsuranceDashboard({ citySlug }: InsuranceDashboardProps
                   <span className="text-sindio-muted ml-2">Stress: {String(c.trigger_stress)}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-yellow-400">${String(c.payout_usd)}</span>
+                  <span className="text-yellow-400">KSh {String(c.payout_kes || c.payout_usd)}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${c.status === 'paid' ? 'bg-green-900/50 text-green-400' : c.status === 'pending' ? 'bg-yellow-900/50 text-yellow-400' : 'bg-red-900/50 text-red-400'}`}>
                     {String(c.status)}
                   </span>

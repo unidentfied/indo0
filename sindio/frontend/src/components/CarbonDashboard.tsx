@@ -57,7 +57,7 @@ export default function CarbonDashboard({ citySlug }: CarbonDashboardProps) {
         </div>
         <div className="bg-sindio-panel rounded-lg p-3 border border-sindio-border">
           <div className="text-xs text-sindio-muted mb-1">Total Value</div>
-          <div className="text-xl font-bold text-yellow-400">${String(data.total_value_usd)}</div>
+          <div className="text-xl font-bold text-yellow-400">KSh {String(data.total_value_kes || data.total_value_usd)}</div>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export default function CarbonDashboard({ citySlug }: CarbonDashboardProps) {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-green-400">{String(c.tco2e_saved)} tCO₂e</span>
-                  <span className="text-yellow-400">${String(c.total_value_usd)}</span>
+                  <span className="text-yellow-400">KSh {String(c.total_value_kes || c.total_value_usd)}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${c.verification_status === 'verified' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'}`}>
                     {String(c.verification_status)}
                   </span>

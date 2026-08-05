@@ -19,7 +19,7 @@ class PolicyCreateRequest(BaseModel):
     city_slug: str = "nairobi"
     infra_type: str
     asset_id: str
-    coverage_amount_usd: float
+    coverage_amount_kes: float
     trigger_stress_threshold: float = 0.80
     trigger_window_hours: int = 24
     duration_days: int = 365
@@ -57,7 +57,7 @@ async def api_create_policy(req: PolicyCreateRequest):
         req.city_slug,
         req.infra_type,
         req.asset_id,
-        req.coverage_amount_usd,
+        req.coverage_amount_kes,
         req.trigger_stress_threshold,
         req.trigger_window_hours,
         req.duration_days,

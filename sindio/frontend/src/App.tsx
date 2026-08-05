@@ -15,6 +15,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
 
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const DataPortal = lazy(() => import('./pages/DataPortal'))
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/data" element={<DataPortal />} />
                   <Route path="/privacy" element={<PrivacyPage />} />
                   <Route path="/cookies" element={<CookiesPage />} />
                   <Route path="/terms" element={<TermsPage />} />

@@ -214,12 +214,6 @@ export const api = {
       }),
   },
 
-  cities: {
-    list: () => request<{ slug: string; name: string; country: string; is_active: boolean }[]>('/api/v1/cities'),
-    active: () => request<{ slug: string; name: string; country: string; center: { lat: number; lng: number }; zoom: number; bbox: Record<string, number>; wards: string[] }>('/api/v1/cities/active'),
-    get: (slug: string) => request<{ slug: string; name: string; country: string; wards: string[]; bbox: Record<string, number> }>(`/api/v1/cities/${slug}`),
-  },
-
   population: {
     dashboard: (citySlug: string) => request<Record<string, unknown>>(`/api/v1/population/dashboard?city_slug=${citySlug}`),
     generate: (citySlug: string, force?: boolean) => request<Record<string, unknown>>(`/api/v1/population/generate?city_slug=${citySlug}${force ? '&force=true' : ''}`, { method: 'POST' }),
@@ -236,5 +230,63 @@ export const api = {
     dashboard: (citySlug: string) => request<Record<string, unknown>>(`/api/v1/insurance/dashboard?city_slug=${citySlug}`),
     assessRisk: (citySlug: string, assetId: string, infraType: string, stress: number) => request<Record<string, unknown>>(`/api/v1/insurance/assess-risk?city_slug=${citySlug}&asset_id=${assetId}&infra_type=${infraType}&current_stress=${stress}`),
     createPolicy: (payload: Record<string, unknown>) => request<Record<string, unknown>>('/api/v1/insurance/create-policy', { method: 'POST', body: JSON.stringify(payload) }),
+  },
+
+  cascade: {
+    analyze: (assetType: string, assetId: string, citySlug = 'nairobi') =>
+      request<Record<string, unknown>>(`/api/v1/cascade/analyze?asset_type=${assetType}&asset_id=${assetId}&city_slug=${citySlug}`),
+    analyzePost: (payload: { asset_type: string; asset_id: string; city_slug?: string }) =>
+      request<Record<string, unknown>>('/api/v1/cascade/analyze', { method: 'POST', body: JSON.stringify(payload) }),
+    assets: () => request<{ asset_id: string; asset_type: string; name: string; ward: string }[]>('/api/v1/cascade/assets'),
+    dependencies: (assetId: string) => request<Record<string, unknown>>(`/api/v1/cascade/dependencies/${assetId}`),
+  },
+
+  nlMap: {
+    query: (text: string) =>
+      request<Record<string, unknown>>('/api/v1/nl-map/query', {
+        method: 'POST',
+        body: JSON.stringify({ query: text }),
+      }),
+  },
+
+  roi: {
+    calculate: (payload: Record<string, unknown>) =>
+      request<Record<string, unknown>>('/api/v1/roi/calculate', { method: 'POST', body: JSON.stringify(payload) }),
+    upgradeOptions: (infraType: string) =>
+      request<{ asset_id: string; name: string; typical_cost_kes: number; typical_annual_savings_kes: number; description: string; payback_years: number }[]>(`/api/v1/roi/upgrade-options?infra_type=${infraType}`),
+  },
+
+  datasets: {
+    list: (category?: string) =>
+      request<Record<string, unknown>[]>(`/api/v1/datasets${category ? `?category=${category}` : ''}`),
+    get: (datasetId: string) =>
+      request<Record<string, unknown>>(`/api/v1/datasets/${datasetId}`),
+    download: (datasetId: string) =>
+      request<Record<string, unknown>>(`/api/v1/datasets/${datasetId}/download`),
+  },
+
+  snapshot: {
+    get: (citySlug = 'nairobi', ward?: string) =>
+      request<Record<string, unknown>>(
+        `/api/v1/snapshot/?city_slug=${citySlug}${ward ? `&ward=${ward}` : ''}`,
+      ),
+  },
+
+  citizenReports: {
+    create: (payload: Record<string, unknown>) =>
+      request<Record<string, unknown>>('/api/v1/citizen-reports/', { method: 'POST', body: JSON.stringify(payload) }),
+    list: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+      return request<Record<string, unknown>>(`/api/v1/citizen-reports/${qs}`)
+    },
+    geojson: (params?: Record<string, string>) => {
+      const qs = params ? '?' + new URLSearchParams(params).toString() : ''
+      return request<Record<string, unknown>>(`/api/v1/citizen-reports/geojson${qs}`)
+    },
+    update: (reportId: string, payload: Record<string, unknown>) =>
+      request<Record<string, unknown>>(`/api/v1/citizen-reports/${reportId}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    upvote: (reportId: string) =>
+      request<Record<string, unknown>>(`/api/v1/citizen-reports/${reportId}/upvote`, { method: 'POST' }),
+    stats: () => request<Record<string, unknown>>('/api/v1/citizen-reports/stats'),
   },
 }

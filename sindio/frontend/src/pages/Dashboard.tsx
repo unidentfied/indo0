@@ -15,9 +15,13 @@ const MonitorOverview = lazy(() => import('../components/MonitorOverview'))
 const ScheduleStatus = lazy(() => import('../components/ScheduleStatus'))
 const AlertFeed = lazy(() => import('../components/AlertFeed'))
 const ClassificationPanel = lazy(() => import('../components/ClassificationPanel'))
-const CitySwitcher = lazy(() => import('../components/CitySwitcher'))
 const CarbonDashboard = lazy(() => import('../components/CarbonDashboard'))
 const InsuranceDashboard = lazy(() => import('../components/InsuranceDashboard'))
+const CascadePanel = lazy(() => import('../components/CascadePanel'))
+const RoiCalculator = lazy(() => import('../components/RoiCalculator'))
+const NlMapSearch = lazy(() => import('../components/NlMapSearch'))
+const DataFreshnessPanel = lazy(() => import('../components/DataFreshnessPanel'))
+const ConditionsSnapshot = lazy(() => import('../components/ConditionsSnapshot'))
 
 function SkeletonBlock({ className = '' }: { className?: string }) {
   return <div className={`panel animate-pulse bg-sindio-panel ${className}`}>
@@ -58,8 +62,6 @@ export default function Dashboard() {
   const { hasActiveSubscription, user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSystem = searchParams.get('system') || 'power'
-  const [activeCity, setActiveCity] = useState(() => localStorage.getItem('sindio_city') || 'nairobi')
-
   const setActiveSystem = (system: string) => {
     setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('system', system); return n }, { replace: true })
   }
@@ -143,14 +145,23 @@ export default function Dashboard() {
         </main>
       ) : (
         <main className="flex-1 p-4 sm:p-8 lg:p-12">
+            {/* ── Conditions Snapshot ── */}
+            <div className="mb-8">
+              <Suspense fallback={<SkeletonBlock />}>
+                <ConditionsSnapshot />
+              </Suspense>
+            </div>
+
+            {/* ── Natural Language Search ── */}
+            <div className="mb-6">
+              <Suspense fallback={null}>
+                <NlMapSearch />
+              </Suspense>
+            </div>
+
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold">{title}</h1>
-                <Suspense fallback={null}>
-                  <CitySwitcher activeCity={activeCity} onCityChange={(slug) => { setActiveCity(slug); localStorage.setItem('sindio_city', slug) }} />
-                </Suspense>
-              </div>
+              <h1 className="text-3xl font-bold mb-2">{title}</h1>
               <p className="text-sindio-muted text-sm max-w-xl">
                 {infraDescriptions[activeSystem] || 'Real-time predictive simulation of load distribution and infrastructure resilience.'}
               </p>
@@ -249,6 +260,9 @@ export default function Dashboard() {
               <Suspense fallback={<SkeletonBlock />}>
                 <MonitorOverview />
               </Suspense>
+              <Suspense fallback={<SkeletonBlock />}>
+                <DataFreshnessPanel />
+              </Suspense>
               <div className="panel">
                 <div className="p-4 border-b border-sindio-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -344,15 +358,28 @@ export default function Dashboard() {
             <ClassificationPanel />
           </Suspense>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
             <div className="panel p-4">
               <Suspense fallback={<SkeletonBlock />}>
-                <CarbonDashboard citySlug={activeCity} />
+                <CascadePanel />
               </Suspense>
             </div>
             <div className="panel p-4">
               <Suspense fallback={<SkeletonBlock />}>
-                <InsuranceDashboard citySlug={activeCity} />
+                <RoiCalculator />
+              </Suspense>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <CarbonDashboard citySlug="nairobi" />
+              </Suspense>
+            </div>
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <InsuranceDashboard citySlug="nairobi" />
               </Suspense>
             </div>
           </div>

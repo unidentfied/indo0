@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 
 from ..models.carbon import CarbonBase, CarbonBaseline, CarbonCredit
 
+_KES_PER_USD = 145.0
+
 
 _EMISSION_FACTORS: dict[str, dict[str, float]] = {
     "power": {"fossil_tco2_per_mwh": 0.60, "renewable_tco2_per_mwh": 0.02, "grid_loss_factor": 0.15},
@@ -52,7 +54,7 @@ def compute_carbon_savings(
     new_baseline = old_baseline * (1 - efficiency_gain * 0.7)
     tco2e_saved = old_baseline - new_baseline
 
-    market_price = 15.0
+    market_price = 15.0 * _KES_PER_USD
     total_value = tco2e_saved * market_price
 
     return {
@@ -65,7 +67,7 @@ def compute_carbon_savings(
         "baseline_tco2e_per_year_after": round(new_baseline, 2),
         "tco2e_saved_per_year": round(tco2e_saved, 2),
         "market_price_per_tco2e": market_price,
-        "estimated_annual_value_usd": round(total_value, 2),
+        "estimated_annual_value_kes": round(total_value, 2),
     }
 
 
@@ -83,7 +85,7 @@ def register_credit(
     cert_seed = f"{credit_id}:{city_slug}:{asset_id}:{tco2e_saved:.2f}"
     certificate_hash = hashlib.sha256(cert_seed.encode()).hexdigest()[:32]
 
-    market_price = 15.0
+    market_price = 15.0 * _KES_PER_USD
     total_value = tco2e_saved * market_price
     upgrade_date = datetime.now(timezone.utc)
     expires_at = upgrade_date + timedelta(days=365 * 5)
@@ -127,7 +129,7 @@ def register_credit(
             "credit_id": credit_id,
             "certificate_hash": certificate_hash,
             "tco2e_saved": round(tco2e_saved, 2),
-            "total_value_usd": round(total_value, 2),
+            "total_value_kes": round(total_value, 2),
             "verification_status": "pending",
             "expires_at": expires_at.isoformat(),
         }
@@ -160,7 +162,7 @@ def get_carbon_dashboard(city_slug: str, engine) -> dict:
             "city": city_slug,
             "total_credits_issued": len(credits),
             "total_tco2e_saved": round(total_saved, 2),
-            "total_value_usd": round(total_value, 2),
+            "total_value_kes": round(total_value, 2),
             "verified_tco2e": round(verified, 2),
             "total_baseline_tco2e_per_year": round(total_baseline, 2),
             "savings_by_infra_type": {k: round(v, 2) for k, v in by_type.items()},
@@ -170,7 +172,7 @@ def get_carbon_dashboard(city_slug: str, engine) -> dict:
                     "infra_type": c.infra_type,
                     "asset_id": c.asset_id,
                     "tco2e_saved": round(c.tco2e_saved, 2),
-                    "total_value_usd": round(c.total_value_usd, 2),
+                    "total_value_kes": round(c.total_value_usd, 2),
                     "verification_status": c.verification_status,
                     "upgrade_description": c.upgrade_description,
                     "created_at": c.created_at.isoformat() if c.created_at else None,

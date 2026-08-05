@@ -42,3 +42,20 @@ class CarbonCredit(CarbonBase):
     verified_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=True)
     metadata_json = Column(JSON, default=dict)
+
+    def to_dict(self):
+        return {
+            "credit_id": self.credit_id,
+            "city_slug": self.city_slug,
+            "infra_type": self.infra_type,
+            "asset_id": self.asset_id,
+            "tco2e_saved": self.tco2e_saved,
+            "upgrade_description": self.upgrade_description,
+            "verification_status": self.verification_status,
+            "certificate_hash": self.certificate_hash,
+            "market_price_per_tco2e": self.market_price_per_tco2e,
+            "total_value_kes": self.total_value_usd,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "verified_at": self.verified_at.isoformat() if self.verified_at else None,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+        }

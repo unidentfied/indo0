@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 from ..models.insurance import InsuranceBase, InsurancePolicy, RiskAssessment, ClaimEvent
 
+_KES_PER_USD = 145.0
+
 
 _BASE_PREMIUM_RATES: dict[str, float] = {
     "power": 0.025, "water": 0.020, "roads": 0.018, "solid_waste": 0.012,
@@ -38,7 +40,7 @@ def assess_risk(
     )
 
     failure_prob_1yr = risk_score * 0.15
-    annual_loss_multiplier = 50000 * base_rate * 100
+    annual_loss_multiplier = 50000 * _KES_PER_USD * base_rate * 100
     expected_annual_loss = risk_score * annual_loss_multiplier
     max_foreseeable_loss = expected_annual_loss * 3.5
 
@@ -48,10 +50,10 @@ def assess_risk(
         "city": city_slug,
         "risk_score": round(risk_score, 4),
         "failure_probability_1yr": round(failure_prob_1yr, 4),
-        "expected_annual_loss_usd": round(expected_annual_loss, 2),
-        "max_foreseeable_loss_usd": round(max_foreseeable_loss, 2),
-        "recommended_coverage_usd": round(max_foreseeable_loss * 0.8, 2),
-        "annual_premium_usd": round(max_foreseeable_loss * base_rate, 2),
+        "expected_annual_loss_kes": round(expected_annual_loss, 2),
+        "max_foreseeable_loss_kes": round(max_foreseeable_loss, 2),
+        "recommended_coverage_kes": round(max_foreseeable_loss * 0.8, 2),
+        "annual_premium_kes": round(max_foreseeable_loss * base_rate, 2),
         "hazard_factors": [
             {"factor": "stress_level", "value": round(hazard_score, 2), "weight": hazard_weight},
         ],
@@ -69,7 +71,7 @@ def create_policy(
     city_slug: str,
     infra_type: str,
     asset_id: str,
-    coverage_amount_usd: float,
+    coverage_amount_kes: float,
     trigger_stress_threshold: float = 0.80,
     trigger_window_hours: int = 24,
     duration_days: int = 365,
@@ -77,7 +79,7 @@ def create_policy(
     from sqlalchemy.orm import Session
 
     base_rate = _BASE_PREMIUM_RATES.get(infra_type, 0.02)
-    premium = coverage_amount_usd * base_rate
+    premium = coverage_amount_kes * base_rate
     stress_adj = max(trigger_stress_threshold / 0.85, 0.5)
     premium = premium * stress_adj
 
@@ -95,7 +97,7 @@ def create_policy(
             policy_type="parametric",
             infra_type=infra_type,
             insured_asset_id=asset_id,
-            coverage_amount_usd=coverage_amount_usd,
+            coverage_amount_usd=coverage_amount_kes,
             premium_usd=round(premium, 2),
             trigger_stress_threshold=trigger_stress_threshold,
             trigger_window_hours=trigger_window_hours,
@@ -113,8 +115,8 @@ def create_policy(
             infra_type=infra_type,
             risk_score=risk["risk_score"],
             failure_probability_1yr=risk["failure_probability_1yr"],
-            expected_annual_loss_usd=risk["expected_annual_loss_usd"],
-            max_foreseeable_loss_usd=risk["max_foreseeable_loss_usd"],
+            expected_annual_loss_usd=risk["expected_annual_loss_kes"],
+            max_foreseeable_loss_usd=risk["max_foreseeable_loss_kes"],
             hazard_factors=risk["hazard_factors"],
             vulnerability_factors=risk["vulnerability_factors"],
             exposure_factors=risk["exposure_factors"],
@@ -126,8 +128,8 @@ def create_policy(
             "policy_id": policy_id,
             "asset_id": asset_id,
             "infra_type": infra_type,
-            "coverage_amount_usd": coverage_amount_usd,
-            "annual_premium_usd": round(premium, 2),
+            "coverage_amount_kes": coverage_amount_kes,
+            "annual_premium_kes": round(premium, 2),
             "trigger_stress_threshold": trigger_stress_threshold,
             "trigger_window_hours": trigger_window_hours,
             "start_date": start.isoformat(),
@@ -197,7 +199,7 @@ def check_trigger_and_claim(
                 "policy_id": policy.policy_id,
                 "trigger_stress": current_stress,
                 "threshold": policy.trigger_stress_threshold,
-                "payout_amount_usd": round(payout, 2),
+                "payout_amount_kes": round(payout, 2),
                 "status": "pending",
             }
 
@@ -236,18 +238,18 @@ def get_insurance_dashboard(city_slug: str, engine) -> dict:
             "city": city_slug,
             "total_policies": len(policies),
             "active_policies": len(active),
-            "total_coverage_usd": round(total_coverage, 2),
-            "total_premium_usd": round(total_premium, 2),
+            "total_coverage_kes": round(total_coverage, 2),
+            "total_premium_kes": round(total_premium, 2),
             "total_claims": len(claims),
-            "total_paid_usd": round(paid, 2),
-            "total_pending_usd": round(pending, 2),
+            "total_paid_kes": round(paid, 2),
+            "total_pending_kes": round(pending, 2),
             "coverage_by_infra_type": {k: round(v, 2) for k, v in by_type.items()},
             "top_risks": [
                 {
                     "asset_id": a.asset_id,
                     "infra_type": a.infra_type,
                     "risk_score": round(a.risk_score, 4),
-                    "expected_annual_loss_usd": round(a.expected_annual_loss_usd, 2),
+                    "expected_annual_loss_kes": round(a.expected_annual_loss_usd, 2),
                 }
                 for a in assessments
             ],
@@ -256,7 +258,7 @@ def get_insurance_dashboard(city_slug: str, engine) -> dict:
                     "claim_id": c.claim_id,
                     "policy_id": c.policy_id,
                     "trigger_stress": round(c.trigger_stress_value, 4),
-                    "payout_usd": round(c.payout_amount_usd, 2),
+                    "payout_kes": round(c.payout_amount_usd, 2),
                     "status": c.status,
                     "created_at": c.created_at.isoformat() if c.created_at else None,
                 }

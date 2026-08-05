@@ -1,30 +1,46 @@
 import json
 import os
-import structlog
 import threading
-
 from contextlib import asynccontextmanager
+
+import structlog
 from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from slowapi.util import get_remote_address
-
-from .logging import logger
-from fastapi.middleware.cors import CORSMiddleware
-
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from .config import config
+from slowapi.util import get_remote_address
 
-from .routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard, training, simulation_compat
-from .routers.cities import city_router
-from .routers.population import population_router
+from .auth import auth_router
+from .config import config
+from .logging import logger
+from .routers import (
+    alerts,
+    dashboard,
+    health,
+    infrastructure,
+    monitor,
+    schedule,
+    simulation_compat,
+    simulations,
+    training,
+)
 from .routers.carbon import carbon_router
+from .routers.cascade import cascade_router
+from .routers.cities import city_router
+from .routers.citizen_reports import citizen_reports_router
+from .routers.datasets import datasets_router
 from .routers.insurance import insurance_router
-from .auth import auth_router, require_auth, optional_auth
+from .routers.nl_map import nl_map_router
+from .routers.population import population_router
+from .routers.roi import roi_router
+from .routers.snapshot import snapshot_router
+from .routers.data_freshness import data_freshness_router
 from .services.data_quality_metrics import registry as dq_registry
 from .services.model_registry import ModelRegistry
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,10 +60,11 @@ async def lifespan(app: FastAPI):
     def _init_tables():
         try:
             from sqlalchemy import inspect
+
             from .database import get_engine, init_ingestion_tables
             engine = get_engine()
             init_ingestion_tables()
-            from .models.user import UserBase, User
+            from .models.user import User, UserBase
 
             inspector = inspect(engine)
             if "users" in inspector.get_table_names():
@@ -65,6 +82,12 @@ async def lifespan(app: FastAPI):
             CarbonBase.metadata.create_all(bind=engine)
             from .models.insurance import InsuranceBase
             InsuranceBase.metadata.create_all(bind=engine)
+            from .models.cascade import CascadeBase
+            CascadeBase.metadata.create_all(bind=engine)
+            from .models.citizen_report import CitizenReportBase
+            CitizenReportBase.metadata.create_all(bind=engine)
+            from .models.roi import RoiBase
+            RoiBase.metadata.create_all(bind=engine)
             logger.info("Database tables verified/created (core)")
         except Exception as exc:
             logger.warning("Table init failed (non-critical): %s", exc)
@@ -229,6 +252,13 @@ app.include_router(city_router, prefix="/api/v1")
 app.include_router(population_router, prefix="/api/v1")
 app.include_router(carbon_router, prefix="/api/v1")
 app.include_router(insurance_router, prefix="/api/v1")
+app.include_router(datasets_router, prefix="/api/v1")
+app.include_router(roi_router, prefix="/api/v1")
+app.include_router(cascade_router, prefix="/api/v1")
+app.include_router(citizen_reports_router, prefix="/api/v1")
+app.include_router(data_freshness_router, prefix="/api/v1")
+app.include_router(nl_map_router, prefix="/api/v1")
+app.include_router(snapshot_router, prefix="/api/v1")
 # Static files mount — disabled in Docker because frontend/dist is not copied into the image.
 # Serve static files via a reverse proxy (nginx, Netlify, or Railway static serving) instead.
 # To enable locally, set CORE_SERVE_STATIC=1.
@@ -264,8 +294,9 @@ async def health_ready():
     deps["models"] = model_registry.summary
 
     try:
-        from app.database import get_engine
         from sqlalchemy import text
+
+        from app.database import get_engine
         with get_engine().connect() as conn:
             conn.execute(text("SELECT 1"))
         deps["postgres"] = "ok"
