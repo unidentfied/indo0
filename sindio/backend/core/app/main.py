@@ -18,6 +18,10 @@ from slowapi.errors import RateLimitExceeded
 from .config import config
 
 from .routers import health, simulations, infrastructure, alerts, schedule, monitor, dashboard, training, simulation_compat
+from .routers.cities import city_router
+from .routers.population import population_router
+from .routers.carbon import carbon_router
+from .routers.insurance import insurance_router
 from .auth import auth_router, require_auth, optional_auth
 from .services.data_quality_metrics import registry as dq_registry
 from .services.model_registry import ModelRegistry
@@ -53,6 +57,14 @@ async def lifespan(app: FastAPI):
                     UserBase.metadata.drop_all(bind=engine, tables=[User.__table__])
 
             UserBase.metadata.create_all(bind=engine)
+            from .models.city import CityBase
+            CityBase.metadata.create_all(bind=engine)
+            from .models.population import PopulationBase
+            PopulationBase.metadata.create_all(bind=engine)
+            from .models.carbon import CarbonBase
+            CarbonBase.metadata.create_all(bind=engine)
+            from .models.insurance import InsuranceBase
+            InsuranceBase.metadata.create_all(bind=engine)
             logger.info("Database tables verified/created (core)")
         except Exception as exc:
             logger.warning("Table init failed (non-critical): %s", exc)
@@ -213,6 +225,10 @@ app.include_router(alerts.router, prefix="/api")
 app.include_router(schedule.router)
 app.include_router(monitor.router)
 app.include_router(training.router, prefix="/api/v1")
+app.include_router(city_router, prefix="/api/v1")
+app.include_router(population_router, prefix="/api/v1")
+app.include_router(carbon_router, prefix="/api/v1")
+app.include_router(insurance_router, prefix="/api/v1")
 # Static files mount — disabled in Docker because frontend/dist is not copied into the image.
 # Serve static files via a reverse proxy (nginx, Netlify, or Railway static serving) instead.
 # To enable locally, set CORE_SERVE_STATIC=1.

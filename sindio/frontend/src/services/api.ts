@@ -213,4 +213,28 @@ export const api = {
         body: JSON.stringify({ prompt, infrastructure_types: infraTypes }),
       }),
   },
+
+  cities: {
+    list: () => request<{ slug: string; name: string; country: string; is_active: boolean }[]>('/api/v1/cities'),
+    active: () => request<{ slug: string; name: string; country: string; center: { lat: number; lng: number }; zoom: number; bbox: Record<string, number>; wards: string[] }>('/api/v1/cities/active'),
+    get: (slug: string) => request<{ slug: string; name: string; country: string; wards: string[]; bbox: Record<string, number> }>(`/api/v1/cities/${slug}`),
+  },
+
+  population: {
+    dashboard: (citySlug: string) => request<Record<string, unknown>>(`/api/v1/population/dashboard?city_slug=${citySlug}`),
+    generate: (citySlug: string, force?: boolean) => request<Record<string, unknown>>(`/api/v1/population/generate?city_slug=${citySlug}${force ? '&force=true' : ''}`, { method: 'POST' }),
+  },
+
+  carbon: {
+    dashboard: (citySlug: string) => request<Record<string, unknown>>(`/api/v1/carbon/dashboard?city_slug=${citySlug}`),
+    baseline: (citySlug: string, infraType: string, assetId: string) => request<Record<string, unknown>>(`/api/v1/carbon/baseline?city_slug=${citySlug}&infra_type=${infraType}&asset_id=${assetId}`),
+    calculateSavings: (payload: Record<string, unknown>) => request<Record<string, unknown>>('/api/v1/carbon/calculate-savings', { method: 'POST', body: JSON.stringify(payload) }),
+    registerCredit: (payload: Record<string, unknown>) => request<Record<string, unknown>>('/api/v1/carbon/register-credit', { method: 'POST', body: JSON.stringify(payload) }),
+  },
+
+  insurance: {
+    dashboard: (citySlug: string) => request<Record<string, unknown>>(`/api/v1/insurance/dashboard?city_slug=${citySlug}`),
+    assessRisk: (citySlug: string, assetId: string, infraType: string, stress: number) => request<Record<string, unknown>>(`/api/v1/insurance/assess-risk?city_slug=${citySlug}&asset_id=${assetId}&infra_type=${infraType}&current_stress=${stress}`),
+    createPolicy: (payload: Record<string, unknown>) => request<Record<string, unknown>>('/api/v1/insurance/create-policy', { method: 'POST', body: JSON.stringify(payload) }),
+  },
 }

@@ -455,3 +455,20 @@ def get_names() -> List[str]:
 def get_by_physics_engine(engine: PhysicsEngine) -> List[InfraConfig]:
     """Return all configs using a specific physics engine."""
     return [c for c in INFRA_REGISTRY.values() if c.physics_engine == engine]
+
+
+def resolve_config_for_city(name: str, city_slug: str) -> InfraConfig:
+    import copy
+    config = copy.deepcopy(get_config(name))
+    try:
+        from ...services.city_config import get_city
+        city = get_city(city_slug)
+        if city and name in city.infra_overrides:
+            overrides = city.infra_overrides[name]
+            if "region" in overrides:
+                config.region = overrides["region"]
+            if "default_asset_count" in overrides:
+                config.default_asset_count = overrides["default_asset_count"]
+    except Exception:
+        pass
+    return config

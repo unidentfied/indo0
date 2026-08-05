@@ -42,6 +42,10 @@ from app.routers.privacy import router as privacy_router
 from backend.core.app.services.health import router as health_router
 # Auth endpoints (signup, login, email verification)
 from backend.core.app.auth import auth_router
+from backend.core.app.routers.cities import city_router
+from backend.core.app.routers.population import population_router
+from backend.core.app.routers.carbon import carbon_router
+from backend.core.app.routers.insurance import insurance_router
 
 _ENV = os.getenv("ENV", "development").lower()
 
@@ -74,6 +78,14 @@ async def on_startup():
                 UserBase.metadata.drop_all(bind=engine, tables=[User.__table__])
 
         UserBase.metadata.create_all(bind=engine)
+        from backend.core.app.models.city import CityBase
+        CityBase.metadata.create_all(bind=engine)
+        from backend.core.app.models.population import PopulationBase
+        PopulationBase.metadata.create_all(bind=engine)
+        from backend.core.app.models.carbon import CarbonBase
+        CarbonBase.metadata.create_all(bind=engine)
+        from backend.core.app.models.insurance import InsuranceBase
+        InsuranceBase.metadata.create_all(bind=engine)
         logger.info("Database tables verified/created")
     except Exception as exc:
         logger.warning("Table creation skipped (DB may not be available): %s", exc)
@@ -345,6 +357,10 @@ app.include_router(privacy_router)   # individual endpoints already enforce role
 app.include_router(health_router)
 app.include_router(health_router, prefix="/api")
 app.include_router(auth_router, prefix="/auth")
+app.include_router(city_router, prefix="/api/v1")
+app.include_router(population_router, prefix="/api/v1")
+app.include_router(carbon_router, prefix="/api/v1")
+app.include_router(insurance_router, prefix="/api/v1")
 
 
 @app.get("/health")

@@ -15,6 +15,9 @@ const MonitorOverview = lazy(() => import('../components/MonitorOverview'))
 const ScheduleStatus = lazy(() => import('../components/ScheduleStatus'))
 const AlertFeed = lazy(() => import('../components/AlertFeed'))
 const ClassificationPanel = lazy(() => import('../components/ClassificationPanel'))
+const CitySwitcher = lazy(() => import('../components/CitySwitcher'))
+const CarbonDashboard = lazy(() => import('../components/CarbonDashboard'))
+const InsuranceDashboard = lazy(() => import('../components/InsuranceDashboard'))
 
 function SkeletonBlock({ className = '' }: { className?: string }) {
   return <div className={`panel animate-pulse bg-sindio-panel ${className}`}>
@@ -55,6 +58,7 @@ export default function Dashboard() {
   const { hasActiveSubscription, user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeSystem = searchParams.get('system') || 'power'
+  const [activeCity, setActiveCity] = useState(() => localStorage.getItem('sindio_city') || 'nairobi')
 
   const setActiveSystem = (system: string) => {
     setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('system', system); return n }, { replace: true })
@@ -139,9 +143,14 @@ export default function Dashboard() {
         </main>
       ) : (
         <main className="flex-1 p-4 sm:p-8 lg:p-12">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{title}</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold">{title}</h1>
+                <Suspense fallback={null}>
+                  <CitySwitcher activeCity={activeCity} onCityChange={(slug) => { setActiveCity(slug); localStorage.setItem('sindio_city', slug) }} />
+                </Suspense>
+              </div>
               <p className="text-sindio-muted text-sm max-w-xl">
                 {infraDescriptions[activeSystem] || 'Real-time predictive simulation of load distribution and infrastructure resilience.'}
               </p>
@@ -334,6 +343,19 @@ export default function Dashboard() {
           <Suspense fallback={<SkeletonBlock className="h-96" />}>
             <ClassificationPanel />
           </Suspense>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <CarbonDashboard citySlug={activeCity} />
+              </Suspense>
+            </div>
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <InsuranceDashboard citySlug={activeCity} />
+              </Suspense>
+            </div>
+          </div>
         </main>
       )}
     </div>
