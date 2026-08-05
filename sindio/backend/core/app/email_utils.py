@@ -1,7 +1,6 @@
 import os
 import asyncio
 import logging
-import socket
 from pathlib import Path
 from dotenv import load_dotenv
 from itsdangerous import URLSafeSerializer, BadSignature
@@ -20,45 +19,17 @@ if not logger.handlers:
 
 EMAIL_SECRET = os.getenv("EMAIL_SECRET", "sindio-email-dev-secret-change-in-production")
 FRONTEND_VERIFY_URL = os.getenv("FRONTEND_VERIFY_URL", "https://sindio.net/verify-email")
-
-MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp-relay.brevo.com")
-MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
-MAIL_USERNAME = os.getenv("MAIL_USERNAME")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
-MAIL_FROM = os.getenv("MAIL_FROM", os.getenv("MAIL_USERNAME", ""))
+MAIL_FROM = os.getenv("MAIL_FROM", "Sindio <noreply@sindio.net>")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 
-def _get_mail_config():
-    from fastapi_mail import ConnectionConfig
-
-    use_tls = os.getenv("MAIL_TLS", "True").lower() == "true"
-    use_ssl = os.getenv("MAIL_SSL", "False").lower() == "true"
-
-    try:
-        return ConnectionConfig(
-            MAIL_USERNAME=MAIL_USERNAME,
-            MAIL_PASSWORD=MAIL_PASSWORD,
-            MAIL_FROM=MAIL_FROM,
-            MAIL_PORT=MAIL_PORT,
-            MAIL_SERVER=MAIL_SERVER,
-            MAIL_STARTTLS=use_tls,
-            MAIL_SSL_TLS=use_ssl,
-            USE_CREDENTIALS=True,
-            VALIDATE_CERTS=True,
-        )
-    except TypeError:
-        logger.warning("fastapi-mail does not support MAIL_STARTTLS/MAIL_SSL_TLS, falling back to MAIL_TLS/MAIL_SSL")
-        return ConnectionConfig(
-            MAIL_USERNAME=MAIL_USERNAME,
-            MAIL_PASSWORD=MAIL_PASSWORD,
-            MAIL_FROM=MAIL_FROM,
-            MAIL_PORT=MAIL_PORT,
-            MAIL_SERVER=MAIL_SERVER,
-            MAIL_TLS=use_tls,
-            MAIL_SSL=use_ssl,
-            USE_CREDENTIALS=True,
-            VALIDATE_CERTS=True,
-        )
+def _parse_from(full_from: str) -> tuple[str, str]:
+    if "<" in full_from and ">" in full_from:
+        name = full_from[: full_from.index("<")].strip()
+        email = full_from[full_from.index("<") + 1 : full_from.index(">")].strip()
+        return name, email
+    return "Sindio", full_from.strip()
 
 
 def generate_verification_token(email: str) -> str:
@@ -89,92 +60,100 @@ def verify_token(token: str, max_age: int = 86400) -> str:
 
 
 async def send_verification_email(to_email: str, token: str) -> None:
-    from fastapi_mail import FastMail, MessageSchema, MessageType
+    if not BREVO_API_KEY:
+        raise RuntimeError("BREVO_API_KEY is not configured")
+
+    from httpx import AsyncClient, HTTPError
+
     verify_link = f"{FRONTEND_VERIFY_URL}?token={token}"
-    message = MessageSchema(
-        subject="Verify your Sindio account",
-        recipients=[to_email],
-        body=f"Hello,\n\nPlease verify your account by clicking the link below (valid for 24 hours):\n{verify_link}\n\nIf you did not sign up for Sindio, you can safely ignore this email.",
-        subtype=MessageType.plain,
-    )
-    conf = _get_mail_config()
-    fm = FastMail(conf)
+    sender_name, sender_email = _parse_from(MAIL_FROM)
+
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email}],
+        "subject": "Verify your Sindio account",
+        "textContent": (
+            f"Hello,\n\n"
+            f"Please verify your account by clicking the link below (valid for 24 hours):\n"
+            f"{verify_link}\n\n"
+            f"If you did not sign up for Sindio, you can safely ignore this email."
+        ),
+    }
 
     last_error = None
     for attempt in range(1, 4):
         try:
-            await fm.send_message(message)
-            logger.info("verification_email_sent to=%s attempt=%d", to_email, attempt)
-            return
-        except Exception as exc:
+            async with AsyncClient(timeout=15.0) as client:
+                resp = await client.post(
+                    BREVO_API_URL,
+                    json=payload,
+                    headers={
+                        "api-key": BREVO_API_KEY,
+                        "Content-Type": "application/json",
+                    },
+                )
+                if resp.status_code in (200, 201, 202):
+                    logger.info("verification_email_sent to=%s attempt=%d status=%d", to_email, attempt, resp.status_code)
+                    return
+                error_body = resp.text
+                logger.warning(
+                    "verification_email_attempt_failed to=%s attempt=%d status=%d body=%s",
+                    to_email, attempt, resp.status_code, error_body[:500],
+                )
+                last_error = RuntimeError(f"Brevo API returned {resp.status_code}: {error_body[:200]}")
+        except HTTPError as exc:
             last_error = exc
             logger.warning("verification_email_attempt_failed to=%s attempt=%d error=%s", to_email, attempt, exc)
-            if attempt < 3:
-                await asyncio.sleep(2 ** attempt)
+
+        if attempt < 3:
+            await asyncio.sleep(2 ** attempt)
 
     logger.error("verification_email_failed_after_retries to=%s error=%s", to_email, last_error)
     raise last_error
 
 
 async def test_smtp_connection() -> dict:
-    import sys
+
+    mail_keys = sorted([k for k in os.environ.keys() if k.upper().startswith("MAIL")])
+    brevo_keys = sorted([k for k in os.environ.keys() if k.upper().startswith("BREVO")])
+
     result = {
-        "smtp_reachable": False,
-        "authenticated": False,
-        "error": None,
-        "config": {},
+        "api_configured": bool(BREVO_API_KEY),
+        "from_address": MAIL_FROM,
+        "mail_env_keys": mail_keys,
+        "brevo_env_keys": brevo_keys,
         "host": os.getenv("PORT", "unknown"),
         "is_core": os.getenv("PORT") == "8081",
+        "api_test": {},
     }
 
-    raw_username = os.getenv("MAIL_USERNAME")
-    raw_password = os.getenv("MAIL_PASSWORD")
+    if not BREVO_API_KEY:
+        result["api_test"]["error"] = "BREVO_API_KEY is not configured"
+        return result
 
-    all_mail_keys = sorted([k for k in os.environ.keys() if k.upper().startswith("MAIL")])
-    env_count = len(os.environ)
+    from httpx import AsyncClient, HTTPError
 
-    result["config"] = {
-        "server": MAIL_SERVER,
-        "port": MAIL_PORT,
-        "username_set": bool(MAIL_USERNAME),
-        "password_set": bool(MAIL_PASSWORD),
-        "from": MAIL_FROM,
-        "raw_env": {
-            "MAIL_USERNAME_present": raw_username is not None,
-            "MAIL_USERNAME_value": bool(raw_username),
-            "MAIL_PASSWORD_present": raw_password is not None,
-            "MAIL_PASSWORD_value": bool(raw_password),
-            "MAIL_FROM_raw": os.getenv("MAIL_FROM", "(unset)"),
-            "MAIL_keys_found": all_mail_keys,
-            "total_env_vars": env_count,
-        },
+    sender_name, sender_email = _parse_from(MAIL_FROM)
+    test_payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": sender_email}],
+        "subject": "Sindio Email Test",
+        "textContent": "This is a connectivity test from Sindio.",
     }
 
-    if not MAIL_USERNAME or not MAIL_PASSWORD:
-        result["error"] = "MAIL_USERNAME or MAIL_PASSWORD is not configured"
-        return result
-
     try:
-        sock = socket.create_connection((MAIL_SERVER, MAIL_PORT), timeout=10)
-        sock.close()
-        result["smtp_reachable"] = True
+        async with AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                BREVO_API_URL,
+                json=test_payload,
+                headers={"api-key": BREVO_API_KEY, "Content-Type": "application/json"},
+            )
+            result["api_test"]["status"] = resp.status_code
+            result["api_test"]["body"] = resp.text[:500]
+            result["api_test"]["ok"] = resp.status_code in (200, 201, 202)
+    except HTTPError as exc:
+        result["api_test"]["error"] = str(exc)
     except Exception as exc:
-        result["error"] = f"SMTP server {MAIL_SERVER}:{MAIL_PORT} unreachable: {exc}"
-        return result
-
-    try:
-        from fastapi_mail import FastMail, MessageSchema, MessageType
-        conf = _get_mail_config()
-        fm = FastMail(conf)
-        test_msg = MessageSchema(
-            subject="Sindio SMTP Test",
-            recipients=[MAIL_FROM.replace("<", "").replace(">", "").split()[-1] if "<" in MAIL_FROM else MAIL_USERNAME],
-            body="This is an SMTP connectivity test from Sindio.",
-            subtype=MessageType.plain,
-        )
-        await fm.send_message(test_msg)
-        result["authenticated"] = True
-    except Exception as exc:
-        result["error"] = f"SMTP auth/send failed: {exc}"
+        result["api_test"]["error"] = str(exc)
 
     return result
