@@ -122,6 +122,9 @@ async def test_smtp_connection() -> dict:
     raw_username = os.getenv("MAIL_USERNAME")
     raw_password = os.getenv("MAIL_PASSWORD")
 
+    all_mail_keys = sorted([k for k in os.environ.keys() if k.upper().startswith("MAIL")])
+    env_count = len(os.environ)
+
     result["config"] = {
         "server": MAIL_SERVER,
         "port": MAIL_PORT,
@@ -134,6 +137,8 @@ async def test_smtp_connection() -> dict:
             "MAIL_PASSWORD_present": raw_password is not None,
             "MAIL_PASSWORD_value": bool(raw_password),
             "MAIL_FROM_raw": os.getenv("MAIL_FROM", "(unset)"),
+            "MAIL_keys_found": all_mail_keys,
+            "total_env_vars": env_count,
         },
     }
 
