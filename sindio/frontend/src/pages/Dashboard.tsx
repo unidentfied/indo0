@@ -21,7 +21,6 @@ const CascadePanel = lazy(() => import('../components/CascadePanel'))
 const RoiCalculator = lazy(() => import('../components/RoiCalculator'))
 const NlMapSearch = lazy(() => import('../components/NlMapSearch'))
 const DataFreshnessPanel = lazy(() => import('../components/DataFreshnessPanel'))
-const ConditionsSnapshot = lazy(() => import('../components/ConditionsSnapshot'))
 
 function SkeletonBlock({ className = '' }: { className?: string }) {
   return <div className={`panel animate-pulse bg-sindio-panel ${className}`}>
@@ -239,22 +238,10 @@ export default function Dashboard() {
             }
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
-            <div className="xl:col-span-1 space-y-4">
-              <Suspense fallback={null}>
-                <NlMapSearch />
-              </Suspense>
-              <Suspense fallback={<SkeletonBlock />}>
-                <SimulationPanel onSimulationComplete={handleSimulationComplete} />
-              </Suspense>
-              <Suspense fallback={<SkeletonBlock className="h-52" />}>
-                <SimulationChart result={simulation} />
-              </Suspense>
+          <div className="mb-8 space-y-4">
+            <div className="space-y-4">
               <Suspense fallback={<SkeletonBlock />}>
                 <MonitorOverview />
-              </Suspense>
-              <Suspense fallback={<SkeletonBlock />}>
-                <DataFreshnessPanel />
               </Suspense>
               <div className="panel">
                 <div className="p-4 border-b border-sindio-border flex items-center justify-between">
@@ -296,13 +283,10 @@ export default function Dashboard() {
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="xl:col-span-2">
               <Suspense fallback={<SkeletonBlock />}>
-                <ConditionsSnapshot />
+                <CascadePanel />
               </Suspense>
-              <div className="panel p-3 mb-4">
+              <div className="panel p-3">
                 <div className="flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-sindio-accent" />
                   <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent">Infrastructure Stress Map</h3>
@@ -323,6 +307,21 @@ export default function Dashboard() {
               }>
                 <StressMap />
               </Suspense>
+              <Suspense fallback={<SkeletonBlock />}>
+                <DataFreshnessPanel />
+              </Suspense>
+              <Suspense fallback={<SkeletonBlock />}>
+                <ScheduleStatus />
+              </Suspense>
+              <Suspense fallback={null}>
+                <NlMapSearch />
+              </Suspense>
+              <Suspense fallback={<SkeletonBlock />}>
+                <SimulationPanel onSimulationComplete={handleSimulationComplete} />
+              </Suspense>
+              <Suspense fallback={<SkeletonBlock className="h-52" />}>
+                <SimulationChart result={simulation} />
+              </Suspense>
             </div>
           </div>
 
@@ -330,52 +329,31 @@ export default function Dashboard() {
             <ClassificationPanel />
           </Suspense>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-            <div className="panel p-4">
-              <Suspense fallback={<SkeletonBlock />}>
-                <CascadePanel />
-              </Suspense>
-            </div>
-            <div className="panel p-4">
-              <Suspense fallback={<SkeletonBlock />}>
-                <RoiCalculator />
-              </Suspense>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-            <div className="space-y-6">
-              {alertsReady
-                ? <AlertPanel alerts={alerts} />
-                : <div className="panel p-6 animate-pulse">
-                    <div className="h-4 w-24 bg-sindio-border rounded mb-3" />
-                    <div className="space-y-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="h-8 bg-sindio-border rounded" />
-                      ))}
-                    </div>
+          <div className="grid grid-cols-1 gap-8 mb-8">
+            {alertsReady
+              ? <AlertPanel alerts={alerts} />
+              : <div className="panel p-6 animate-pulse">
+                  <div className="h-4 w-24 bg-sindio-border rounded mb-3" />
+                  <div className="space-y-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="h-8 bg-sindio-border rounded" />
+                    ))}
                   </div>
-              }
-            </div>
-            <div className="space-y-6">
-              <Suspense fallback={<SkeletonBlock />}>
-                <ScheduleStatus />
-              </Suspense>
-            </div>
+                </div>
+            }
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
-            <div className="panel p-4">
-              <Suspense fallback={<SkeletonBlock />}>
-                <CarbonDashboard citySlug="nairobi" />
-              </Suspense>
-            </div>
-            <div className="panel p-4">
-              <Suspense fallback={<SkeletonBlock />}>
-                <InsuranceDashboard citySlug="nairobi" />
-              </Suspense>
-            </div>
-          </div>
+          <Suspense fallback={<SkeletonBlock />}>
+            <RoiCalculator />
+          </Suspense>
+
+          <Suspense fallback={<SkeletonBlock />}>
+            <CarbonDashboard citySlug="nairobi" />
+          </Suspense>
+
+          <Suspense fallback={<SkeletonBlock />}>
+            <InsuranceDashboard citySlug="nairobi" />
+          </Suspense>
         </main>
       )}
     </div>

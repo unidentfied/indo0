@@ -271,13 +271,6 @@ export const api = {
       request<Record<string, unknown>>(`/api/v1/datasets/${datasetId}/download`),
   },
 
-  snapshot: {
-    get: (citySlug = 'nairobi', ward?: string) =>
-      request<Record<string, unknown>>(
-        `/api/v1/snapshot/?city_slug=${citySlug}${ward ? `&ward=${ward}` : ''}`,
-      ),
-  },
-
   citizenReports: {
     create: (payload: Record<string, unknown>) =>
       request<Record<string, unknown>>('/api/v1/citizen-reports/', { method: 'POST', body: JSON.stringify(payload) }),
