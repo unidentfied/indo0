@@ -238,8 +238,7 @@ export default function Dashboard() {
             }
           </div>
 
-          <div className="mb-8 space-y-4">
-            <div className="space-y-4">
+          <div className="space-y-6">
               <Suspense fallback={<SkeletonBlock />}>
                 <MonitorOverview />
               </Suspense>
@@ -328,14 +327,13 @@ export default function Dashboard() {
               <Suspense fallback={<SkeletonBlock className="h-52" />}>
                 <SimulationChart result={simulation} />
               </Suspense>
-            </div>
           </div>
 
-          <Suspense fallback={<SkeletonBlock className="h-96" />}>
-            <ClassificationPanel />
-          </Suspense>
+          <div className="space-y-6">
+            <Suspense fallback={<SkeletonBlock className="h-96" />}>
+              <ClassificationPanel />
+            </Suspense>
 
-          <div className="grid grid-cols-1 gap-8 mb-8">
             {alertsReady
               ? <AlertPanel alerts={alerts} />
               : <div className="panel p-6 animate-pulse">
@@ -347,24 +345,24 @@ export default function Dashboard() {
                   </div>
                 </div>
             }
-          </div>
 
-          <div className="panel p-4">
-            <Suspense fallback={<SkeletonBlock />}>
-              <RoiCalculator />
-            </Suspense>
-          </div>
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <RoiCalculator />
+              </Suspense>
+            </div>
 
-          <div className="panel p-4">
-            <Suspense fallback={<SkeletonBlock />}>
-              <CarbonDashboard citySlug="nairobi" />
-            </Suspense>
-          </div>
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <CarbonDashboard citySlug="nairobi" />
+              </Suspense>
+            </div>
 
-          <div className="panel p-4">
-            <Suspense fallback={<SkeletonBlock />}>
-              <InsuranceDashboard citySlug="nairobi" />
-            </Suspense>
+            <div className="panel p-4">
+              <Suspense fallback={<SkeletonBlock />}>
+                <InsuranceDashboard citySlug="nairobi" />
+              </Suspense>
+            </div>
           </div>
         </main>
       )}
