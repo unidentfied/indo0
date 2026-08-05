@@ -39,16 +39,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     signal: controller.signal,
   })
     .then(async (res) => {
+      let body: unknown
+      try {
+        body = await res.json()
+      } catch {
+        const text = await res.clone().text().catch(() => '')
+        if (!res.ok) {
+          throw new Error(`API ${res.status} on ${path}`)
+        }
+        throw new Error(`Invalid JSON response on ${path}${text ? `: ${text.slice(0, 100)}` : ''}`)
+      }
       if (!res.ok) {
-        let detail = `API ${res.status} on ${path}`
-        try {
-          const body = await res.json()
-          detail = body.detail || detail
-        } catch {}
+        const detail = (body as { detail?: string })?.detail || `API ${res.status} on ${path}`
         console.error(`[Sindio API] ${res.status} on ${path}:`, detail)
         throw new Error(detail)
       }
-      return res.json() as T
+      return body as T
     })
     .finally(() => {
       clearTimeout(timeoutId)

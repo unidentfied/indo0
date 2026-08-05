@@ -45,12 +45,12 @@ export default function NlMapSearch({ onResult }: { onResult?: (result: NlMapRes
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Ask in plain English... (e.g. water pipes failing in Eastlands)"
+            placeholder=""
             className="w-full bg-sindio-panel border border-sindio-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-white placeholder-sindio-muted focus:border-sindio-accent focus:outline-none"
           />
         </div>
         <button type="submit" disabled={loading || !query.trim()} className="btn-primary text-sm py-2">
-          {loading ? '...' : 'Go'}
+          {loading ? '...' : 'Query'}
         </button>
       </form>
       {error && <div className="text-red-400 text-xs">{error}</div>}

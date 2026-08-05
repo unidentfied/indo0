@@ -46,7 +46,10 @@ const capabilities = [
 const trialFeatures = [
   'Full access to all 8 infrastructure sectors',
   'Real-time stress monitoring dashboard',
+  'Natural language infrastructure search',
   'Predictive analytics & STL decomposition',
+  'Cascade failure analysis & ROI calculator',
+  'Carbon impact & insurance risk dashboards',
   'Interactive PostGIS spatial heatmaps',
   'Live WebSocket alert feeds',
   'Unlimited simulations during trial',
@@ -55,7 +58,9 @@ const trialFeatures = [
 const proFeatures = [
   'Everything in the free trial',
   'Priority data ingestion pipelines',
-  'Classification history & shift detection',
+  'Asset-level classification & shift detection',
+  'Critical risk feed with priority routing',
+  'Real-time data freshness monitoring',
   'CSV/GeoJSON data exports',
   'Long-window Spearman correlation',
   'Multi-user team accounts (coming soon)',
@@ -211,7 +216,7 @@ export default function LandingPage() {
             <div className="text-[10px] uppercase tracking-wider text-sindio-accent font-medium mb-2">Platform</div>
             <h2 className="text-3xl font-bold mb-4">Three Lenses on Nairobi&rsquo;s Dynamics</h2>
             <p className="text-sindio-muted max-w-xl mx-auto">
-              Explore interactive stress heatmaps, live alert feeds, and high-level health diagnostics powered by PostGIS spatial indexing and WebSockets.
+              Explore interactive stress heatmaps, natural language search, live alert feeds, cascade analysis, and high-level health diagnostics — all powered by PostGIS spatial indexing and WebSockets.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

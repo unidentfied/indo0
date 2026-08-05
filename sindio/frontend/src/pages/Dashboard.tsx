@@ -145,19 +145,6 @@ export default function Dashboard() {
         </main>
       ) : (
         <main className="flex-1 p-4 sm:p-8 lg:p-12">
-            {/* ── Conditions Snapshot ── */}
-            <div className="mb-8">
-              <Suspense fallback={<SkeletonBlock />}>
-                <ConditionsSnapshot />
-              </Suspense>
-            </div>
-
-            {/* ── Natural Language Search ── */}
-            <div className="mb-6">
-              <Suspense fallback={null}>
-                <NlMapSearch />
-              </Suspense>
-            </div>
 
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
             <div>
@@ -254,8 +241,14 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
             <div className="xl:col-span-1 space-y-4">
+              <Suspense fallback={null}>
+                <NlMapSearch />
+              </Suspense>
               <Suspense fallback={<SkeletonBlock />}>
                 <SimulationPanel onSimulationComplete={handleSimulationComplete} />
+              </Suspense>
+              <Suspense fallback={<SkeletonBlock className="h-52" />}>
+                <SimulationChart result={simulation} />
               </Suspense>
               <Suspense fallback={<SkeletonBlock />}>
                 <MonitorOverview />
@@ -306,6 +299,9 @@ export default function Dashboard() {
             </div>
 
             <div className="xl:col-span-2">
+              <Suspense fallback={<SkeletonBlock />}>
+                <ConditionsSnapshot />
+              </Suspense>
               <div className="panel p-3 mb-4">
                 <div className="flex items-center gap-2">
                   <Gauge className="w-4 h-4 text-sindio-accent" />
@@ -330,30 +326,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
-            <div className="xl:col-span-2">
-              <Suspense fallback={<SkeletonBlock className="h-52" />}>
-                <SimulationChart result={simulation} />
-              </Suspense>
-            </div>
-            <div className="space-y-6">
-              {alertsReady
-                ? <AlertPanel alerts={alerts} />
-                : <div className="panel p-6 animate-pulse">
-                    <div className="h-4 w-24 bg-sindio-border rounded mb-3" />
-                    <div className="space-y-2">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="h-8 bg-sindio-border rounded" />
-                      ))}
-                    </div>
-                  </div>
-              }
-              <Suspense fallback={<SkeletonBlock />}>
-                <ScheduleStatus />
-              </Suspense>
-            </div>
-          </div>
-
           <Suspense fallback={<SkeletonBlock className="h-96" />}>
             <ClassificationPanel />
           </Suspense>
@@ -367,6 +339,27 @@ export default function Dashboard() {
             <div className="panel p-4">
               <Suspense fallback={<SkeletonBlock />}>
                 <RoiCalculator />
+              </Suspense>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <div className="space-y-6">
+              {alertsReady
+                ? <AlertPanel alerts={alerts} />
+                : <div className="panel p-6 animate-pulse">
+                    <div className="h-4 w-24 bg-sindio-border rounded mb-3" />
+                    <div className="space-y-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="h-8 bg-sindio-border rounded" />
+                      ))}
+                    </div>
+                  </div>
+              }
+            </div>
+            <div className="space-y-6">
+              <Suspense fallback={<SkeletonBlock />}>
+                <ScheduleStatus />
               </Suspense>
             </div>
           </div>
