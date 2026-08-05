@@ -75,7 +75,23 @@ export default function CascadePanel() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.cascade.assets().then(setAssets).catch(() => {})
+    api.cascade.assets().then((raw: unknown) => {
+      const data = raw as Record<string, unknown>
+      const assetsWrapper = data.assets as Record<string, unknown[]> | undefined
+      if (!assetsWrapper) return
+      const substations = (assetsWrapper.power_substations || []) as Record<string, unknown>[]
+      const pumps = (assetsWrapper.water_pumps || []) as Record<string, unknown>[]
+      const flat = [...substations, ...pumps].map(a => {
+        const servesWards = a.serves_wards as string[] | undefined
+        return {
+          asset_id: a.asset_id as string,
+          asset_type: a.type as string,
+          name: a.name as string,
+          ward: (a.wards_count as number || servesWards?.[0] || '') as string,
+        }
+      }) as CascadeAsset[]
+      setAssets(flat)
+    }).catch(() => {})
   }, [])
 
   const analyze = async () => {
