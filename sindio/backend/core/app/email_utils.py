@@ -117,7 +117,15 @@ async def send_verification_email(to_email: str, token: str) -> None:
 
 
 async def test_smtp_connection() -> dict:
-    result = {"smtp_reachable": False, "authenticated": False, "error": None, "config": {}}
+    import sys
+    result = {
+        "smtp_reachable": False,
+        "authenticated": False,
+        "error": None,
+        "config": {},
+        "host": os.getenv("PORT", "unknown"),
+        "is_core": os.getenv("PORT") == "8081",
+    }
 
     raw_username = os.getenv("MAIL_USERNAME")
     raw_password = os.getenv("MAIL_PASSWORD")
