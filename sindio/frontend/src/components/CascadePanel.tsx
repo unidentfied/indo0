@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { AlertTriangle, Zap, Droplets, Car, Wifi, Users, Clock, ArrowRight, Loader2, XCircle, ChevronDown } from 'lucide-react'
+import { Workflow, Zap, Droplets, Car, Wifi, Users, Clock, ArrowRight, Loader2, XCircle, ChevronDown } from 'lucide-react'
 
 interface CascadeAsset {
   asset_id: string
@@ -114,8 +114,8 @@ export default function CascadePanel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-sindio-accent flex items-center gap-2">
-        <AlertTriangle className="w-5 h-5" /> Cascade Failure Analysis
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent flex items-center gap-2">
+        <Workflow className="w-4 h-4" /> Cascade Failure Analysis
       </h3>
 
       <div className="flex flex-wrap items-end gap-3">

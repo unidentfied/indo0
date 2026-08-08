@@ -83,8 +83,8 @@ export default function RoiCalculator() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-sindio-accent flex items-center gap-2">
-        <Calculator className="w-5 h-5" /> Adaptation ROI Calculator
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent flex items-center gap-2">
+        <Calculator className="w-4 h-4" /> Adaptation ROI Calculator
       </h3>
 
       <div className="flex flex-wrap gap-2">

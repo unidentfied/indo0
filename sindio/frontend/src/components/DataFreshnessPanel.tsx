@@ -111,7 +111,7 @@ export default function DataFreshnessPanel() {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
-        <h4 className="text-xs font-medium text-sindio-muted">Data Freshness</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-sindio-accent">Data Freshness</h4>
         <div className="flex items-center gap-2">
           {data.checked_at && (
             <span className="text-[10px] text-sindio-muted opacity-60">

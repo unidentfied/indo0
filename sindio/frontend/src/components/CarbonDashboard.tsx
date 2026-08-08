@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { Leaf, TrendingUp, Award, Loader2 } from 'lucide-react'
+import { Trees, TrendingUp, Award, Loader2 } from 'lucide-react'
 
 interface CarbonDashboardProps {
   citySlug: string
@@ -38,8 +38,8 @@ export default function CarbonDashboard({ citySlug }: CarbonDashboardProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-sindio-accent flex items-center gap-2">
-        <Leaf className="w-5 h-5" /> Carbon Credits
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent flex items-center gap-2">
+        <Trees className="w-4 h-4" /> Carbon Credits
       </h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../services/api'
-import { Shield, AlertTriangle, DollarSign, FileText, Loader2 } from 'lucide-react'
+import { HeartHandshake, AlertTriangle, DollarSign, FileText, Loader2 } from 'lucide-react'
 
 interface InsuranceDashboardProps {
   citySlug: string
@@ -39,8 +39,8 @@ export default function InsuranceDashboard({ citySlug }: InsuranceDashboardProps
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-sindio-accent flex items-center gap-2">
-        <Shield className="w-5 h-5" /> Parametric Insurance
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-sindio-accent flex items-center gap-2">
+        <HeartHandshake className="w-4 h-4" /> Parametric Insurance
       </h3>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
