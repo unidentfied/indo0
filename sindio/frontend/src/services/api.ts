@@ -247,6 +247,8 @@ export const api = {
     dependencies: (assetId: string) => request<Record<string, unknown>>(`/api/v1/cascade/dependencies/${assetId}`),
   },
 
+  dataFreshness: () => request<Record<string, unknown>>('/api/v1/data-freshness/'),
+
   nlMap: {
     query: (text: string) =>
       request<Record<string, unknown>>('/api/v1/nl-map/query', {

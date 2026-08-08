@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { api } from '../services/api'
 
 interface SourceStatus {
   id: string
@@ -42,37 +43,83 @@ const statusLabel: Record<string, string> = {
   offline: 'Offline',
 }
 
+function formatCheckedAt(iso: string): string {
+  try {
+    const then = new Date(iso)
+    if (isNaN(then.getTime())) return ''
+    const diffMs = Date.now() - then.getTime()
+    const diffSec = Math.round(diffMs / 1000)
+    if (diffSec < 10) return 'just now'
+    if (diffSec < 60) return `${diffSec}s ago`
+    const diffMin = Math.round(diffSec / 60)
+    if (diffMin < 60) return `${diffMin}m ago`
+    return `${Math.round(diffMin / 60)}h ago`
+  } catch {
+    return ''
+  }
+}
+
 export default function DataFreshnessPanel() {
   const [data, setData] = useState<FreshnessData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      try {
-        const response = await fetch('/api/v1/data-freshness/')
-        if (!response.ok) throw new Error('Failed')
-        const json = await response.json()
-        setData(json)
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Failed to load')
-      } finally {
-        setLoading(false)
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const json = await api.dataFreshness() as unknown as FreshnessData
+      if (!json || !Array.isArray(json.sources)) {
+        throw new Error('Invalid response format')
       }
+      setData(json)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load'
+      setError(msg)
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [])
 
-  if (loading) return <div className="text-sindio-muted text-xs p-2">Checking data sources...</div>
-  if (error) return <div className="text-red-400 text-xs p-2">{error}</div>
+  useEffect(() => {
+    load()
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(load, 60_000)
+    return () => clearInterval(interval)
+  }, [load])
+
+  if (loading && !data) {
+    return <div className="text-sindio-muted text-xs p-2">Checking data sources…</div>
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex items-center justify-between text-xs p-2">
+        <span className="text-red-400">Data freshness unavailable</span>
+        <button
+          onClick={load}
+          className="text-sindio-accent hover:text-white text-[10px] underline transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
   if (!data) return null
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between px-1">
         <h4 className="text-xs font-medium text-sindio-muted">Data Freshness</h4>
-        <span className="text-[10px] text-sindio-muted tabular-nums">{data.fresh_pct}% fresh</span>
+        <div className="flex items-center gap-2">
+          {data.checked_at && (
+            <span className="text-[10px] text-sindio-muted opacity-60">
+              {formatCheckedAt(data.checked_at)}
+            </span>
+          )}
+          <span className="text-[10px] text-sindio-muted tabular-nums">{data.fresh_pct}% fresh</span>
+        </div>
       </div>
 
       <div className="flex gap-3 text-[10px] text-sindio-muted px-1">
@@ -111,3 +158,4 @@ export default function DataFreshnessPanel() {
     </div>
   )
 }
+
