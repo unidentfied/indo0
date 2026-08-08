@@ -18,7 +18,7 @@ const ClassificationPanel = lazy(() => import('../components/ClassificationPanel
 const CarbonDashboard = lazy(() => import('../components/CarbonDashboard'))
 const InsuranceDashboard = lazy(() => import('../components/InsuranceDashboard'))
 const CascadePanel = lazy(() => import('../components/CascadePanel'))
-const RoiCalculator = lazy(() => import('../components/RoiCalculator'))
+const RoiEvaluator = lazy(() => import('../components/RoiEvaluator'))
 const NlMapSearch = lazy(() => import('../components/NlMapSearch'))
 const DataFreshnessPanel = lazy(() => import('../components/DataFreshnessPanel'))
 
@@ -349,7 +349,7 @@ export default function Dashboard() {
 
             <div className="panel p-4">
               <Suspense fallback={<SkeletonBlock />}>
-                <RoiCalculator />
+                <RoiEvaluator />
               </Suspense>
             </div>
 

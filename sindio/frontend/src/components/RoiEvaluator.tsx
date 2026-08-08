@@ -38,7 +38,7 @@ const infraLabels: Record<string, string> = {
   airports: 'Airports',
 }
 
-export default function RoiCalculator() {
+export default function RoiEvaluator() {
   const [infraType, setInfraType] = useState('power')
   const [options, setOptions] = useState<UpgradeOption[]>([])
   const [selectedOption, setSelectedOption] = useState<number | null>(null)

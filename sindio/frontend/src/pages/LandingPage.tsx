@@ -48,7 +48,7 @@ const trialFeatures = [
   'Real-time stress monitoring dashboard',
   'Natural language infrastructure search',
   'Predictive analytics & STL decomposition',
-  'Cascade failure analysis & ROI calculator',
+  'Cascade failure analysis & ROI evaluator',
   'Carbon impact & insurance risk dashboards',
   'Interactive PostGIS spatial heatmaps',
   'Live WebSocket alert feeds',
